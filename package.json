@@ -1,0 +1,38 @@
+{
+  "name": "24-hour-party-people",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "npm@11.19.0",
+  "overrides": {
+    "deepmerge-ts": "8.0.0",
+    "mysql2": "3.24.2"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "db:down": "docker compose down",
+    "db:generate": "npm run db:generate --workspace server",
+    "db:migrate": "npm run db:migrate --workspace server",
+    "db:studio": "npm run db:studio --workspace server",
+    "db:up": "docker compose up -d postgres",
+    "dev:client": "npm run dev --workspace client",
+    "dev:server": "npm run dev --workspace server",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "npm run lint --workspaces --if-present",
+    "postinstall": "npm run db:generate",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3"
+  }
+}
