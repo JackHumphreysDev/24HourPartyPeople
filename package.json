@@ -1,6 +1,6 @@
 {
   "name": "24-hour-party-people",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -20,6 +20,8 @@
     "db:down": "docker compose down",
     "db:generate": "npm run db:generate --workspace server",
     "db:migrate": "npm run db:migrate --workspace server",
+    "db:test:down": "docker compose --profile test rm --force --stop postgres-test",
+    "db:test:up": "docker compose --profile test up --detach --wait postgres-test",
     "db:studio": "npm run db:studio --workspace server",
     "db:up": "docker compose up -d postgres",
     "dev:client": "npm run dev --workspace client",
@@ -28,7 +30,8 @@
     "format:check": "prettier --check .",
     "lint": "npm run lint --workspaces --if-present",
     "postinstall": "npm run db:generate",
-    "test": "npm run test --workspaces --if-present",
+    "test": "bash scripts/test.sh",
+    "test:workspaces": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {

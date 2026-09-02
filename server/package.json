@@ -1,13 +1,17 @@
 {
   "name": "24-hour-party-people-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "db:generate": "prisma generate",
+    "db:deploy": "prisma migrate deploy",
+    "db:format": "prisma format",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "db:test:deploy": "prisma migrate deploy --config prisma.test.config.ts",
+    "db:validate": "prisma validate",
     "dev": "tsx watch src/index.ts",
     "lint": "oxlint src tests",
     "start": "node dist/index.js",
