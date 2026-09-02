@@ -7,10 +7,10 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.2.0` release includes the project foundation and core football
-data model. The user-facing product features are still to be built. See
-[the project specification](docs/PROJECT-SPEC.md) for the planned
-functionality.
+The current `0.3.0` release includes the project foundation, core football
+data model, and secure administrator authentication. The remaining team-hub
+features are still to be built. See
+[the project specification](docs/PROJECT-SPEC.md) for the planned functionality.
 
 ## Technology stack
 
@@ -49,6 +49,28 @@ Business rules such as exactly one current season, valid formation limits,
 non-negative statistics, and walkover score handling are enforced by the
 application features that write those records.
 
+## Authentication
+
+The first account is created through the one-time administrator setup screen.
+Set a long, random `ADMIN_SETUP_KEY` in `server/.env`, open the website, choose
+**Set up administrator**, and enter that same key. Registration closes as soon
+as the first account has been created; public player registration is not yet
+available.
+
+Passwords are stored as salted scrypt hashes. Successful registration and
+login create a random, revocable seven-day session whose SHA-256 token hash is
+stored in PostgreSQL. The browser receives only the opaque token in an
+`HttpOnly`, `SameSite=Lax` cookie, with `Secure` enabled in production.
+Authentication attempts are rate limited, and failed logins do not reveal
+whether an email address exists.
+
+The authentication API provides:
+
+- `POST /api/auth/register` — create the first administrator account
+- `POST /api/auth/login` — sign in and start a session
+- `POST /api/auth/logout` — revoke the current session
+- `GET /api/auth/me` — return the currently authenticated user
+
 ## Local development
 
 ### Prerequisites
@@ -75,9 +97,13 @@ Apply development migrations after the database is running:
 npm run db:migrate
 ```
 
-If custom local settings are needed, copy `server/.env.example` to
-`server/.env` and edit the copied values. The defaults already match the
-Docker service.
+Copy `server/.env.example` to `server/.env` and replace
+`ADMIN_SETUP_KEY` with a long random secret. The remaining defaults match the
+Docker service. For example, a setup key can be generated with:
+
+```bash
+openssl rand -base64 32
+```
 
 Run the API and client in separate terminals:
 

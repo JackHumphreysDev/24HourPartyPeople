@@ -2,6 +2,24 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.3.0] - 2026-09-02
+
+### Added
+
+- One-time administrator account setup and browser sign-in experience.
+- Register, login, logout, and current-user API endpoints with reusable
+  authentication and administrator authorization middleware.
+- Database-backed, seven-day sessions storing SHA-256 hashes of opaque tokens.
+- Session migration, request validation, authentication rate limiting, and
+  coverage for password, session, and role boundaries.
+
+### Security
+
+- Passwords are protected with salted scrypt hashes and timing-safe checks.
+- Session cookies are `HttpOnly` and `SameSite=Lax`, with `Secure` enabled in
+  production; failed logins use a generic response for known and unknown
+  email addresses.
+
 ## [0.2.0] - 2026-09-02
 
 ### Added

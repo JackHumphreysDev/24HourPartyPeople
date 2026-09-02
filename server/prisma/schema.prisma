@@ -36,14 +36,27 @@ enum FixtureSource {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
+  id           String    @id @default(uuid()) @db.Uuid
   name         String
-  email        String   @unique
+  email        String    @unique
   passwordHash String
-  role         UserRole @default(PLAYER)
-  playerId     String?  @unique @db.Uuid
-  createdAt    DateTime @default(now()) @db.Timestamptz(3)
-  player       Player?  @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  role         UserRole  @default(PLAYER)
+  playerId     String?   @unique @db.Uuid
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  player       Player?   @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  tokenHash String   @unique @db.Char(64)
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Player {
