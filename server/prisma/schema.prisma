@@ -6,3 +6,171 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum UserRole {
+  ADMIN
+  PLAYER
+}
+
+enum PlayerPosition {
+  GK
+  DEF
+  MID
+  FWD
+}
+
+enum Competition {
+  LEAGUE
+  CUP
+}
+
+enum FixtureStatus {
+  SCHEDULED
+  PLAYED
+  WALKOVER
+}
+
+enum FixtureSource {
+  SCRAPE @map("scrape")
+  MANUAL @map("manual")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(PLAYER)
+  playerId     String?  @unique @db.Uuid
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  player       Player?  @relation(fields: [playerId], references: [id], onDelete: SetNull)
+}
+
+model Player {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String
+  description       String
+  profilePictureUrl String?
+  position          PlayerPosition
+  isActiveSquad     Boolean            @default(true)
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+  user              User?
+  seasonStats       PlayerSeasonStat[]
+
+  @@index([isActiveSquad, position])
+}
+
+model Season {
+  id          String             @id @default(uuid()) @db.Uuid
+  name        String
+  startDate   DateTime           @db.Date
+  endDate     DateTime           @db.Date
+  isCurrent   Boolean            @default(false)
+  playerStats PlayerSeasonStat[]
+  fixtures    Fixture[]
+  gameResults GameResult[]
+  standings   SeasonStanding[]
+  clubHistory ClubHistory?
+
+  @@index([isCurrent])
+}
+
+model PlayerSeasonStat {
+  id          String  @id @default(uuid()) @db.Uuid
+  playerId    String  @db.Uuid
+  seasonId    String  @db.Uuid
+  goals       Int     @default(0)
+  assists     Int     @default(0)
+  cleanSheets Int     @default(0)
+  gamesPlayed Int?
+  note        String?
+  player      Player  @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  season      Season  @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+
+  @@unique([playerId, seasonId])
+  @@index([seasonId])
+}
+
+model OpponentClub {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @unique
+  fixtures    Fixture[]
+  gameResults GameResult[]
+}
+
+model Fixture {
+  id             String        @id @default(uuid()) @db.Uuid
+  seasonId       String        @db.Uuid
+  opponentClubId String        @db.Uuid
+  competition    Competition
+  scheduledDate  DateTime      @db.Date
+  scheduledTime  DateTime?     @db.Time(0)
+  venue          String?
+  status         FixtureStatus @default(SCHEDULED)
+  source         FixtureSource
+  season         Season        @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  opponentClub   OpponentClub  @relation(fields: [opponentClubId], references: [id], onDelete: Restrict)
+  result         GameResult?
+
+  @@index([seasonId, scheduledDate])
+  @@index([status, scheduledDate])
+  @@index([opponentClubId])
+}
+
+model GameResult {
+  id             String       @id @default(uuid()) @db.Uuid
+  fixtureId      String?      @unique @db.Uuid
+  seasonId       String       @db.Uuid
+  competition    Competition
+  datePlayed     DateTime     @db.Date
+  opponentClubId String       @db.Uuid
+  ourScore       Int?
+  opponentScore  Int?
+  isWalkover     Boolean      @default(false)
+  walkoverReason String?
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  fixture        Fixture?     @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
+  season         Season       @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  opponentClub   OpponentClub @relation(fields: [opponentClubId], references: [id], onDelete: Restrict)
+
+  @@index([seasonId, datePlayed])
+  @@index([opponentClubId, datePlayed])
+}
+
+model SeasonStanding {
+  id            String   @id @default(uuid()) @db.Uuid
+  seasonId      String   @db.Uuid
+  position      Int
+  clubName      String
+  played        Int
+  won           Int
+  drawn         Int
+  lost          Int
+  gf            Int
+  ga            Int
+  gd            Int
+  points        Int
+  walkoverGames Int      @default(0)
+  scrapedAt     DateTime @db.Timestamptz(3)
+  season        Season   @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+
+  @@unique([seasonId, clubName])
+  @@index([seasonId, position])
+}
+
+model ClubHistory {
+  id            String    @id @default(uuid()) @db.Uuid
+  seasonId      String    @unique @db.Uuid
+  position      Int
+  played        Int
+  won           Int
+  drawn         Int
+  lost          Int
+  gf            Int
+  ga            Int
+  gd            Int
+  points        Int
+  walkoverGames Int       @default(0)
+  finalizedAt   DateTime? @db.Timestamptz(3)
+  season        Season    @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+}

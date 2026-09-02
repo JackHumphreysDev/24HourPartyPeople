@@ -7,10 +7,10 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.1.0` release is the project foundation. It contains the
-frontend, API, database connection, and development tooling, but no product
-features yet. See [the project specification](docs/PROJECT-SPEC.md) for the
-planned functionality.
+The current `0.2.0` release includes the project foundation and core football
+data model. The user-facing product features are still to be built. See
+[the project specification](docs/PROJECT-SPEC.md) for the planned
+functionality.
 
 ## Technology stack
 
@@ -36,6 +36,19 @@ mobile application.
 Hosting-specific files such as a Vercel API adapter will be added only after
 the production hosting approach is confirmed.
 
+## Core data model
+
+The Prisma schema defines users, players, seasons, player season statistics,
+opponents, fixtures, game results, live standings, and finalized club history.
+The initial migration is stored in `server/prisma/migrations/`.
+
+Database relationships preserve historical football records. Players are
+deactivated rather than deleted once statistics reference them, while optional
+account and fixture links are cleared without deleting their user or result.
+Business rules such as exactly one current season, valid formation limits,
+non-negative statistics, and walkover score handling are enforced by the
+application features that write those records.
+
 ## Local development
 
 ### Prerequisites
@@ -54,6 +67,12 @@ Start PostgreSQL:
 
 ```bash
 npm run db:up
+```
+
+Apply development migrations after the database is running:
+
+```bash
+npm run db:migrate
 ```
 
 If custom local settings are needed, copy `server/.env.example` to
@@ -80,6 +99,10 @@ npm run db:down
 ```
 
 ## Quality checks
+
+`npm test` automatically creates an isolated PostgreSQL test database on local
+port `55432`, applies all migrations, runs the client and server suites, and
+removes the test container afterward. It does not modify development data.
 
 ```bash
 npm test

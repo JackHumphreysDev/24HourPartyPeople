@@ -1,14 +1,11 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.1.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.2.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
 
 ## Stack (fixed — do not change without asking)
-
-Matches **Fore the Record** (the golf handicap tracker) so both projects
-share conventions:
 
 - **Frontend:** React (functional components + hooks; TypeScript preferred,
   plain JS acceptable if the repo already uses it — match `tsconfig.json` /
@@ -435,4 +432,5 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.2.0 | 2026-09-02 | Added the core football data model, initial PostgreSQL migration, and isolated database integration tests |
 | 0.1.0 | 2026-09-02 | Initial infrastructure setup — repo scaffold, stack wired up (React/Express/DB via ORM), no features yet |

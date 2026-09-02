@@ -6,5 +6,10 @@ export default defineConfig({
       reporter: ['text', 'html'],
     },
     environment: 'node',
+    env: {
+      DATABASE_URL:
+        'postgresql://party_people_test:party_people_test@localhost:55432/party_people_test',
+    },
+    fileParallelism: false,
   },
 });
