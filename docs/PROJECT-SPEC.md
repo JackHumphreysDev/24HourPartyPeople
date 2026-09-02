@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.2.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.3.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -432,5 +432,6 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.3.0 | 2026-09-02 | Added one-time administrator setup, secure database-backed sessions, authentication APIs and middleware, and the browser sign-in experience |
 | 0.2.0 | 2026-09-02 | Added the core football data model, initial PostgreSQL migration, and isolated database integration tests |
 | 0.1.0 | 2026-09-02 | Initial infrastructure setup — repo scaffold, stack wired up (React/Express/DB via ORM), no features yet |
