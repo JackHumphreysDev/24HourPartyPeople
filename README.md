@@ -7,13 +7,14 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.6.0` release includes the project foundation, core football
+The current `0.7.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
-which appear in public game history. The remaining team-hub features are still
-to be built. See [the project specification](docs/PROJECT-SPEC.md) for the
-planned functionality.
+which appear in public game history, and manage upcoming fixtures displayed on
+the public website. The remaining team-hub features are still to be built. See
+[the project specification](docs/PROJECT-SPEC.md) for the planned
+functionality.
 
 ## Technology stack
 
@@ -148,6 +149,30 @@ The game API provides:
 - `GET /api/admin/games/fixtures` — list scheduled fixtures available for result entry
 - `POST /api/admin/games` — record a fixture-based or manual result
 
+## Upcoming fixtures
+
+The public `/fixtures` route lists scheduled games from the current Sheffield
+date onward, ordered by fixture date and optional kick-off time. Dates and
+times are treated as Sheffield local wall-clock values and are not shifted for
+the viewer's timezone. Each fixture shows its competition, opponent, season,
+and venue when available.
+
+The `/admin/fixtures` route provides the manual fallback required while the
+Powerleague scraper is still unconnected. An authenticated administrator can
+add a scheduled fixture or correct one before its result is recorded. Opponent
+names are reused without regard to letter case, and duplicate fixtures with the
+same season, opponent, competition, date, and time are rejected. Played and
+walkover fixtures remain visible but read-only so historical results cannot be
+silently changed; fixture deletion and cancellation are not included in this
+release.
+
+The fixture API provides:
+
+- `GET /api/fixtures/upcoming` — list public upcoming scheduled fixtures
+- `GET /api/admin/fixtures` — list all fixtures (administrator)
+- `POST /api/admin/fixtures` — create a manual fixture (administrator)
+- `PUT /api/admin/fixtures/:fixtureId` — correct a scheduled fixture (administrator)
+
 ## Local development
 
 ### Prerequisites
@@ -197,10 +222,10 @@ The website runs at `http://localhost:5173`. The API runs at
 `http://localhost:3000`, with its health endpoint at `/api/health`.
 
 React Router uses browser-history URLs. Production hosting must rewrite
-non-API routes such as `/players/:playerId`, `/games`, `/admin`,
-`/admin/statistics`, and `/admin/games` to the client `index.html` so direct
-links and refreshes work. The exact rewrite will be added with the hosting
-configuration once the production host is confirmed.
+non-API routes such as `/players/:playerId`, `/fixtures`, `/games`, `/admin`,
+`/admin/statistics`, `/admin/fixtures`, and `/admin/games` to the client
+`index.html` so direct links and refreshes work. The exact rewrite will be
+added with the hosting configuration once the production host is confirmed.
 
 Stop the local database service with:
 

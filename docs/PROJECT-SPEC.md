@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.6.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.7.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -179,9 +179,13 @@ played, won, drawn, lost, gf, ga, gd, points, walkoverGames, finalizedAt
 
 ### Fixtures (tab)
 
-- Upcoming scheduled games (scraped), with date, opponent, venue if
-  available. Distinguish League vs Cup fixtures once that's determinable
-  from the source.
+- Upcoming scheduled games from the current Sheffield date onward, with date,
+  optional Sheffield-local kick-off time, opponent, season, and venue if
+  available. League and Cup fixtures are distinguished.
+- The implemented manual fallback lets an administrator add fixtures and
+  correct scheduled fixtures before results are recorded. Played and walkover
+  fixtures are retained as read-only history. Scraped fixture ingestion remains
+  part of the separate Powerleague scraper feature.
 
 ### Club history (tab)
 
@@ -395,6 +399,9 @@ GET    /api/admin/games/fixtures           (admin) scheduled result options
 POST   /api/admin/games                    (admin) submit a result (incl. walkover flow)
 GET    /api/standings/current              current league standings (scraped, cached)
 GET    /api/fixtures/upcoming              upcoming fixtures (scraped, cached)
+GET    /api/admin/fixtures                 (admin) list all fixtures
+POST   /api/admin/fixtures                 (admin) create a manual fixture
+PUT    /api/admin/fixtures/:id             (admin) correct a scheduled fixture
 GET    /api/club-history                   our club's season-by-season finishes
 POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 ```
@@ -413,7 +420,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       allowing two results to exist for the same date
 - [x] Game history displays every result with date and competition type,
       correctly handling same-date walkover + cup pairs
-- [ ] Fixtures tab shows scraped upcoming games
+- [x] Fixtures tab shows upcoming scheduled games with date, competition,
+      opponent, optional Sheffield-local time, and venue; administrators have
+      a manual create/correct fallback while scraped ingestion remains pending
 - [ ] Club history tab shows our club's own season-end finish, starting
       from the current season, with the required columns including
       walkover games
@@ -451,6 +460,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.7.0 | 2026-09-07 | Added public upcoming fixtures and authenticated manual fixture creation/correction with recorded-history protection |
 | 0.6.0 | 2026-09-07 | Added fixture/manual result submission, guided league-walkover cup follow-up, and public same-date game history |
 | 0.5.0 | 2026-09-07 | Added authenticated season and player-statistics management with explicit historical games-played tracking |
 | 0.4.0 | 2026-09-07 | Added routed public player profiles, authenticated squad management, Cloudinary picture uploads, and transactional formation limits |

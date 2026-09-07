@@ -2,6 +2,23 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.7.0] - 2026-09-07
+
+### Added
+
+- Public upcoming fixtures at `/fixtures`, with league/cup labels, optional
+  Sheffield-local kick-off times, season details, and venues.
+- Protected fixture management at `/admin/fixtures` for adding manual fixtures
+  and correcting scheduled fixtures before results are recorded.
+- Public and administrator fixture APIs with date-range validation,
+  case-insensitive opponent reuse, duplicate prevention, and integration
+  coverage across the API and browser workflows.
+
+### Changed
+
+- Kept played and walkover fixtures visible but read-only in administration so
+  recorded history cannot be changed through fixture corrections.
+
 ## [0.6.0] - 2026-09-07
 
 ### Added

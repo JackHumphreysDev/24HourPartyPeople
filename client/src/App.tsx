@@ -5,6 +5,8 @@ import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom';
 import { HomePage } from './HomePage';
 import { AuthProvider } from './auth/AuthProvider';
 import { useAuth } from './auth/useAuth';
+import { AdminFixturesPage } from './fixtures/AdminFixturesPage';
+import { FixturesPage } from './fixtures/FixturesPage';
 import { AdminGamePage } from './games/AdminGamePage';
 import { GameHistoryPage } from './games/GameHistoryPage';
 import { AdminPlayersPage } from './players/AdminPlayersPage';
@@ -37,6 +39,7 @@ function AppContent() {
               Home
             </NavLink>
             <NavLink to="/players">Players</NavLink>
+            <NavLink to="/fixtures">Fixtures</NavLink>
             <NavLink to="/games">Games</NavLink>
             <NavLink to="/admin">Admin</NavLink>
             {status === 'authenticated' && user && (
@@ -51,9 +54,11 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/:playerId" element={<PlayerProfilePage />} />
+          <Route path="/fixtures" element={<FixturesPage />} />
           <Route path="/games" element={<GameHistoryPage />} />
           <Route path="/admin" element={<AdminPlayersPage />} />
           <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
+          <Route path="/admin/fixtures" element={<AdminFixturesPage />} />
           <Route path="/admin/games" element={<AdminGamePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
