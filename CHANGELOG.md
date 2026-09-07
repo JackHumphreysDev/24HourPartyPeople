@@ -2,6 +2,26 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.5.0] - 2026-09-07
+
+### Added
+
+- Protected season creation and editing APIs and an administrator website
+  workflow at `/admin/statistics`.
+- Administrator player-statistics entry and editing for active and inactive
+  players, with automatic updates to public player profiles.
+- A season-level `tracksGamesPlayed` field and migration so historic missing
+  attendance remains distinct from a recorded value of zero.
+- Integration coverage for administrator access, season rollover rules,
+  historical attendance handling, validation, and statistics upserts.
+
+### Changed
+
+- Enforced exactly one current season throughout administrator workflows,
+  switching seasons within serializable database transactions.
+- Required non-negative whole-number statistics and required games played only
+  for seasons in which attendance was recorded.
+
 ## [0.4.0] - 2026-09-07
 
 ### Added

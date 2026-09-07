@@ -39,6 +39,42 @@ export type PlayerInput = {
   removeProfilePicture: boolean;
 };
 
+export type SeasonSummary = {
+  endDate: string;
+  id: string;
+  isCurrent: boolean;
+  name: string;
+  startDate: string;
+  tracksGamesPlayed: boolean;
+};
+
+export type SeasonInput = {
+  endDate: string;
+  isCurrent: boolean;
+  name: string;
+  startDate: string;
+  tracksGamesPlayed: boolean;
+};
+
+export type AdminSeasonStat = {
+  assists: number;
+  cleanSheets: number;
+  gamesPlayed: number | null;
+  goals: number;
+  id: string;
+  note: string | null;
+  seasonId: string;
+};
+
+export type SeasonStatInput = {
+  assists: number;
+  cleanSheets: number;
+  gamesPlayed: number | null;
+  goals: number;
+  note: string | null;
+  seasonId: string;
+};
+
 export const positionLabels: Record<PlayerPosition, string> = {
   GK: 'Goalkeeper',
   DEF: 'Defender',

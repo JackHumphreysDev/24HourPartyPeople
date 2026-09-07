@@ -7,11 +7,12 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.4.0` release includes the project foundation, core football
-data model, secure administrator authentication, and routed player profiles
-with administrator squad management. The remaining team-hub features are
-still to be built. See [the project specification](docs/PROJECT-SPEC.md) for
-the planned functionality.
+The current `0.5.0` release includes the project foundation, core football
+data model, secure administrator authentication, routed player profiles,
+administrator squad management, and season-by-season player-statistics
+management. The remaining team-hub features are still to be built. See
+[the project specification](docs/PROJECT-SPEC.md) for the planned
+functionality.
 
 ## Technology stack
 
@@ -101,6 +102,27 @@ The player API provides:
 - `POST /api/admin/players` — create a player using multipart form data
 - `PUT /api/admin/players/:playerId` — update a player using multipart form data
 
+## Season and statistics management
+
+The `/admin/statistics` route allows an authenticated administrator to create
+and edit seasons and to add or update each player's totals for any season.
+Making a season current replaces the previous current season atomically, and
+the current season cannot be left unset.
+
+Each season records whether games played was tracked. Seasons from before
+attendance tracking began keep that setting disabled, require
+`PlayerSeasonStat.gamesPlayed` to remain `null`, and display **Not recorded**.
+Current and future seasons require games played as a non-negative whole number.
+This avoids turning unknown historical attendance into a misleading zero.
+
+The administration API provides:
+
+- `GET /api/admin/seasons` — list seasons
+- `POST /api/admin/seasons` — create a season
+- `PUT /api/admin/seasons/:seasonId` — edit or make a season current
+- `GET /api/admin/players/:playerId/season-stats` — list a player's statistics
+- `POST /api/admin/players/:playerId/season-stats` — add or update a season's statistics
+
 ## Local development
 
 ### Prerequisites
@@ -150,7 +172,8 @@ The website runs at `http://localhost:5173`. The API runs at
 `http://localhost:3000`, with its health endpoint at `/api/health`.
 
 React Router uses browser-history URLs. Production hosting must rewrite
-non-API routes such as `/players/:playerId` and `/admin` to the client
+non-API routes such as `/players/:playerId`, `/admin`, and
+`/admin/statistics` to the client
 `index.html` so direct links and refreshes work. The exact rewrite will be
 added with the hosting configuration once the production host is confirmed.
 

@@ -252,8 +252,41 @@ select {
 
 .content-section,
 .profile-page,
-.admin-layout {
+.admin-layout,
+.statistics-admin-page {
   padding: clamp(3rem, 7vw, 5rem) 0;
+}
+
+.statistics-admin-page .admin-layout {
+  padding-top: 1.5rem;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.35rem;
+  width: fit-content;
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 999px;
+  background: rgb(9 27 18 / 78%);
+}
+
+.page-frame > .admin-nav {
+  margin-top: clamp(3rem, 7vw, 5rem);
+}
+
+.admin-nav a {
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  color: #c9c4b8;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.admin-nav a:hover,
+.admin-nav a.active {
+  color: #07120d;
+  background: #d9ac55;
 }
 
 .section-heading {
@@ -476,8 +509,68 @@ select {
   flex: 0 0 4rem;
 }
 
-.admin-player-item > div:nth-child(2) {
+.admin-player-item > div {
   flex: 1;
+}
+
+.admin-item-detail {
+  margin: 0.35rem 0 0;
+  color: #9e9a90;
+  font-size: 0.85rem;
+}
+
+.statistics-editor {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 1rem;
+  background: rgb(9 27 18 / 78%);
+}
+
+.statistics-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1rem;
+}
+
+.statistics-form label {
+  display: grid;
+  gap: 0.5rem;
+  color: #eee4d0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.statistics-form input,
+.statistics-form textarea,
+.statistics-form select {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  color: #f6eedb;
+  border: 1px solid rgb(217 172 85 / 38%);
+  border-radius: 0.65rem;
+  outline: none;
+  background: rgb(1 10 6 / 72%);
+}
+
+.statistics-form input:focus,
+.statistics-form textarea:focus,
+.statistics-form select:focus {
+  border-color: #d9ac55;
+  box-shadow: 0 0 0 3px rgb(217 172 85 / 18%);
+}
+
+.statistics-form input:disabled {
+  opacity: 0.55;
+}
+
+.statistics-note-field,
+.statistics-form-message,
+.statistics-form-action {
+  grid-column: 1 / -1;
+}
+
+.statistics-form-message {
+  margin: 0;
 }
 
 .checkbox-label {
@@ -550,5 +643,9 @@ select {
   .admin-player-item {
     align-items: flex-start;
     flex-wrap: wrap;
+  }
+
+  .statistics-form {
+    grid-template-columns: 1fr;
   }
 }
