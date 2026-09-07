@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.7.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.8.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -233,6 +233,10 @@ don't merge them into one component that hides which is which:
 
 - `SeasonStanding` is a **live, scraped** snapshot of the whole league for
   the current season only, re-scraped periodically (see Section 6).
+- The implemented manual fallback replaces the current season’s complete
+  snapshot atomically and shows its `scrapedAt` value as “Last updated.” It
+  calculates goal difference from GF and GA and validates table consistency.
+  Automatic scrape ingestion remains part of the separate scraper feature.
 - `ClubHistory` is **our own club's row only**, persisted **once per
   season**, and only starts existing from the current season forward. It
   should not be re-derived live from `SeasonStanding` after a season ends —
@@ -398,6 +402,8 @@ GET    /api/games                          game history
 GET    /api/admin/games/fixtures           (admin) scheduled result options
 POST   /api/admin/games                    (admin) submit a result (incl. walkover flow)
 GET    /api/standings/current              current league standings (scraped, cached)
+GET    /api/admin/standings                (admin) current standings snapshot
+PUT    /api/admin/standings/current        (admin) replace current standings snapshot
 GET    /api/fixtures/upcoming              upcoming fixtures (scraped, cached)
 GET    /api/admin/fixtures                 (admin) list all fixtures
 POST   /api/admin/fixtures                 (admin) create a manual fixture
@@ -414,8 +420,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       stats (goals/assists/clean sheets only), and an overall/history
       section that clearly separates career totals from
       current-season-onward games-played totals
-- [ ] Current league standings tab shows the scraped table for the
-      current season, with a visible "last updated" timestamp
+- [x] Current league standings tab shows the current-season table with a
+      visible "last updated" timestamp and authenticated manual snapshot
+      replacement; automatic scraped ingestion remains pending
 - [x] Game submission supports the walkover → cup-game-instead flow,
       allowing two results to exist for the same date
 - [x] Game history displays every result with date and competition type,
@@ -460,6 +467,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.8.0 | 2026-09-07 | Added public current-season standings and authenticated atomic snapshot replacement with consistency validation |
 | 0.7.0 | 2026-09-07 | Added public upcoming fixtures and authenticated manual fixture creation/correction with recorded-history protection |
 | 0.6.0 | 2026-09-07 | Added fixture/manual result submission, guided league-walkover cup follow-up, and public same-date game history |
 | 0.5.0 | 2026-09-07 | Added authenticated season and player-statistics management with explicit historical games-played tracking |

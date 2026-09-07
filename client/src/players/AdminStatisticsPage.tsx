@@ -258,6 +258,7 @@ function StatisticsManager() {
           Players
         </NavLink>
         <NavLink to="/admin/statistics">Seasons &amp; statistics</NavLink>
+        <NavLink to="/admin/standings">Standings</NavLink>
         <NavLink to="/admin/fixtures">Fixtures</NavLink>
         <NavLink to="/admin/games">Results</NavLink>
       </nav>

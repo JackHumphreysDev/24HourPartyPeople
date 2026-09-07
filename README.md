@@ -7,14 +7,14 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.7.0` release includes the project foundation, core football
+The current `0.8.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
-which appear in public game history, and manage upcoming fixtures displayed on
-the public website. The remaining team-hub features are still to be built. See
-[the project specification](docs/PROJECT-SPEC.md) for the planned
-functionality.
+which appear in public game history, manage upcoming fixtures, and replace the
+current league table displayed on the public website. The remaining team-hub
+features are still to be built. See
+[the project specification](docs/PROJECT-SPEC.md) for the planned functionality.
 
 ## Technology stack
 
@@ -126,6 +126,28 @@ The administration API provides:
 - `GET /api/admin/players/:playerId/season-stats` — list a player's statistics
 - `POST /api/admin/players/:playerId/season-stats` — add or update a season's statistics
 
+## Current league standings
+
+The public `/standings` route displays the current season’s complete league
+table in position order, including Played, Won, Drawn, Lost, GF, GA, GD,
+Points, and Walkovers. The 24 Hour Party People row is highlighted, and the
+snapshot’s update time is displayed in Sheffield local time.
+
+The `/admin/standings` route provides a complete-table editor as the manual
+fallback while the Powerleague scraper is still unconnected. Saving replaces
+only the current season’s table in one transaction; standings belonging to
+historic seasons remain unchanged. Every snapshot requires unique positions
+and club names, includes 24 Hour Party People, and validates that played games
+match the combined results and that walkovers do not exceed games played. Goal
+difference is calculated by the server from GF and GA. Points remain entered
+directly because league scoring rules may vary.
+
+The standings API provides:
+
+- `GET /api/standings/current` — return the public current-season snapshot
+- `GET /api/admin/standings` — return the editable current snapshot (administrator)
+- `PUT /api/admin/standings/current` — atomically replace the current snapshot (administrator)
+
 ## Game results and history
 
 The public `/games` route displays every recorded result in reverse
@@ -222,10 +244,11 @@ The website runs at `http://localhost:5173`. The API runs at
 `http://localhost:3000`, with its health endpoint at `/api/health`.
 
 React Router uses browser-history URLs. Production hosting must rewrite
-non-API routes such as `/players/:playerId`, `/fixtures`, `/games`, `/admin`,
-`/admin/statistics`, `/admin/fixtures`, and `/admin/games` to the client
-`index.html` so direct links and refreshes work. The exact rewrite will be
-added with the hosting configuration once the production host is confirmed.
+non-API routes such as `/players/:playerId`, `/standings`, `/fixtures`,
+`/games`, `/admin`, `/admin/statistics`, `/admin/standings`,
+`/admin/fixtures`, and `/admin/games` to the client `index.html` so direct
+links and refreshes work. The exact rewrite will be added with the hosting
+configuration once the production host is confirmed.
 
 Stop the local database service with:
 
