@@ -60,15 +60,16 @@ model Session {
 }
 
 model Player {
-  id                String             @id @default(uuid()) @db.Uuid
-  name              String
-  description       String
-  profilePictureUrl String?
-  position          PlayerPosition
-  isActiveSquad     Boolean            @default(true)
-  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
-  user              User?
-  seasonStats       PlayerSeasonStat[]
+  id                     String             @id @default(uuid()) @db.Uuid
+  name                   String
+  description            String
+  profilePictureUrl      String?
+  profilePicturePublicId String?
+  position               PlayerPosition
+  isActiveSquad          Boolean            @default(true)
+  createdAt              DateTime           @default(now()) @db.Timestamptz(3)
+  user                   User?
+  seasonStats            PlayerSeasonStat[]
 
   @@index([isActiveSquad, position])
 }

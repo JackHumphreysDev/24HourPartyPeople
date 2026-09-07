@@ -7,17 +7,19 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.3.0` release includes the project foundation, core football
-data model, and secure administrator authentication. The remaining team-hub
-features are still to be built. See
-[the project specification](docs/PROJECT-SPEC.md) for the planned functionality.
+The current `0.4.0` release includes the project foundation, core football
+data model, secure administrator authentication, and routed player profiles
+with administrator squad management. The remaining team-hub features are
+still to be built. See [the project specification](docs/PROJECT-SPEC.md) for
+the planned functionality.
 
 ## Technology stack
 
-- **Frontend:** React, Vite, and TypeScript
+- **Frontend:** React, React Router, Vite, and TypeScript
 - **Backend:** Node.js, Express, and TypeScript
 - **Database:** PostgreSQL
 - **ORM:** Prisma
+- **Image storage:** Cloudinary
 - **Testing:** Vitest, Testing Library, and Supertest
 - **Linting and formatting:** Oxlint and Prettier
 - **Package management:** npm workspaces
@@ -71,6 +73,34 @@ The authentication API provides:
 - `POST /api/auth/logout` — revoke the current session
 - `GET /api/auth/me` — return the currently authenticated user
 
+## Player profiles and squad management
+
+The public website provides a routed home page, current-squad list, and an
+individual profile URL for each active player. Profiles display the player's
+description and picture, current-season statistics, previous-season records,
+and recorded career totals. Historic seasons with no attendance data show
+games played as **Not recorded** rather than `0`.
+
+The `/admin` route allows an authenticated administrator to create and edit
+profiles, replace or remove pictures, and move players in or out of the active
+squad. Active positions are transactionally limited to the confirmed
+six-a-side formation: one goalkeeper, three defenders, one midfielder, and
+one forward. Inactive players remain available to administrators but are not
+exposed by the public API.
+
+Profile pictures are uploaded through the API to Cloudinary. Uploads accept
+JPEG, PNG, or WebP files up to 5 MB and are cropped to an 800 × 800 square.
+Only the delivery URL is public; the Cloudinary public ID is retained in the
+database so replaced and removed images can be deleted safely.
+
+The player API provides:
+
+- `GET /api/players` — list the active squad
+- `GET /api/players/:playerId` — return an active player and season statistics
+- `GET /api/admin/players` — list active and inactive players (administrator)
+- `POST /api/admin/players` — create a player using multipart form data
+- `PUT /api/admin/players/:playerId` — update a player using multipart form data
+
 ## Local development
 
 ### Prerequisites
@@ -97,9 +127,10 @@ Apply development migrations after the database is running:
 npm run db:migrate
 ```
 
-Copy `server/.env.example` to `server/.env` and replace
-`ADMIN_SETUP_KEY` with a long random secret. The remaining defaults match the
-Docker service. For example, a setup key can be generated with:
+Copy `server/.env.example` to `server/.env`, replace `ADMIN_SETUP_KEY` with a
+long random secret, and add the Cloudinary cloud name, API key, and API secret
+for profile-picture uploads. The remaining defaults match the Docker service.
+For example, a setup key can be generated with:
 
 ```bash
 openssl rand -base64 32
@@ -117,6 +148,11 @@ npm run dev:client
 
 The website runs at `http://localhost:5173`. The API runs at
 `http://localhost:3000`, with its health endpoint at `/api/health`.
+
+React Router uses browser-history URLs. Production hosting must rewrite
+non-API routes such as `/players/:playerId` and `/admin` to the client
+`index.html` so direct links and refreshes work. The exact rewrite will be
+added with the hosting configuration once the production host is confirmed.
 
 Stop the local database service with:
 
