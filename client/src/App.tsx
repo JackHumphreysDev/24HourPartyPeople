@@ -13,6 +13,8 @@ import { AdminPlayersPage } from './players/AdminPlayersPage';
 import { AdminStatisticsPage } from './players/AdminStatisticsPage';
 import { PlayerProfilePage } from './players/PlayerProfilePage';
 import { PlayersPage } from './players/PlayersPage';
+import { AdminStandingsPage } from './standings/AdminStandingsPage';
+import { StandingsPage } from './standings/StandingsPage';
 
 function NotFoundPage() {
   return (
@@ -39,6 +41,7 @@ function AppContent() {
               Home
             </NavLink>
             <NavLink to="/players">Players</NavLink>
+            <NavLink to="/standings">Standings</NavLink>
             <NavLink to="/fixtures">Fixtures</NavLink>
             <NavLink to="/games">Games</NavLink>
             <NavLink to="/admin">Admin</NavLink>
@@ -54,10 +57,12 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/:playerId" element={<PlayerProfilePage />} />
+          <Route path="/standings" element={<StandingsPage />} />
           <Route path="/fixtures" element={<FixturesPage />} />
           <Route path="/games" element={<GameHistoryPage />} />
           <Route path="/admin" element={<AdminPlayersPage />} />
           <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
+          <Route path="/admin/standings" element={<AdminStandingsPage />} />
           <Route path="/admin/fixtures" element={<AdminFixturesPage />} />
           <Route path="/admin/games" element={<AdminGamePage />} />
           <Route path="*" element={<NotFoundPage />} />

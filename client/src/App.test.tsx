@@ -465,6 +465,240 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders the current league table and highlights 24 Hour Party People', async () => {
+    window.history.replaceState({}, '', '/standings');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        if (String(input) === '/api/auth/me') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                error: {
+                  code: 'AUTHENTICATION_REQUIRED',
+                  message: 'Authentication is required.',
+                },
+              },
+              401,
+            ),
+          );
+        }
+
+        return Promise.resolve(
+          mockResponse(
+            {
+              lastUpdated: '2026-09-07T12:30:00.000Z',
+              season: { id: 'season', name: 'Summer 2026' },
+              standings: [
+                {
+                  clubName: 'League Leaders',
+                  drawn: 1,
+                  ga: 5,
+                  gd: 7,
+                  gf: 12,
+                  id: 'leaders',
+                  lost: 0,
+                  played: 4,
+                  points: 10,
+                  position: 1,
+                  scrapedAt: '2026-09-07T12:30:00.000Z',
+                  walkoverGames: 0,
+                  won: 3,
+                },
+                {
+                  clubName: '24 Hour Party People',
+                  drawn: 0,
+                  ga: 8,
+                  gd: 2,
+                  gf: 10,
+                  id: 'party-people',
+                  lost: 1,
+                  played: 4,
+                  points: 9,
+                  position: 2,
+                  scrapedAt: '2026-09-07T12:30:00.000Z',
+                  walkoverGames: 1,
+                  won: 3,
+                },
+              ],
+            },
+            200,
+          ),
+        );
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Current standings' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Summer 2026' }),
+    ).toBeInTheDocument();
+    const teamCell = screen.getByRole('rowheader', {
+      name: '24 Hour Party People',
+    });
+    expect(teamCell.closest('tr')).toHaveClass('team-standing-row');
+    expect(screen.getByText(/Last updated/)).toBeInTheDocument();
+  });
+
+  it('replaces the complete standings snapshot as an administrator', async () => {
+    let submittedRows: unknown;
+    window.history.replaceState({}, '', '/admin/standings');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'jack@example.test',
+                    id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
+                    name: 'Jack',
+                    role: 'ADMIN',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+
+          if (path === '/api/admin/standings' && !init?.method) {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  lastUpdated: null,
+                  season: { id: 'season', name: 'Summer 2026' },
+                  standings: [],
+                },
+                200,
+              ),
+            );
+          }
+
+          if (
+            path === '/api/admin/standings/current' &&
+            init?.method === 'PUT'
+          ) {
+            submittedRows = (JSON.parse(String(init.body)) as { rows: unknown })
+              .rows;
+            return Promise.resolve(
+              mockResponse(
+                {
+                  lastUpdated: '2026-09-07T13:00:00.000Z',
+                  season: { id: 'season', name: 'Summer 2026' },
+                  standings: [
+                    {
+                      clubName: '24 Hour Party People',
+                      drawn: 0,
+                      ga: 0,
+                      gd: 2,
+                      gf: 2,
+                      id: 'party-people',
+                      lost: 0,
+                      played: 1,
+                      points: 3,
+                      position: 1,
+                      scrapedAt: '2026-09-07T13:00:00.000Z',
+                      walkoverGames: 0,
+                      won: 1,
+                    },
+                    {
+                      clubName: 'New Rivals',
+                      drawn: 0,
+                      ga: 2,
+                      gd: -2,
+                      gf: 0,
+                      id: 'new-rivals',
+                      lost: 1,
+                      played: 1,
+                      points: 0,
+                      position: 2,
+                      scrapedAt: '2026-09-07T13:00:00.000Z',
+                      walkoverGames: 0,
+                      won: 0,
+                    },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
+
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Manage standings' }),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('24 Hour Party People played'), {
+      target: { value: '1' },
+    });
+    fireEvent.change(screen.getByLabelText('24 Hour Party People won'), {
+      target: { value: '1' },
+    });
+    fireEvent.change(screen.getByLabelText('24 Hour Party People gf'), {
+      target: { value: '2' },
+    });
+    fireEvent.change(screen.getByLabelText('24 Hour Party People points'), {
+      target: { value: '3' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add club' }));
+    fireEvent.change(screen.getByLabelText('Row 2 club name'), {
+      target: { value: 'New Rivals' },
+    });
+    fireEvent.change(screen.getByLabelText('New Rivals played'), {
+      target: { value: '1' },
+    });
+    fireEvent.change(screen.getByLabelText('New Rivals lost'), {
+      target: { value: '1' },
+    });
+    fireEvent.change(screen.getByLabelText('New Rivals ga'), {
+      target: { value: '2' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Save complete table' }),
+    );
+
+    expect(
+      await screen.findByText('Current standings updated successfully.'),
+    ).toBeInTheDocument();
+    expect(submittedRows).toEqual([
+      {
+        clubName: '24 Hour Party People',
+        drawn: 0,
+        ga: 0,
+        gf: 2,
+        lost: 0,
+        played: 1,
+        points: 3,
+        position: 1,
+        walkoverGames: 0,
+        won: 1,
+      },
+      {
+        clubName: 'New Rivals',
+        drawn: 0,
+        ga: 2,
+        gf: 0,
+        lost: 1,
+        played: 1,
+        points: 0,
+        position: 2,
+        walkoverGames: 0,
+        won: 0,
+      },
+    ]);
+  });
+
   it('renders upcoming fixtures with Sheffield-local kick-off times', async () => {
     window.history.replaceState({}, '', '/fixtures');
     vi.stubGlobal(
@@ -617,7 +851,7 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: 'Manage fixtures' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Recorded')).toBeInTheDocument();
+    expect(await screen.findByText('Recorded')).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Edit' }),
     ).not.toBeInTheDocument();
