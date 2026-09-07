@@ -2,6 +2,24 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.6.0] - 2026-09-07
+
+### Added
+
+- Public chronological game history at `/games`, keeping league and cup
+  results as separate entries when they occur on the same date.
+- Protected result entry at `/admin/games` for scheduled fixtures and manual
+  league or cup games.
+- A guided walkover workflow that records a scoreless league walkover and
+  prepares a separate cup result for the same date and opponent.
+- Transactional fixture completion, case-insensitive opponent reuse, result
+  validation, and integration coverage across the API and browser workflows.
+
+### Changed
+
+- Flagged non-walkover league results as requiring a standings refresh while
+  the Powerleague scraper remains unconnected.
+
 ## [0.5.0] - 2026-09-07
 
 ### Added

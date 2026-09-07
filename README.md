@@ -7,12 +7,13 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.5.0` release includes the project foundation, core football
+The current `0.6.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
-management. The remaining team-hub features are still to be built. See
-[the project specification](docs/PROJECT-SPEC.md) for the planned
-functionality.
+management. Administrators can also record league, cup, and walkover results,
+which appear in public game history. The remaining team-hub features are still
+to be built. See [the project specification](docs/PROJECT-SPEC.md) for the
+planned functionality.
 
 ## Technology stack
 
@@ -112,8 +113,9 @@ the current season cannot be left unset.
 Each season records whether games played was tracked. Seasons from before
 attendance tracking began keep that setting disabled, require
 `PlayerSeasonStat.gamesPlayed` to remain `null`, and display **Not recorded**.
-Current and future seasons require games played as a non-negative whole number.
-This avoids turning unknown historical attendance into a misleading zero.
+Seasons configured to track attendance require games played as a non-negative
+whole number. This avoids turning unknown historical attendance into a
+misleading zero.
 
 The administration API provides:
 
@@ -122,6 +124,29 @@ The administration API provides:
 - `PUT /api/admin/seasons/:seasonId` — edit or make a season current
 - `GET /api/admin/players/:playerId/season-stats` — list a player's statistics
 - `POST /api/admin/players/:playerId/season-stats` — add or update a season's statistics
+
+## Game results and history
+
+The public `/games` route displays every recorded result in reverse
+chronological order. League and cup games remain separate records, so a league
+walkover and the cup game played instead can both appear on the same date.
+
+The `/admin/games` route lets an authenticated administrator record a result
+against an available scheduled fixture or enter a game manually. Manual games
+reuse an existing opponent when its name matches without regard to letter
+case. Normal results require non-negative scores; league walkovers keep scores
+blank and may include a reason. After a league walkover is saved, the form
+prefills a separate cup result with the same season, opponent, and date.
+
+Saving a normal league result displays a standings-refresh warning. The
+Powerleague scraper is not connected yet, so the application flags this work
+instead of claiming that the live table was refreshed.
+
+The game API provides:
+
+- `GET /api/games` — list public game history
+- `GET /api/admin/games/fixtures` — list scheduled fixtures available for result entry
+- `POST /api/admin/games` — record a fixture-based or manual result
 
 ## Local development
 
@@ -172,10 +197,10 @@ The website runs at `http://localhost:5173`. The API runs at
 `http://localhost:3000`, with its health endpoint at `/api/health`.
 
 React Router uses browser-history URLs. Production hosting must rewrite
-non-API routes such as `/players/:playerId`, `/admin`, and
-`/admin/statistics` to the client
-`index.html` so direct links and refreshes work. The exact rewrite will be
-added with the hosting configuration once the production host is confirmed.
+non-API routes such as `/players/:playerId`, `/games`, `/admin`,
+`/admin/statistics`, and `/admin/games` to the client `index.html` so direct
+links and refreshes work. The exact rewrite will be added with the hosting
+configuration once the production host is confirmed.
 
 Stop the local database service with:
 
