@@ -253,7 +253,8 @@ select {
 .content-section,
 .profile-page,
 .admin-layout,
-.statistics-admin-page {
+.statistics-admin-page,
+.game-admin-page {
   padding: clamp(3rem, 7vw, 5rem) 0;
 }
 
@@ -573,6 +574,185 @@ select {
   margin: 0;
 }
 
+.game-history {
+  display: grid;
+  gap: 1rem;
+}
+
+.game-card {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 1rem;
+  background: rgb(9 27 18 / 78%);
+}
+
+.game-card-meta {
+  display: flex;
+  gap: 0.65rem 1rem;
+  flex-wrap: wrap;
+  color: #9e9a90;
+  font-size: 0.85rem;
+}
+
+.competition-label {
+  color: #d9ac55;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.game-card-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.game-card-result h3 {
+  margin: 0.45rem 0 0;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.score,
+.walkover-result {
+  margin: 0;
+  color: #f6eedb;
+  font-size: clamp(2rem, 7vw, 4rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.walkover-result {
+  color: #d9ac55;
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+}
+
+.game-note,
+.fixture-detail {
+  color: #c9c4b8;
+  line-height: 1.6;
+}
+
+.game-admin-link {
+  margin-top: 2rem;
+}
+
+.game-result-form {
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 1rem;
+  background: rgb(9 27 18 / 78%);
+}
+
+.game-result-form label,
+.manual-result-fields label,
+.score-entry-fields label {
+  display: grid;
+  gap: 0.5rem;
+  color: #eee4d0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.game-result-form input,
+.game-result-form textarea,
+.game-result-form select {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  color: #f6eedb;
+  border: 1px solid rgb(217 172 85 / 38%);
+  border-radius: 0.65rem;
+  outline: none;
+  background: rgb(1 10 6 / 72%);
+}
+
+.game-result-form input:focus,
+.game-result-form textarea:focus,
+.game-result-form select:focus {
+  border-color: #d9ac55;
+  box-shadow: 0 0 0 3px rgb(217 172 85 / 18%);
+}
+
+.entry-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border-radius: 0.85rem;
+  background: rgb(0 0 0 / 28%);
+}
+
+.entry-mode-tabs button {
+  padding: 0.75rem;
+  color: #c9c4b8;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.entry-mode-tabs button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.entry-mode-tabs .entry-mode-active {
+  color: #07120d;
+  background: #d9ac55;
+  font-weight: 800;
+}
+
+.manual-result-fields,
+.score-entry-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1rem;
+}
+
+.walkover-control {
+  padding: 1rem;
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 0.8rem;
+  background: rgb(0 0 0 / 22%);
+}
+
+.form-success,
+.form-warning {
+  padding: 0.8rem;
+  margin: 0;
+  border-radius: 0.65rem;
+}
+
+.form-success {
+  color: #d8f8dd;
+  border: 1px solid rgb(94 205 116 / 45%);
+  background: rgb(28 101 45 / 30%);
+}
+
+.form-warning {
+  color: #fff0c7;
+  border: 1px solid rgb(217 172 85 / 45%);
+  background: rgb(118 82 18 / 35%);
+}
+
+.game-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.secondary-link {
+  padding: 0.85rem 1.15rem;
+  color: #d9ac55;
+  border: 1px solid #d9ac55;
+  border-radius: 0.7rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .checkbox-label {
   display: flex !important;
   grid-template-columns: auto 1fr;
@@ -647,5 +827,16 @@ select {
 
   .statistics-form {
     grid-template-columns: 1fr;
+  }
+
+  .entry-mode-tabs,
+  .manual-result-fields,
+  .score-entry-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .game-card-result {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

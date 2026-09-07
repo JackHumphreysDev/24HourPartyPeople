@@ -391,4 +391,195 @@ describe('App', () => {
     ).toBeDisabled();
     expect(screen.getByLabelText('Goals')).toHaveValue(3);
   });
+
+  it('renders separate same-date league and cup results in game history', async () => {
+    window.history.replaceState({}, '', '/games');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        if (String(input) === '/api/auth/me') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                error: {
+                  code: 'AUTHENTICATION_REQUIRED',
+                  message: 'Authentication is required.',
+                },
+              },
+              401,
+            ),
+          );
+        }
+
+        return Promise.resolve(
+          mockResponse(
+            {
+              games: [
+                {
+                  competition: 'LEAGUE',
+                  createdAt: '2026-07-28T20:00:00.000Z',
+                  datePlayed: '2026-07-28T00:00:00.000Z',
+                  fixtureId: null,
+                  id: 'league-result',
+                  isWalkover: true,
+                  opponentClub: { id: 'opponent', name: 'Norton Rivals' },
+                  opponentScore: null,
+                  ourScore: null,
+                  season: { id: 'season', name: 'Summer 2026' },
+                  walkoverReason: 'Opponent could not field a team.',
+                },
+                {
+                  competition: 'CUP',
+                  createdAt: '2026-07-28T20:30:00.000Z',
+                  datePlayed: '2026-07-28T00:00:00.000Z',
+                  fixtureId: null,
+                  id: 'cup-result',
+                  isWalkover: false,
+                  opponentClub: { id: 'opponent', name: 'Norton Rivals' },
+                  opponentScore: 2,
+                  ourScore: 5,
+                  season: { id: 'season', name: 'Summer 2026' },
+                  walkoverReason: null,
+                },
+              ],
+            },
+            200,
+          ),
+        );
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Game history' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('heading', { name: 'Norton Rivals' }),
+    ).toHaveLength(2);
+    expect(screen.getByText('Walkover')).toBeInTheDocument();
+    expect(screen.getByText('5–2')).toBeInTheDocument();
+    expect(
+      screen.getByText('Opponent could not field a team.'),
+    ).toBeInTheDocument();
+  });
+
+  it('prefills a manual cup result after an administrator saves a league walkover', async () => {
+    const seasonId = '12c37c8a-6559-493b-9615-76ddab94dd66';
+    let submittedBody: unknown;
+    window.history.replaceState({}, '', '/admin/games');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'jack@example.test',
+                    id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
+                    name: 'Jack',
+                    role: 'ADMIN',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+
+          if (path === '/api/admin/games/fixtures') {
+            return Promise.resolve(mockResponse({ fixtures: [] }, 200));
+          }
+
+          if (path === '/api/admin/seasons') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  seasons: [
+                    {
+                      endDate: '2026-08-31T00:00:00.000Z',
+                      id: seasonId,
+                      isCurrent: true,
+                      name: 'Summer 2026',
+                      startDate: '2026-06-01T00:00:00.000Z',
+                      tracksGamesPlayed: true,
+                    },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
+
+          if (path === '/api/admin/games' && init?.method === 'POST') {
+            submittedBody = JSON.parse(String(init.body));
+            return Promise.resolve(
+              mockResponse(
+                {
+                  game: {
+                    competition: 'LEAGUE',
+                    createdAt: '2026-07-28T20:00:00.000Z',
+                    datePlayed: '2026-07-28T00:00:00.000Z',
+                    fixtureId: null,
+                    id: 'league-walkover',
+                    isWalkover: true,
+                    opponentClub: {
+                      id: 'opponent',
+                      name: 'Norton Rivals',
+                    },
+                    opponentScore: null,
+                    ourScore: null,
+                    season: { id: seasonId, name: 'Summer 2026' },
+                    walkoverReason: 'No opposition players.',
+                  },
+                  standingsRefreshRequired: false,
+                },
+                201,
+              ),
+            );
+          }
+
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Record a result' }),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Opponent'), {
+      target: { value: 'Norton Rivals' },
+    });
+    fireEvent.change(screen.getByLabelText('Date played'), {
+      target: { value: '2026-07-28' },
+    });
+    fireEvent.click(screen.getByLabelText('This league game was a walkover'));
+    fireEvent.change(screen.getByRole('textbox', { name: /Walkover reason/ }), {
+      target: { value: 'No opposition players.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save result' }));
+
+    expect(
+      await screen.findByText(
+        'League walkover saved. Add the cup result played instead.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Competition')).toHaveValue('CUP');
+    expect(screen.getByLabelText('Opponent')).toHaveValue('Norton Rivals');
+    expect(screen.getByLabelText('Date played')).toHaveValue('2026-07-28');
+    expect(submittedBody).toMatchObject({
+      competition: 'LEAGUE',
+      datePlayed: '2026-07-28',
+      entryMode: 'manual',
+      isWalkover: true,
+      opponentName: 'Norton Rivals',
+      opponentScore: null,
+      ourScore: null,
+      seasonId,
+    });
+  });
 });

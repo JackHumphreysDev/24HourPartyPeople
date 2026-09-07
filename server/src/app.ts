@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 
 import { authRouter } from './auth/router.js';
+import { adminGamesRouter, publicGamesRouter } from './games/router.js';
 import { adminPlayersRouter, publicPlayersRouter } from './players/router.js';
 import { adminSeasonsRouter } from './seasons/router.js';
 
@@ -22,7 +23,9 @@ export function createApp() {
   });
 
   app.use('/api/auth', authRouter);
+  app.use('/api/games', publicGamesRouter);
   app.use('/api/players', publicPlayersRouter);
+  app.use('/api/admin/games', adminGamesRouter);
   app.use('/api/admin/players', adminPlayersRouter);
   app.use('/api/admin/seasons', adminSeasonsRouter);
 
