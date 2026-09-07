@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.5.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.6.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -166,6 +166,9 @@ played, won, drawn, lost, gf, ga, gd, points, walkoverGames, finalizedAt
   `SeasonStanding` (or at minimum flag it as stale) since the scrape source
   is the league table, and a manually-entered result won't retroactively
   correct the scraped table until the next scrape.
+- The current implementation takes the permitted fallback above: it returns
+  and displays a standings-refresh-required flag until the Powerleague scraper
+  is connected.
 
 ### Game history (tab)
 
@@ -387,8 +390,9 @@ POST   /api/admin/players/:id/season-stats (admin) add/edit a season's stats
 GET    /api/admin/seasons                  (admin) list seasons
 POST   /api/admin/seasons                  (admin) create a season
 PUT    /api/admin/seasons/:id              (admin) edit/make a season current
-POST   /api/games                          submit a game result (incl. walkover flow)
 GET    /api/games                          game history
+GET    /api/admin/games/fixtures           (admin) scheduled result options
+POST   /api/admin/games                    (admin) submit a result (incl. walkover flow)
 GET    /api/standings/current              current league standings (scraped, cached)
 GET    /api/fixtures/upcoming              upcoming fixtures (scraped, cached)
 GET    /api/club-history                   our club's season-by-season finishes
@@ -405,9 +409,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       current-season-onward games-played totals
 - [ ] Current league standings tab shows the scraped table for the
       current season, with a visible "last updated" timestamp
-- [ ] Game submission supports the walkover → cup-game-instead flow,
+- [x] Game submission supports the walkover → cup-game-instead flow,
       allowing two results to exist for the same date
-- [ ] Game history displays every result with date and competition type,
+- [x] Game history displays every result with date and competition type,
       correctly handling same-date walkover + cup pairs
 - [ ] Fixtures tab shows scraped upcoming games
 - [ ] Club history tab shows our club's own season-end finish, starting
@@ -447,6 +451,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.6.0 | 2026-09-07 | Added fixture/manual result submission, guided league-walkover cup follow-up, and public same-date game history |
 | 0.5.0 | 2026-09-07 | Added authenticated season and player-statistics management with explicit historical games-played tracking |
 | 0.4.0 | 2026-09-07 | Added routed public player profiles, authenticated squad management, Cloudinary picture uploads, and transactional formation limits |
 | 0.3.0 | 2026-09-02 | Added one-time administrator setup, secure database-backed sessions, authentication APIs and middleware, and the browser sign-in experience |
