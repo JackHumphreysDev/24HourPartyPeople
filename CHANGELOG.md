@@ -2,6 +2,30 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.4.0] - 2026-09-07
+
+### Added
+
+- React Router navigation with public home, squad, and individual player
+  profile pages plus a protected administrator route.
+- Public player APIs with current and historic season statistics and recorded
+  career totals.
+- Administrator player creation, editing, deactivation, and picture-management
+  APIs and browser workflows.
+- Cloudinary-backed JPEG, PNG, and WebP uploads with an 800 × 800 transform,
+  a 5 MB limit, and cleanup when pictures are replaced or removed.
+- A migration for private Cloudinary public IDs and integration coverage for
+  player visibility, authorization, uploads, and image lifecycle behaviour.
+
+### Changed
+
+- Made the team website public while keeping management features behind
+  administrator authentication.
+- Enforced the confirmed 1 GK, 3 DEF, 1 MID, and 1 FWD active-formation limits
+  with serializable database transactions.
+- Rendered missing historic games-played values as “Not recorded” and limited
+  overall games-played totals to seasons where attendance was recorded.
+
 ## [0.3.0] - 2026-09-02
 
 ### Added

@@ -1,8 +1,22 @@
 import './styles.css';
 
-import { AuthScreen } from './AuthScreen';
+import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom';
+
+import { HomePage } from './HomePage';
 import { AuthProvider } from './auth/AuthProvider';
 import { useAuth } from './auth/useAuth';
+import { AdminPlayersPage } from './players/AdminPlayersPage';
+import { PlayerProfilePage } from './players/PlayerProfilePage';
+import { PlayersPage } from './players/PlayersPage';
+
+function NotFoundPage() {
+  return (
+    <section className="status-panel">
+      <h2>Page not found</h2>
+      <NavLink to="/">Return home</NavLink>
+    </section>
+  );
+}
 
 function AppContent() {
   const { logout, status, user } = useAuth();
@@ -11,32 +25,31 @@ function AppContent() {
     <main className="app-shell">
       <div className="page-frame">
         <header className="team-header">
-          <p className="eyebrow">6-a-side football · Sheffield</p>
-          <h1 id="team-name">24 Hour Party People</h1>
+          <div>
+            <p className="eyebrow">6-a-side football · Sheffield</p>
+            <h1 id="team-name">24 Hour Party People</h1>
+          </div>
+          <nav className="site-nav" aria-label="Main navigation">
+            <NavLink to="/" end>
+              Home
+            </NavLink>
+            <NavLink to="/players">Players</NavLink>
+            <NavLink to="/admin">Admin</NavLink>
+            {status === 'authenticated' && user && (
+              <button type="button" onClick={() => void logout()}>
+                Sign out {user.name}
+              </button>
+            )}
+          </nav>
         </header>
 
-        {status === 'loading' && (
-          <section className="auth-card auth-loading" aria-live="polite">
-            Checking your session…
-          </section>
-        )}
-
-        {status === 'anonymous' && <AuthScreen />}
-
-        {status === 'authenticated' && user && (
-          <section className="auth-card signed-in-card">
-            <p className="eyebrow">Administrator access active</p>
-            <h2>Welcome, {user.name}</h2>
-            <p>{user.email}</p>
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => void logout()}
-            >
-              Sign out
-            </button>
-          </section>
-        )}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/players" element={<PlayersPage />} />
+          <Route path="/players/:playerId" element={<PlayerProfilePage />} />
+          <Route path="/admin" element={<AdminPlayersPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
       </div>
     </main>
   );
@@ -45,7 +58,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
     </AuthProvider>
   );
 }

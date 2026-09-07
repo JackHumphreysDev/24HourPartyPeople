@@ -1,0 +1,384 @@
+import request from 'supertest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+
+const imageMocks = vi.hoisted(() => ({
+  deletePlayerImage: vi.fn<(publicId: string) => Promise<void>>(),
+  uploadPlayerImage:
+    vi.fn<(contents: Buffer) => Promise<{ publicId: string; url: string }>>(),
+}));
+
+vi.mock('../src/media/playerImage.js', () => ({
+  deletePlayerImage: imageMocks.deletePlayerImage,
+  ImageStorageConfigurationError: class extends Error {},
+  uploadPlayerImage: imageMocks.uploadPlayerImage,
+}));
+
+import { createApp } from '../src/app.js';
+import { createSession, SESSION_COOKIE_NAME } from '../src/auth/session.js';
+import { prisma } from '../src/lib/prisma.js';
+
+async function clearDatabase() {
+  await prisma.session.deleteMany();
+  await prisma.gameResult.deleteMany();
+  await prisma.fixture.deleteMany();
+  await prisma.playerSeasonStat.deleteMany();
+  await prisma.seasonStanding.deleteMany();
+  await prisma.clubHistory.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.player.deleteMany();
+  await prisma.opponentClub.deleteMany();
+  await prisma.season.deleteMany();
+}
+
+async function createUserSession(role: 'ADMIN' | 'PLAYER') {
+  const user = await prisma.user.create({
+    data: {
+      email: `${role.toLowerCase()}@example.test`,
+      name: `Test ${role}`,
+      passwordHash: 'not-used-by-this-test',
+      role,
+    },
+  });
+  const token = await createSession(user.id);
+  return `${SESSION_COOKIE_NAME}=${token}`;
+}
+
+function validPlayerFields() {
+  return {
+    description: 'A dependable defender with an eye for a pass.',
+    isActiveSquad: 'true',
+    name: 'Alex Example',
+    position: 'DEF',
+  };
+}
+
+beforeAll(async () => {
+  await prisma.$connect();
+});
+
+beforeEach(async () => {
+  await clearDatabase();
+  imageMocks.deletePlayerImage.mockReset();
+  imageMocks.deletePlayerImage.mockResolvedValue();
+  imageMocks.uploadPlayerImage.mockReset();
+  imageMocks.uploadPlayerImage.mockResolvedValue({
+    publicId: '24-hour-party-people/players/test-image',
+    url: 'https://res.cloudinary.com/example/image/upload/test.webp',
+  });
+});
+
+afterEach(clearDatabase);
+
+afterAll(async () => {
+  await prisma.$disconnect();
+});
+
+describe('public player API', () => {
+  it('lists active players without exposing image storage identifiers', async () => {
+    await prisma.player.createMany({
+      data: [
+        {
+          description: 'Active squad member.',
+          name: 'Active Player',
+          position: 'MID',
+          profilePicturePublicId: 'private/cloudinary-id',
+          profilePictureUrl: 'https://example.test/active.webp',
+        },
+        {
+          description: 'Former squad member.',
+          isActiveSquad: false,
+          name: 'Inactive Player',
+          position: 'FWD',
+        },
+      ],
+    });
+
+    const response = await request(createApp()).get('/api/players');
+
+    expect(response.status).toBe(200);
+    expect(response.body.players).toHaveLength(1);
+    expect(response.body.players[0]).toMatchObject({
+      isActiveSquad: true,
+      name: 'Active Player',
+      position: 'MID',
+      profilePictureUrl: 'https://example.test/active.webp',
+    });
+    expect(response.body.players[0]).not.toHaveProperty(
+      'profilePicturePublicId',
+    );
+  });
+
+  it('returns current and historic season statistics for an active player', async () => {
+    const player = await prisma.player.create({
+      data: {
+        description: 'Player profile detail test.',
+        name: 'Profile Player',
+        position: 'GK',
+      },
+    });
+    const previousSeason = await prisma.season.create({
+      data: {
+        endDate: new Date('2026-05-31T00:00:00.000Z'),
+        name: 'Spring 2026',
+        startDate: new Date('2026-03-01T00:00:00.000Z'),
+      },
+    });
+    const currentSeason = await prisma.season.create({
+      data: {
+        endDate: new Date('2026-09-01T00:00:00.000Z'),
+        isCurrent: true,
+        name: 'Summer 2026',
+        startDate: new Date('2026-06-01T00:00:00.000Z'),
+      },
+    });
+    await prisma.playerSeasonStat.createMany({
+      data: [
+        {
+          assists: 1,
+          cleanSheets: 2,
+          gamesPlayed: null,
+          goals: 3,
+          playerId: player.id,
+          seasonId: previousSeason.id,
+        },
+        {
+          assists: 2,
+          cleanSheets: 4,
+          gamesPlayed: 8,
+          goals: 1,
+          playerId: player.id,
+          seasonId: currentSeason.id,
+        },
+      ],
+    });
+
+    const response = await request(createApp()).get(
+      `/api/players/${player.id}`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.player.seasonStats).toHaveLength(2);
+    expect(response.body.player.seasonStats[0]).toMatchObject({
+      gamesPlayed: 8,
+      season: { isCurrent: true, name: 'Summer 2026' },
+    });
+    expect(response.body.player.seasonStats[1]).toMatchObject({
+      gamesPlayed: null,
+      season: { isCurrent: false, name: 'Spring 2026' },
+    });
+  });
+
+  it('does not expose inactive players or accept malformed profile IDs', async () => {
+    const inactivePlayer = await prisma.player.create({
+      data: {
+        description: 'Not in the current squad.',
+        isActiveSquad: false,
+        name: 'Inactive Player',
+        position: 'FWD',
+      },
+    });
+
+    expect(
+      (await request(createApp()).get(`/api/players/${inactivePlayer.id}`))
+        .status,
+    ).toBe(404);
+    expect(
+      (await request(createApp()).get('/api/players/not-a-uuid')).status,
+    ).toBe(404);
+  });
+});
+
+describe('administrator player API', () => {
+  it('requires an authenticated administrator', async () => {
+    const app = createApp();
+    const anonymous = await request(app)
+      .post('/api/admin/players')
+      .field(validPlayerFields());
+    expect(anonymous.status).toBe(401);
+
+    const playerCookie = await createUserSession('PLAYER');
+    const forbidden = await request(app)
+      .post('/api/admin/players')
+      .set('Cookie', playerCookie)
+      .field(validPlayerFields());
+    expect(forbidden.status).toBe(403);
+  });
+
+  it('creates a player and stores a validated uploaded image', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const response = await request(createApp())
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field(validPlayerFields())
+      .attach('profilePicture', Buffer.from('test-image'), {
+        contentType: 'image/png',
+        filename: 'player.png',
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.player).toMatchObject({
+      isActiveSquad: true,
+      name: 'Alex Example',
+      position: 'DEF',
+      profilePictureUrl:
+        'https://res.cloudinary.com/example/image/upload/test.webp',
+    });
+    expect(response.body.player).not.toHaveProperty('profilePicturePublicId');
+    expect(imageMocks.uploadPlayerImage).toHaveBeenCalledOnce();
+
+    await expect(
+      prisma.player.findUniqueOrThrow({
+        where: { id: response.body.player.id },
+      }),
+    ).resolves.toMatchObject({
+      profilePicturePublicId: '24-hour-party-people/players/test-image',
+    });
+  });
+
+  it('rejects unsupported uploads before contacting image storage', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const response = await request(createApp())
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field(validPlayerFields())
+      .attach('profilePicture', Buffer.from('plain text'), {
+        contentType: 'text/plain',
+        filename: 'player.txt',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('UNSUPPORTED_IMAGE_TYPE');
+    expect(imageMocks.uploadPlayerImage).not.toHaveBeenCalled();
+    await expect(prisma.player.count()).resolves.toBe(0);
+  });
+
+  it('rejects images larger than the five-megabyte limit', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const response = await request(createApp())
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field(validPlayerFields())
+      .attach('profilePicture', Buffer.alloc(5 * 1024 * 1024 + 1), {
+        contentType: 'image/jpeg',
+        filename: 'too-large.jpg',
+      });
+
+    expect(response.status).toBe(413);
+    expect(response.body.error.code).toBe('IMAGE_TOO_LARGE');
+    expect(imageMocks.uploadPlayerImage).not.toHaveBeenCalled();
+    await expect(prisma.player.count()).resolves.toBe(0);
+  });
+
+  it('enforces the confirmed active formation limits', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    await prisma.player.create({
+      data: {
+        description: 'The active goalkeeper.',
+        name: 'Starting Keeper',
+        position: 'GK',
+      },
+    });
+
+    const response = await request(createApp())
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field({ ...validPlayerFields(), position: 'GK' })
+      .attach('profilePicture', Buffer.from('test-image'), {
+        contentType: 'image/png',
+        filename: 'keeper.png',
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('FORMATION_POSITION_FULL');
+    expect(imageMocks.deletePlayerImage).toHaveBeenCalledWith(
+      '24-hour-party-people/players/test-image',
+    );
+    await expect(
+      prisma.player.count({ where: { position: 'GK' } }),
+    ).resolves.toBe(1);
+  });
+
+  it('updates squad status and safely replaces a managed image', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const player = await prisma.player.create({
+      data: {
+        description: 'Original description.',
+        name: 'Original Name',
+        position: 'MID',
+        profilePicturePublicId: '24-hour-party-people/players/old-image',
+        profilePictureUrl: 'https://example.test/old.webp',
+      },
+    });
+
+    const response = await request(createApp())
+      .put(`/api/admin/players/${player.id}`)
+      .set('Cookie', adminCookie)
+      .field({
+        ...validPlayerFields(),
+        isActiveSquad: 'false',
+        name: 'Updated Name',
+        removeProfilePicture: 'false',
+      })
+      .attach('profilePicture', Buffer.from('replacement-image'), {
+        contentType: 'image/webp',
+        filename: 'replacement.webp',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.player).toMatchObject({
+      isActiveSquad: false,
+      name: 'Updated Name',
+      profilePictureUrl:
+        'https://res.cloudinary.com/example/image/upload/test.webp',
+    });
+    expect(imageMocks.deletePlayerImage).toHaveBeenCalledWith(
+      '24-hour-party-people/players/old-image',
+    );
+  });
+
+  it('removes an existing managed image without deleting the player', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const player = await prisma.player.create({
+      data: {
+        description: 'Player with a removable picture.',
+        name: 'Picture Player',
+        position: 'FWD',
+        profilePicturePublicId: '24-hour-party-people/players/remove-me',
+        profilePictureUrl: 'https://example.test/remove-me.webp',
+      },
+    });
+
+    const response = await request(createApp())
+      .put(`/api/admin/players/${player.id}`)
+      .set('Cookie', adminCookie)
+      .field({
+        description: player.description,
+        isActiveSquad: 'true',
+        name: player.name,
+        position: player.position,
+        removeProfilePicture: 'true',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.player.profilePictureUrl).toBeNull();
+    expect(imageMocks.deletePlayerImage).toHaveBeenCalledWith(
+      '24-hour-party-people/players/remove-me',
+    );
+    await expect(
+      prisma.player.findUniqueOrThrow({ where: { id: player.id } }),
+    ).resolves.toMatchObject({
+      id: player.id,
+      profilePicturePublicId: null,
+      profilePictureUrl: null,
+    });
+  });
+});
