@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import App from './App';
+import type { FixtureSummary } from './fixtures/types';
 
 function mockResponse(body: unknown, status: number): Response {
   return {
@@ -461,6 +462,193 @@ describe('App', () => {
     expect(screen.getByText('5–2')).toBeInTheDocument();
     expect(
       screen.getByText('Opponent could not field a team.'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders upcoming fixtures with Sheffield-local kick-off times', async () => {
+    window.history.replaceState({}, '', '/fixtures');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        if (String(input) === '/api/auth/me') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                error: {
+                  code: 'AUTHENTICATION_REQUIRED',
+                  message: 'Authentication is required.',
+                },
+              },
+              401,
+            ),
+          );
+        }
+
+        return Promise.resolve(
+          mockResponse(
+            {
+              fixtures: [
+                {
+                  competition: 'LEAGUE',
+                  id: 'fixture',
+                  opponentClub: { id: 'opponent', name: 'Norton Rivals' },
+                  result: null,
+                  scheduledDate: '2026-09-15T00:00:00.000Z',
+                  scheduledTime: '1970-01-01T20:15:00.000Z',
+                  season: { id: 'season', name: 'Summer 2026' },
+                  source: 'MANUAL',
+                  status: 'SCHEDULED',
+                  venue: 'Norton Playing Fields 3G',
+                },
+              ],
+            },
+            200,
+          ),
+        );
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Upcoming fixtures' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Norton Rivals' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Tuesday, 15 September 2026')).toBeInTheDocument();
+    expect(screen.getByText('20:15')).toBeInTheDocument();
+    expect(screen.getByText('Norton Playing Fields 3G')).toBeInTheDocument();
+  });
+
+  it('creates fixtures while keeping recorded fixtures read-only for administrators', async () => {
+    const seasonId = '12c37c8a-6559-493b-9615-76ddab94dd66';
+    let submittedBody: Record<string, unknown> | undefined;
+    let fixtures: FixtureSummary[] = [
+      {
+        competition: 'LEAGUE',
+        id: 'played-fixture',
+        opponentClub: { id: 'opponent', name: 'Played Opponent' },
+        result: { id: 'result' },
+        scheduledDate: '2026-09-01T00:00:00.000Z',
+        scheduledTime: '1970-01-01T19:30:00.000Z',
+        season: { id: seasonId, name: 'Summer 2026' },
+        source: 'MANUAL',
+        status: 'PLAYED',
+        venue: null,
+      },
+    ];
+    window.history.replaceState({}, '', '/admin/fixtures');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'jack@example.test',
+                    id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
+                    name: 'Jack',
+                    role: 'ADMIN',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+
+          if (path === '/api/admin/seasons') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  seasons: [
+                    {
+                      endDate: '2026-12-31T00:00:00.000Z',
+                      id: seasonId,
+                      isCurrent: true,
+                      name: 'Summer 2026',
+                      startDate: '2026-01-01T00:00:00.000Z',
+                      tracksGamesPlayed: true,
+                    },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
+
+          if (path === '/api/admin/fixtures' && init?.method === 'POST') {
+            submittedBody = JSON.parse(String(init.body)) as Record<
+              string,
+              unknown
+            >;
+            const createdFixture: FixtureSummary = {
+              competition: 'CUP',
+              id: 'created-fixture',
+              opponentClub: { id: 'new-opponent', name: 'New Opponent' },
+              result: null,
+              scheduledDate: '2026-09-22T00:00:00.000Z',
+              scheduledTime: null,
+              season: { id: seasonId, name: 'Summer 2026' },
+              source: 'MANUAL',
+              status: 'SCHEDULED',
+              venue: 'Pitch 2',
+            };
+            fixtures = [createdFixture, ...fixtures];
+            return Promise.resolve(
+              mockResponse({ fixture: createdFixture }, 201),
+            );
+          }
+
+          if (path === '/api/admin/fixtures') {
+            return Promise.resolve(mockResponse({ fixtures }, 200));
+          }
+
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Manage fixtures' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Recorded')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Edit' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Opponent'), {
+      target: { value: 'New Opponent' },
+    });
+    fireEvent.change(screen.getByLabelText('Date'), {
+      target: { value: '2026-09-22' },
+    });
+    fireEvent.change(screen.getByLabelText('Competition'), {
+      target: { value: 'CUP' },
+    });
+    fireEvent.change(screen.getByLabelText('Venue (optional)'), {
+      target: { value: 'Pitch 2' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create fixture' }));
+
+    expect(
+      await screen.findByText('Fixture created successfully.'),
+    ).toBeInTheDocument();
+    expect(submittedBody).toEqual({
+      competition: 'CUP',
+      opponentName: 'New Opponent',
+      scheduledDate: '2026-09-22',
+      scheduledTime: null,
+      seasonId,
+      venue: 'Pitch 2',
+    });
+    expect(
+      screen.getByRole('heading', { name: 'New Opponent' }),
     ).toBeInTheDocument();
   });
 
