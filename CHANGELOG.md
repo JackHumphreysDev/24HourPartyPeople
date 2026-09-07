@@ -2,6 +2,25 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.8.0] - 2026-09-07
+
+### Added
+
+- Public current-season league standings at `/standings`, including all
+  recorded columns, team highlighting, and a visible last-updated timestamp.
+- Protected full-table standings management at `/admin/standings` as the
+  manual fallback while automatic Powerleague scraping remains unconnected.
+- Public and administrator standings APIs with authentication, validation,
+  atomic snapshot replacement, and integration coverage.
+
+### Changed
+
+- Calculate goal difference on the server and require unique clubs and
+  positions, consistent played/result totals, valid walkover counts, and a
+  24 Hour Party People row in every saved snapshot.
+- Preserve standings for historic seasons when replacing the current-season
+  table.
+
 ## [0.7.0] - 2026-09-07
 
 ### Added
