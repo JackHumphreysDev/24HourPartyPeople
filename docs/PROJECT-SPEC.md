@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.4.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.5.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -71,13 +71,16 @@ createdAt.
 
 **Season** — id, name (e.g. "Summer 2026"), startDate, endDate,
 isCurrent (boolean, exactly one season should be current at a time —
-enforce in application logic, not just convention).
+enforce in application logic, not just convention), tracksGamesPlayed
+(boolean — false for seasons before attendance tracking began and true for
+the current season onward).
 
 **PlayerSeasonStat** — id, playerId (FK), seasonId (FK), goals (integer),
 assists (integer), cleanSheets (integer), gamesPlayed (integer, nullable —
-**null/unknown for all seasons before the current one**, since historic
-games-played data was never recorded; only populate going forward — see
-Section 4), note (optional text, e.g. flagging incomplete historic data).
+**null/unknown whenever the related season has `tracksGamesPlayed = false`**,
+since historic games-played data was never recorded; only populate for tracked
+seasons — see Section 4), note (optional text, e.g. flagging incomplete
+historic data).
 
 **OpponentClub** — id, name (the other teams in the league, from the
 scraped standings/fixtures — not our own club).
@@ -196,16 +199,21 @@ played, won, drawn, lost, gf, ga, gd, points, walkoverGames, finalizedAt
   since that data isn't on Powerleague in a per-player breakdown — the
   Powerleague scrape covers team-level standings/fixtures/results, not
   individual player stats).
+- Admin can create and edit seasons, make exactly one season current, record
+  whether each season tracked games played, and add or update non-negative
+  player statistics for active and inactive players.
 
 ## 4. Games-played tracking — historic data note
 
 Previous seasons have goals, assists, and clean sheets recorded, but
 **games played was never tracked** before now. Per product decision:
 
-- From the **current season onward**, record `gamesPlayed` on every
-  `PlayerSeasonStat`.
-- For all prior seasons, `gamesPlayed` stays `null` and is rendered as
-  "not recorded," not `0` or blank.
+- Set `Season.tracksGamesPlayed` to `true` from the first tracked season onward
+  and require `gamesPlayed` on every related `PlayerSeasonStat`.
+- Set `Season.tracksGamesPlayed` to `false` for all prior seasons; their
+  `gamesPlayed` values stay `null` and render as "not recorded," not `0` or
+  blank. This season-level fact remains accurate after a current season later
+  becomes historic.
 - Do not attempt to back-calculate historic games played from goals/
   assists/clean-sheets data — there's no reliable way to derive attendance
   from scoring stats, so don't guess.
@@ -369,11 +377,16 @@ Python/pytest.
 ```
 POST   /api/auth/register                 create account
 POST   /api/auth/login                    login
-POST   /api/players                       (admin) create player profile
-PUT    /api/players/:id                    (admin) edit player profile
 GET    /api/players                        list players
 GET    /api/players/:id                    player profile + current/historic stats
-POST   /api/players/:id/season-stats       (admin) add/edit a season's stats
+GET    /api/admin/players                  (admin) list active/inactive players
+POST   /api/admin/players                  (admin) create player profile
+PUT    /api/admin/players/:id              (admin) edit player profile
+GET    /api/admin/players/:id/season-stats (admin) list a player's stats
+POST   /api/admin/players/:id/season-stats (admin) add/edit a season's stats
+GET    /api/admin/seasons                  (admin) list seasons
+POST   /api/admin/seasons                  (admin) create a season
+PUT    /api/admin/seasons/:id              (admin) edit/make a season current
 POST   /api/games                          submit a game result (incl. walkover flow)
 GET    /api/games                          game history
 GET    /api/standings/current              current league standings (scraped, cached)
@@ -386,7 +399,7 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 
 - [ ] Home page shows current league position, team description, and
       current squad in a 1GK-3DEF-1MID-1FWD formation
-- [ ] Player profiles show current-season stats, per-season historic
+- [x] Player profiles show current-season stats, per-season historic
       stats (goals/assists/clean sheets only), and an overall/history
       section that clearly separates career totals from
       current-season-onward games-played totals
@@ -400,8 +413,10 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 - [ ] Club history tab shows our club's own season-end finish, starting
       from the current season, with the required columns including
       walkover games
-- [ ] Admin account can create/edit player profiles (description,
+- [x] Admin account can create/edit player profiles (description,
       picture) and enter historic season stats
+- [x] Admin can create/edit seasons, maintain exactly one current season, and
+      preserve whether games played was recorded for each season
 - [ ] Scraping module (Python) implemented with both tiers, DB-backed
       caching, a visible staleness indicator, and the 3 required pytest
       unit tests passing
@@ -432,6 +447,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.0 | 2026-09-07 | Added authenticated season and player-statistics management with explicit historical games-played tracking |
 | 0.4.0 | 2026-09-07 | Added routed public player profiles, authenticated squad management, Cloudinary picture uploads, and transactional formation limits |
 | 0.3.0 | 2026-09-02 | Added one-time administrator setup, secure database-backed sessions, authentication APIs and middleware, and the browser sign-in experience |
 | 0.2.0 | 2026-09-02 | Added the core football data model, initial PostgreSQL migration, and isolated database integration tests |
