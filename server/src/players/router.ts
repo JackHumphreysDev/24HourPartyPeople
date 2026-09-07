@@ -13,6 +13,7 @@ import { parsePlayerImage } from './upload.js';
 
 const positionSchema = z.enum(['GK', 'DEF', 'MID', 'FWD']);
 const playerIdSchema = z.uuid();
+const statValueSchema = z.number().int().min(0).max(10_000);
 const booleanStringSchema = z
   .enum(['true', 'false'])
   .transform((value) => value === 'true');
@@ -26,6 +27,15 @@ const createPlayerSchema = z.object({
 
 const updatePlayerSchema = createPlayerSchema.extend({
   removeProfilePicture: booleanStringSchema.default(false),
+});
+
+const seasonStatSchema = z.object({
+  assists: statValueSchema,
+  cleanSheets: statValueSchema,
+  gamesPlayed: statValueSchema.nullable(),
+  goals: statValueSchema,
+  note: z.string().trim().max(500).nullable(),
+  seasonId: z.uuid(),
 });
 
 const playerSummarySelect = {
@@ -194,6 +204,154 @@ adminPlayersRouter.get('/', async (_request, response) => {
 
   response.status(200).json({ players });
 });
+
+adminPlayersRouter.get('/:playerId/season-stats', async (request, response) => {
+  const playerId = playerIdSchema.safeParse(request.params.playerId);
+  if (!playerId.success) {
+    response.status(404).json({
+      error: {
+        code: 'PLAYER_NOT_FOUND',
+        message: 'Player not found.',
+      },
+    });
+    return;
+  }
+
+  const player = await prisma.player.findUnique({
+    select: {
+      seasonStats: {
+        orderBy: { season: { startDate: 'desc' } },
+        select: {
+          assists: true,
+          cleanSheets: true,
+          gamesPlayed: true,
+          goals: true,
+          id: true,
+          note: true,
+          seasonId: true,
+        },
+      },
+    },
+    where: { id: playerId.data },
+  });
+
+  if (!player) {
+    response.status(404).json({
+      error: {
+        code: 'PLAYER_NOT_FOUND',
+        message: 'Player not found.',
+      },
+    });
+    return;
+  }
+
+  response.status(200).json({ seasonStats: player.seasonStats });
+});
+
+adminPlayersRouter.post(
+  '/:playerId/season-stats',
+  async (request, response) => {
+    const playerId = playerIdSchema.safeParse(request.params.playerId);
+    if (!playerId.success) {
+      response.status(404).json({
+        error: {
+          code: 'PLAYER_NOT_FOUND',
+          message: 'Player not found.',
+        },
+      });
+      return;
+    }
+
+    const parsed = seasonStatSchema.safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({
+        error: {
+          code: 'INVALID_SEASON_STATS',
+          message: 'Statistics must be whole numbers of zero or more.',
+        },
+      });
+      return;
+    }
+
+    const [player, season] = await Promise.all([
+      prisma.player.findUnique({
+        select: { id: true },
+        where: { id: playerId.data },
+      }),
+      prisma.season.findUnique({
+        select: { id: true, tracksGamesPlayed: true },
+        where: { id: parsed.data.seasonId },
+      }),
+    ]);
+
+    if (!player) {
+      response.status(404).json({
+        error: {
+          code: 'PLAYER_NOT_FOUND',
+          message: 'Player not found.',
+        },
+      });
+      return;
+    }
+
+    if (!season) {
+      response.status(404).json({
+        error: {
+          code: 'SEASON_NOT_FOUND',
+          message: 'Season not found.',
+        },
+      });
+      return;
+    }
+
+    if (season.tracksGamesPlayed && parsed.data.gamesPlayed === null) {
+      response.status(400).json({
+        error: {
+          code: 'GAMES_PLAYED_REQUIRED',
+          message: 'Games played is required for this season.',
+        },
+      });
+      return;
+    }
+
+    if (!season.tracksGamesPlayed && parsed.data.gamesPlayed !== null) {
+      response.status(400).json({
+        error: {
+          code: 'GAMES_PLAYED_NOT_TRACKED',
+          message: 'Games played was not tracked for this season.',
+        },
+      });
+      return;
+    }
+
+    const { seasonId, ...values } = parsed.data;
+    const seasonStats = await prisma.playerSeasonStat.upsert({
+      create: {
+        ...values,
+        playerId: player.id,
+        seasonId,
+      },
+      select: {
+        assists: true,
+        cleanSheets: true,
+        gamesPlayed: true,
+        goals: true,
+        id: true,
+        note: true,
+        seasonId: true,
+      },
+      update: values,
+      where: {
+        playerId_seasonId: {
+          playerId: player.id,
+          seasonId,
+        },
+      },
+    });
+
+    response.status(200).json({ seasonStats });
+  },
+);
 
 adminPlayersRouter.post('/', parsePlayerImage, async (request, response) => {
   const parsed = createPlayerSchema.safeParse(request.body);

@@ -6,6 +6,7 @@ import { HomePage } from './HomePage';
 import { AuthProvider } from './auth/AuthProvider';
 import { useAuth } from './auth/useAuth';
 import { AdminPlayersPage } from './players/AdminPlayersPage';
+import { AdminStatisticsPage } from './players/AdminStatisticsPage';
 import { PlayerProfilePage } from './players/PlayerProfilePage';
 import { PlayersPage } from './players/PlayersPage';
 
@@ -48,6 +49,7 @@ function AppContent() {
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/:playerId" element={<PlayerProfilePage />} />
           <Route path="/admin" element={<AdminPlayersPage />} />
+          <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>

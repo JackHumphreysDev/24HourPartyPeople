@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import App from './App';
@@ -268,5 +268,127 @@ describe('App', () => {
     expect(
       await screen.findByText('No player profiles have been created.'),
     ).toBeInTheDocument();
+  });
+
+  it('manages seasons and preserves untracked historic games on the administrator statistics route', async () => {
+    const playerId = '12c37c8a-6559-493b-9615-76ddab94dd66';
+    window.history.replaceState({}, '', '/admin/statistics');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === '/api/auth/me') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                user: {
+                  email: 'jack@example.test',
+                  id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
+                  name: 'Jack',
+                  role: 'ADMIN',
+                },
+              },
+              200,
+            ),
+          );
+        }
+
+        if (path === '/api/admin/seasons') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                seasons: [
+                  {
+                    endDate: '2026-08-31T00:00:00.000Z',
+                    id: 'current-season',
+                    isCurrent: true,
+                    name: 'Summer 2026',
+                    startDate: '2026-06-01T00:00:00.000Z',
+                    tracksGamesPlayed: true,
+                  },
+                  {
+                    endDate: '2026-05-31T00:00:00.000Z',
+                    id: 'historic-season',
+                    isCurrent: false,
+                    name: 'Spring 2026',
+                    startDate: '2026-03-01T00:00:00.000Z',
+                    tracksGamesPlayed: false,
+                  },
+                ],
+              },
+              200,
+            ),
+          );
+        }
+
+        if (path === '/api/admin/players') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                players: [
+                  {
+                    createdAt: '2026-09-02T12:00:00.000Z',
+                    description: 'A dependable defender.',
+                    id: playerId,
+                    isActiveSquad: true,
+                    name: 'Alex Example',
+                    position: 'DEF',
+                    profilePictureUrl: null,
+                  },
+                ],
+              },
+              200,
+            ),
+          );
+        }
+
+        if (path === `/api/admin/players/${playerId}/season-stats`) {
+          return Promise.resolve(
+            mockResponse(
+              {
+                seasonStats: [
+                  {
+                    assists: 2,
+                    cleanSheets: 1,
+                    gamesPlayed: null,
+                    goals: 3,
+                    id: 'historic-stat',
+                    note: null,
+                    seasonId: 'historic-season',
+                  },
+                ],
+              },
+              200,
+            ),
+          );
+        }
+
+        return Promise.resolve(mockResponse({}, 404));
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Manage seasons' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Manage statistics' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Seasons & statistics' }),
+    ).toHaveClass('active');
+
+    await screen.findByRole('option', { name: 'Summer 2026 (current)' });
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Season' }), {
+      target: { value: 'historic-season' },
+    });
+
+    expect(await screen.findByText('Not recorded')).toBeInTheDocument();
+    expect(
+      screen.getByRole('spinbutton', { name: /Games played/ }),
+    ).toBeDisabled();
+    expect(screen.getByLabelText('Goals')).toHaveValue(3);
   });
 });

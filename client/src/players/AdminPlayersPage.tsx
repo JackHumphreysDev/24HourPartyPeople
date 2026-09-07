@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { NavLink } from 'react-router-dom';
 
 import { AuthScreen } from '../AuthScreen';
 import { useAuth } from '../auth/useAuth';
@@ -299,5 +300,15 @@ export function AdminPlayersPage() {
     );
   }
 
-  return <PlayerManager />;
+  return (
+    <>
+      <nav className="admin-nav" aria-label="Administrator sections">
+        <NavLink to="/admin" end>
+          Players
+        </NavLink>
+        <NavLink to="/admin/statistics">Seasons &amp; statistics</NavLink>
+      </nav>
+      <PlayerManager />
+    </>
+  );
 }

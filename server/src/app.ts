@@ -3,6 +3,7 @@ import express from 'express';
 
 import { authRouter } from './auth/router.js';
 import { adminPlayersRouter, publicPlayersRouter } from './players/router.js';
+import { adminSeasonsRouter } from './seasons/router.js';
 
 export function createApp() {
   const app = express();
@@ -23,6 +24,7 @@ export function createApp() {
   app.use('/api/auth', authRouter);
   app.use('/api/players', publicPlayersRouter);
   app.use('/api/admin/players', adminPlayersRouter);
+  app.use('/api/admin/seasons', adminSeasonsRouter);
 
   app.use(
     (

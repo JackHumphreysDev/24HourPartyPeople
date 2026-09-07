@@ -75,16 +75,17 @@ model Player {
 }
 
 model Season {
-  id          String             @id @default(uuid()) @db.Uuid
-  name        String
-  startDate   DateTime           @db.Date
-  endDate     DateTime           @db.Date
-  isCurrent   Boolean            @default(false)
-  playerStats PlayerSeasonStat[]
-  fixtures    Fixture[]
-  gameResults GameResult[]
-  standings   SeasonStanding[]
-  clubHistory ClubHistory?
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String
+  startDate         DateTime           @db.Date
+  endDate           DateTime           @db.Date
+  isCurrent         Boolean            @default(false)
+  tracksGamesPlayed Boolean            @default(false)
+  playerStats       PlayerSeasonStat[]
+  fixtures          Fixture[]
+  gameResults       GameResult[]
+  standings         SeasonStanding[]
+  clubHistory       ClubHistory?
 
   @@index([isCurrent])
 }

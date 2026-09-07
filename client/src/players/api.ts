@@ -1,4 +1,12 @@
-import type { PlayerDetail, PlayerInput, PlayerSummary } from './types';
+import type {
+  AdminSeasonStat,
+  PlayerDetail,
+  PlayerInput,
+  PlayerSummary,
+  SeasonInput,
+  SeasonStatInput,
+  SeasonSummary,
+} from './types';
 
 type ErrorResponse = {
   error?: {
@@ -104,4 +112,62 @@ export async function updatePlayer(
     },
   );
   return response.player;
+}
+
+export async function getAdminSeasons(): Promise<SeasonSummary[]> {
+  const response = await playerRequest<{ seasons: SeasonSummary[] }>(
+    '/api/admin/seasons',
+  );
+  return response.seasons;
+}
+
+export async function createSeason(input: SeasonInput): Promise<SeasonSummary> {
+  const response = await playerRequest<{ season: SeasonSummary }>(
+    '/api/admin/seasons',
+    {
+      body: JSON.stringify(input),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    },
+  );
+  return response.season;
+}
+
+export async function updateSeason(
+  seasonId: string,
+  input: SeasonInput,
+): Promise<SeasonSummary> {
+  const response = await playerRequest<{ season: SeasonSummary }>(
+    `/api/admin/seasons/${encodeURIComponent(seasonId)}`,
+    {
+      body: JSON.stringify(input),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
+    },
+  );
+  return response.season;
+}
+
+export async function getPlayerSeasonStats(
+  playerId: string,
+): Promise<AdminSeasonStat[]> {
+  const response = await playerRequest<{ seasonStats: AdminSeasonStat[] }>(
+    `/api/admin/players/${encodeURIComponent(playerId)}/season-stats`,
+  );
+  return response.seasonStats;
+}
+
+export async function savePlayerSeasonStats(
+  playerId: string,
+  input: SeasonStatInput,
+): Promise<AdminSeasonStat> {
+  const response = await playerRequest<{ seasonStats: AdminSeasonStat }>(
+    `/api/admin/players/${encodeURIComponent(playerId)}/season-stats`,
+    {
+      body: JSON.stringify(input),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    },
+  );
+  return response.seasonStats;
 }
