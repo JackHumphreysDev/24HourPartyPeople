@@ -16,12 +16,19 @@ import {
 
 export function createApp() {
   const app = express();
+  const isProduction =
+    process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
   app.disable('x-powered-by');
+  if (isProduction) {
+    app.set('trust proxy', 1);
+  }
   app.use(
     cors({
       credentials: true,
-      origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+      origin:
+        process.env.CORS_ORIGIN ??
+        (isProduction ? false : 'http://localhost:5173'),
     }),
   );
   app.use(express.json());
