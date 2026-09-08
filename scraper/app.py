@@ -1,9 +1,13 @@
 import hmac
 import os
+from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 
 from powerleague.service import scrape_powerleague
+
+load_dotenv(Path(__file__).resolve().parent.parent / "server" / ".env")
 
 app = FastAPI(docs_url=None, redoc_url=None, title="Powerleague scraper")
 
@@ -33,4 +37,3 @@ def scrape() -> dict[str, object]:
         )
 
     return result.to_dict()
-
