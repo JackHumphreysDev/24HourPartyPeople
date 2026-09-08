@@ -105,6 +105,8 @@ export async function getUserForSession(
     id: session.user.id,
     name: session.user.name,
     email: session.user.email,
+    playerId: session.user.playerId,
+    requestedPlayerId: session.user.requestedPlayerId,
     role: session.user.role,
   };
 }

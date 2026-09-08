@@ -2,6 +2,24 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.12.0] - 2026-09-09
+
+### Added
+
+- Public player account registration with one pending claim against an active,
+  unclaimed Player profile.
+- Dedicated player account status and linked-profile navigation.
+- Administrator account management for approving or rejecting claims and
+  manually assigning or unassigning Player profiles.
+- Administrator settings for changing the account name, email, and password
+  after confirming the current password.
+
+### Changed
+
+- Use ordinary email/password sign-in for administrators and retain the setup
+  key only in the recovery-only initial administrator endpoint.
+- Share one navigation component across the administration pages.
+
 ## [0.11.1] - 2026-09-08
 
 ### Fixed

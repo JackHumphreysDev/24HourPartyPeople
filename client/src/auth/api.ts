@@ -1,4 +1,10 @@
-import type { AuthUser, LoginInput, RegisterAdminInput } from './types';
+import type {
+  AdminAccountInput,
+  AuthUser,
+  LoginInput,
+  RegisterPlayerInput,
+  RegistrationPlayer,
+} from './types';
 
 type ErrorResponse = {
   error?: {
@@ -79,13 +85,46 @@ export async function login(input: LoginInput): Promise<AuthUser> {
   return response.user;
 }
 
-export async function registerAdmin(
-  input: RegisterAdminInput,
+export async function getRegistrationPlayers(): Promise<RegistrationPlayer[]> {
+  const response = await authRequest<{ players: RegistrationPlayer[] }>(
+    '/api/auth/player-registration-options',
+  );
+  return response.players;
+}
+
+export async function registerPlayer(
+  input: RegisterPlayerInput,
 ): Promise<AuthUser> {
-  const response = await authRequest<AuthResponse>('/api/auth/register', {
-    method: 'POST',
+  const response = await authRequest<AuthResponse>(
+    '/api/auth/player-register',
+    {
+      body: JSON.stringify(input),
+      method: 'POST',
+    },
+  );
+  return response.user;
+}
+
+export async function updateAdminAccount(
+  input: AdminAccountInput,
+): Promise<AuthUser> {
+  const response = await authRequest<AuthResponse>('/api/admin/account', {
     body: JSON.stringify(input),
+    method: 'PUT',
   });
+  return response.user;
+}
+
+export async function requestPlayerProfile(
+  playerId: string,
+): Promise<AuthUser> {
+  const response = await authRequest<AuthResponse>(
+    '/api/auth/me/player-request',
+    {
+      body: JSON.stringify({ playerId }),
+      method: 'PUT',
+    },
+  );
   return response.user;
 }
 

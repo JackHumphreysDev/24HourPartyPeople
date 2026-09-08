@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.11.1` release includes the project foundation, core football
+The current `0.12.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -18,8 +18,11 @@ formation; player profiles also record additional playable positions. Ended
 seasons can be finalised into the permanent public club history. Powerleague
 standings, fixtures, and results can be refreshed automatically through a
 private scraper, with cached data and administrator entry retained as safe
-fallbacks. The website is deployed to Vercel with Neon PostgreSQL and
-Cloudinary image storage. See
+fallbacks. Players can create accounts and request their Player profile, with
+administrator approval and manual assignment controls; administrators can
+manage their own normal login details without using the recovery setup key.
+The website is deployed to Vercel with Neon PostgreSQL and Cloudinary image
+storage. See
 [the project specification](docs/PROJECT-SPEC.md) for full functionality.
 
 ## Technology stack
@@ -67,7 +70,7 @@ code.
 
 The Vercel project also requires these application secrets:
 
-- `ADMIN_SETUP_KEY` — one-time administrator registration secret
+- `ADMIN_SETUP_KEY` — recovery-only secret for initial administrator setup
 - `CLOUDINARY_CLOUD_NAME` — Cloudinary account cloud name
 - `CLOUDINARY_API_KEY` — Cloudinary API key
 - `CLOUDINARY_API_SECRET` — Cloudinary API secret
@@ -99,18 +102,28 @@ live standings, and finalised club history. Migrations are stored in
 
 Database relationships preserve historical football records. Players are
 deactivated rather than deleted once statistics reference them, while optional
-account and fixture links are cleared without deleting their user or result.
-Business rules such as exactly one current season, valid formation limits,
-non-negative statistics, and walkover score handling are enforced by the
-application features that write those records.
+approved and requested account links and fixture links are cleared without
+deleting their user or result. A Player profile can have at most one approved
+account and one pending claim. Business rules such as exactly one current
+season, valid formation limits, non-negative statistics, and walkover score
+handling are enforced by the application features that write those records.
 
 ## Authentication
 
-The first account is created through the one-time administrator setup screen.
-Set a long, random `ADMIN_SETUP_KEY` in `server/.env`, open the website, choose
-**Set up administrator**, and enter that same key. Registration closes as soon
-as the first account has been created; public player registration is not yet
-available.
+The first administrator account is created once through the recovery-only
+`POST /api/auth/register` endpoint and the `ADMIN_SETUP_KEY`. The normal
+website does not display or request that key. Once the administrator exists,
+they sign in with their email and password and can update their name, email,
+or password from `/admin/account`; the current password is required to save a
+change.
+
+Players can create an account from the website and select an active, unclaimed
+Player profile. The account is created immediately, but its profile link
+remains pending until an administrator approves it. Administrators review,
+approve, or reject claims and can assign or unassign profiles manually at
+`/admin/accounts`. Rejected or unlinked player accounts can request another
+available profile from `/account`. Player accounts can view their linked
+public profile but cannot edit football records.
 
 Passwords are stored as salted scrypt hashes. Successful registration and
 login create a random, revocable seven-day session whose SHA-256 token hash is
@@ -122,9 +135,17 @@ whether an email address exists.
 The authentication API provides:
 
 - `POST /api/auth/register` — create the first administrator account
+- `GET /api/auth/player-registration-options` — list active, unclaimed Player profiles
+- `POST /api/auth/player-register` — create a player account with a pending profile claim
 - `POST /api/auth/login` — sign in and start a session
 - `POST /api/auth/logout` — revoke the current session
 - `GET /api/auth/me` — return the currently authenticated user
+- `PUT /api/auth/me/player-request` — request a profile for an unlinked player account
+- `PUT /api/admin/account` — update the signed-in administrator account
+- `GET /api/admin/accounts` — list player accounts, claims, and profile assignments
+- `POST /api/admin/accounts/:userId/approve` — approve a pending profile claim
+- `POST /api/admin/accounts/:userId/reject` — reject a pending profile claim
+- `PUT /api/admin/accounts/:userId/player` — assign or unassign a Player profile
 
 ## Home page
 

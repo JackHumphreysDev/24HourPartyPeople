@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { NavLink } from 'react-router-dom';
 
 import { AuthScreen } from '../AuthScreen';
+import { AdminNavigation } from '../admin/AdminNavigation';
 import { useAuth } from '../auth/useAuth';
 import {
   createSeason,
@@ -253,17 +253,7 @@ function StatisticsManager() {
 
   return (
     <section className="statistics-admin-page">
-      <nav className="admin-nav" aria-label="Administrator sections">
-        <NavLink to="/admin/home-page">Home page</NavLink>
-        <NavLink to="/admin" end>
-          Players
-        </NavLink>
-        <NavLink to="/admin/statistics">Seasons &amp; statistics</NavLink>
-        <NavLink to="/admin/standings">Standings</NavLink>
-        <NavLink to="/admin/fixtures">Fixtures</NavLink>
-        <NavLink to="/admin/games">Results</NavLink>
-        <NavLink to="/admin/club-history">Club history</NavLink>
-      </nav>
+      <AdminNavigation />
 
       <div className="admin-layout">
         <div className="admin-player-list">

@@ -3,6 +3,9 @@ import './styles.css';
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom';
 
 import { HomePage } from './HomePage';
+import { AccountPage } from './accounts/AccountPage';
+import { AdminAccountPage } from './accounts/AdminAccountPage';
+import { AdminAccountsPage } from './accounts/AdminAccountsPage';
 import { AuthProvider } from './auth/AuthProvider';
 import { useAuth } from './auth/useAuth';
 import { AdminClubHistoryPage } from './club-history/AdminClubHistoryPage';
@@ -48,7 +51,15 @@ function AppContent() {
             <NavLink to="/fixtures">Fixtures</NavLink>
             <NavLink to="/games">Games</NavLink>
             <NavLink to="/club-history">History</NavLink>
-            <NavLink to="/admin">Admin</NavLink>
+            {user?.role === 'ADMIN' ? (
+              <NavLink to="/admin">Admin</NavLink>
+            ) : user?.playerId ? (
+              <NavLink to={`/players/${user.playerId}`}>My profile</NavLink>
+            ) : (
+              <NavLink to="/account">
+                {status === 'authenticated' ? 'Account' : 'Sign in'}
+              </NavLink>
+            )}
             {status === 'authenticated' && user && (
               <button type="button" onClick={() => void logout()}>
                 Sign out {user.name}
@@ -65,7 +76,10 @@ function AppContent() {
           <Route path="/fixtures" element={<FixturesPage />} />
           <Route path="/games" element={<GameHistoryPage />} />
           <Route path="/club-history" element={<ClubHistoryPage />} />
+          <Route path="/account" element={<AccountPage />} />
           <Route path="/admin" element={<AdminPlayersPage />} />
+          <Route path="/admin/account" element={<AdminAccountPage />} />
+          <Route path="/admin/accounts" element={<AdminAccountsPage />} />
           <Route path="/admin/home-page" element={<AdminHomePage />} />
           <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
           <Route path="/admin/standings" element={<AdminStandingsPage />} />

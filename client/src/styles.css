@@ -350,6 +350,7 @@ select {
 }
 
 .auth-form input,
+.auth-form select,
 .admin-player-form input,
 .admin-player-form textarea,
 .admin-player-form select {
@@ -363,6 +364,7 @@ select {
 }
 
 .auth-form input:focus,
+.auth-form select:focus,
 .admin-player-form input:focus,
 .admin-player-form textarea:focus,
 .admin-player-form select:focus {
@@ -495,6 +497,55 @@ select {
 .section-heading {
   max-width: 42rem;
   margin-bottom: 2rem;
+}
+
+.account-section + .account-section {
+  margin-top: 3rem;
+}
+
+.account-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.account-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 24rem);
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 1rem;
+  background: rgb(9 27 18 / 78%);
+}
+
+.account-card > div:first-child,
+.account-card label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.account-card span {
+  color: #c9c4b8;
+}
+
+.account-card select {
+  width: 100%;
+  padding: 0.7rem;
+  color: #f6eedb;
+  border: 1px solid rgb(217 172 85 / 38%);
+  border-radius: 0.65rem;
+  background: rgb(1 10 6 / 72%);
+}
+
+.account-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.account-status {
+  max-width: 44rem;
 }
 
 .section-heading h2,
@@ -1205,6 +1256,14 @@ select {
 
   .admin-layout {
     grid-template-columns: 1fr;
+  }
+
+  .account-card {
+    grid-template-columns: 1fr;
+  }
+
+  .account-actions {
+    justify-content: flex-start;
   }
 
   .admin-player-form {

@@ -4,14 +4,17 @@ import {
   getCurrentUser,
   login as loginRequest,
   logout as logoutRequest,
-  registerAdmin as registerAdminRequest,
+  registerPlayer as registerPlayerRequest,
+  requestPlayerProfile as requestPlayerProfileRequest,
+  updateAdminAccount as updateAdminAccountRequest,
 } from './api';
 import { AuthContext } from './context';
 import type {
   AuthStatus,
   AuthUser,
   LoginInput,
-  RegisterAdminInput,
+  RegisterPlayerInput,
+  AdminAccountInput,
 } from './types';
 
 type AuthProviderProps = {
@@ -48,10 +51,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setStatus('authenticated');
   }, []);
 
-  const registerAdmin = useCallback(async (input: RegisterAdminInput) => {
-    const authenticatedUser = await registerAdminRequest(input);
+  const registerPlayer = useCallback(async (input: RegisterPlayerInput) => {
+    const authenticatedUser = await registerPlayerRequest(input);
     setUser(authenticatedUser);
     setStatus('authenticated');
+  }, []);
+
+  const updateAdminAccount = useCallback(async (input: AdminAccountInput) => {
+    const authenticatedUser = await updateAdminAccountRequest(input);
+    setUser(authenticatedUser);
+  }, []);
+
+  const requestPlayerProfile = useCallback(async (playerId: string) => {
+    const authenticatedUser = await requestPlayerProfileRequest(playerId);
+    setUser(authenticatedUser);
   }, []);
 
   const logout = useCallback(async () => {
@@ -61,8 +74,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const value = useMemo(
-    () => ({ login, logout, registerAdmin, status, user }),
-    [login, logout, registerAdmin, status, user],
+    () => ({
+      login,
+      logout,
+      registerPlayer,
+      requestPlayerProfile,
+      status,
+      updateAdminAccount,
+      user,
+    }),
+    [
+      login,
+      logout,
+      registerPlayer,
+      requestPlayerProfile,
+      status,
+      updateAdminAccount,
+      user,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
