@@ -2,6 +2,24 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.11.0] - 2026-09-08
+
+### Added
+
+- Private FastAPI Powerleague scraper using confirmed live page selectors for
+  league standings, upcoming fixtures, and completed results.
+- Automatic ingestion of standings, fixtures, and previously unseen results,
+  with database-backed scrape status and a visible stale-data warning.
+- Protected daily Vercel Cron refresh and an administrator-triggered refresh
+  with status feedback.
+
+### Changed
+
+- Configure the React website, Express API, and private FastAPI scraper as
+  three Vercel Services with a private service binding.
+- Retain cached public data and administrator entry as fallbacks when live
+  scraping is unavailable or the upstream page structure changes.
+
 ## [0.10.0] - 2026-09-08
 
 ### Added

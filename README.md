@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.10.0` release includes the project foundation, core football
+The current `0.11.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -15,10 +15,12 @@ which appear in public game history, manage upcoming fixtures, and replace the
 current league table displayed on the public website. The Home page presents
 the editable team introduction, current league position, and active squad in
 formation; player profiles also record additional playable positions. Ended
-seasons can be finalised into the permanent public club history. The website
-is deployed to Vercel with Neon PostgreSQL and Cloudinary image storage. The
-remaining team-hub features are still to be built. See
-[the project specification](docs/PROJECT-SPEC.md) for the planned functionality.
+seasons can be finalised into the permanent public club history. Powerleague
+standings, fixtures, and results can be refreshed automatically through a
+private scraper, with cached data and administrator entry retained as safe
+fallbacks. The website is deployed to Vercel with Neon PostgreSQL and
+Cloudinary image storage. See
+[the project specification](docs/PROJECT-SPEC.md) for full functionality.
 
 ## Technology stack
 
