@@ -54,6 +54,7 @@ async function createUserSession(role: 'ADMIN' | 'PLAYER') {
 
 function validPlayerFields() {
   return {
+    additionalPositions: JSON.stringify(['MID', 'FWD']),
     description: 'A dependable defender with an eye for a pass.',
     isActiveSquad: 'true',
     name: 'Alex Example',
@@ -107,6 +108,7 @@ describe('public player API', () => {
     expect(response.status).toBe(200);
     expect(response.body.players).toHaveLength(1);
     expect(response.body.players[0]).toMatchObject({
+      additionalPositions: [],
       isActiveSquad: true,
       name: 'Active Player',
       position: 'MID',
@@ -226,6 +228,7 @@ describe('administrator player API', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.player).toMatchObject({
+      additionalPositions: ['MID', 'FWD'],
       isActiveSquad: true,
       name: 'Alex Example',
       position: 'DEF',
@@ -240,8 +243,33 @@ describe('administrator player API', () => {
         where: { id: response.body.player.id },
       }),
     ).resolves.toMatchObject({
+      additionalPositions: ['MID', 'FWD'],
       profilePicturePublicId: '24-hour-party-people/players/test-image',
     });
+  });
+
+  it('rejects duplicate additional positions and the primary position', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const app = createApp();
+
+    const duplicate = await request(app)
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field({
+        ...validPlayerFields(),
+        additionalPositions: JSON.stringify(['MID', 'MID']),
+      });
+    expect(duplicate.status).toBe(400);
+
+    const includesPrimary = await request(app)
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field({
+        ...validPlayerFields(),
+        additionalPositions: JSON.stringify(['DEF']),
+      });
+    expect(includesPrimary.status).toBe(400);
+    expect(await prisma.player.count()).toBe(0);
   });
 
   it('rejects unsupported uploads before contacting image storage', async () => {

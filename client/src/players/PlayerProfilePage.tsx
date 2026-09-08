@@ -137,8 +137,16 @@ export function PlayerProfilePage() {
       <header className="profile-header">
         <PlayerAvatar player={player} />
         <div>
-          <p className="eyebrow">{positionLabels[player.position]}</p>
+          <p className="eyebrow">Primary: {positionLabels[player.position]}</p>
           <h2>{player.name}</h2>
+          {(player.additionalPositions?.length ?? 0) > 0 && (
+            <p className="profile-positions">
+              Also plays:{' '}
+              {player.additionalPositions
+                .map((position) => positionLabels[position])
+                .join(', ')}
+            </p>
+          )}
           <p>{player.description}</p>
         </div>
       </header>

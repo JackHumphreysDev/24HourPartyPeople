@@ -17,6 +17,10 @@ import {
   adminStandingsRouter,
   publicStandingsRouter,
 } from './standings/router.js';
+import {
+  adminTeamProfileRouter,
+  publicTeamProfileRouter,
+} from './team-profile/router.js';
 
 export function createApp() {
   const app = express();
@@ -47,12 +51,14 @@ export function createApp() {
   app.use('/api/games', publicGamesRouter);
   app.use('/api/players', publicPlayersRouter);
   app.use('/api/standings', publicStandingsRouter);
+  app.use('/api/team-profile', publicTeamProfileRouter);
   app.use('/api/admin/fixtures', adminFixturesRouter);
   app.use('/api/admin/club-history', adminClubHistoryRouter);
   app.use('/api/admin/games', adminGamesRouter);
   app.use('/api/admin/players', adminPlayersRouter);
   app.use('/api/admin/seasons', adminSeasonsRouter);
   app.use('/api/admin/standings', adminStandingsRouter);
+  app.use('/api/admin/team-profile', adminTeamProfileRouter);
 
   app.use(
     (

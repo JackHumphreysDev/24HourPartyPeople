@@ -1,6 +1,7 @@
 export type PlayerPosition = 'GK' | 'DEF' | 'MID' | 'FWD';
 
 export type PlayerSummary = {
+  additionalPositions: PlayerPosition[];
   createdAt: string;
   description: string;
   id: string;
@@ -31,6 +32,7 @@ export type PlayerDetail = PlayerSummary & {
 };
 
 export type PlayerInput = {
+  additionalPositions: PlayerPosition[];
   description: string;
   image: File | null;
   isActiveSquad: boolean;

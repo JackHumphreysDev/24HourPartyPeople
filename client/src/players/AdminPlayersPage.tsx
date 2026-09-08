@@ -9,6 +9,7 @@ import type { PlayerInput, PlayerPosition, PlayerSummary } from './types';
 import { positionLabels } from './types';
 
 const emptyInput: PlayerInput = {
+  additionalPositions: [],
   description: '',
   image: null,
   isActiveSquad: true,
@@ -33,6 +34,7 @@ function PlayerForm({ editingPlayer, onCancel, onSaved }: PlayerFormProps) {
   const [input, setInput] = useState<PlayerInput>(() =>
     editingPlayer
       ? {
+          additionalPositions: editingPlayer.additionalPositions ?? [],
           description: editingPlayer.description,
           image: null,
           isActiveSquad: editingPlayer.isActiveSquad,
@@ -107,15 +109,19 @@ function PlayerForm({ editingPlayer, onCancel, onSaved }: PlayerFormProps) {
       </label>
 
       <label>
-        Position
+        Primary position
         <select
           value={input.position}
-          onChange={(event) =>
+          onChange={(event) => {
+            const position = event.target.value as PlayerPosition;
             setInput({
               ...input,
-              position: event.target.value as PlayerPosition,
-            })
-          }
+              additionalPositions: input.additionalPositions.filter(
+                (additionalPosition) => additionalPosition !== position,
+              ),
+              position,
+            });
+          }}
         >
           {Object.entries(positionLabels).map(([value, label]) => (
             <option key={value} value={value}>
@@ -124,6 +130,40 @@ function PlayerForm({ editingPlayer, onCancel, onSaved }: PlayerFormProps) {
           ))}
         </select>
       </label>
+
+      <fieldset className="additional-positions-fieldset">
+        <legend>Additional positions</legend>
+        <p className="field-hint">
+          Select every other position this player can cover. Formation placement
+          continues to use the primary position.
+        </p>
+        <div className="checkbox-grid">
+          {Object.entries(positionLabels).map(([value, label]) => {
+            const position = value as PlayerPosition;
+            if (position === input.position) return null;
+
+            return (
+              <label className="checkbox-label" key={position}>
+                <input
+                  checked={input.additionalPositions.includes(position)}
+                  type="checkbox"
+                  onChange={(event) =>
+                    setInput({
+                      ...input,
+                      additionalPositions: event.target.checked
+                        ? [...input.additionalPositions, position]
+                        : input.additionalPositions.filter(
+                            (selectedPosition) => selectedPosition !== position,
+                          ),
+                    })
+                  }
+                />
+                {label}
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
 
       <label>
         Profile picture
@@ -254,8 +294,17 @@ function PlayerManager() {
               <PlayerAvatar player={player} />
               <div>
                 <p className="position-label">
-                  {positionLabels[player.position]} ·{' '}
-                  {player.isActiveSquad ? 'Active' : 'Inactive'}
+                  Primary: {positionLabels[player.position]}
+                  {(player.additionalPositions?.length ?? 0) > 0 && (
+                    <>
+                      {' '}
+                      · Also:{' '}
+                      {player.additionalPositions
+                        .map((position) => positionLabels[position])
+                        .join(', ')}
+                    </>
+                  )}{' '}
+                  · {player.isActiveSquad ? 'Active' : 'Inactive'}
                 </p>
                 <h3>{player.name}</h3>
               </div>
@@ -303,6 +352,7 @@ export function AdminPlayersPage() {
   return (
     <>
       <nav className="admin-nav" aria-label="Administrator sections">
+        <NavLink to="/admin/home-page">Home page</NavLink>
         <NavLink to="/admin" end>
           Players
         </NavLink>

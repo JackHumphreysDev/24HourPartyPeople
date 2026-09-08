@@ -48,6 +48,191 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Players' })).toBeInTheDocument();
   });
 
+  it('renders the editable description, league position, and squad formation on the Home page', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === '/api/auth/me') {
+          return Promise.resolve(mockResponse({}, 401));
+        }
+        if (path === '/api/team-profile') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                teamProfile: {
+                  description: 'Sheffield football, friendship, and trophies.',
+                  updatedAt: '2026-09-08T10:00:00.000Z',
+                },
+              },
+              200,
+            ),
+          );
+        }
+        if (path === '/api/players') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                players: [
+                  {
+                    createdAt: '2026-09-02T12:00:00.000Z',
+                    description: 'Goalkeeper.',
+                    id: 'goalkeeper',
+                    isActiveSquad: true,
+                    name: 'Gary Gloves',
+                    position: 'GK',
+                    profilePictureUrl: null,
+                  },
+                  {
+                    createdAt: '2026-09-02T12:00:00.000Z',
+                    description: 'Defender.',
+                    id: 'defender',
+                    isActiveSquad: true,
+                    name: 'Dan Defence',
+                    position: 'DEF',
+                    profilePictureUrl: null,
+                  },
+                  {
+                    createdAt: '2026-09-02T12:00:00.000Z',
+                    description: 'Midfielder.',
+                    id: 'midfielder',
+                    isActiveSquad: true,
+                    name: 'Mike Midfield',
+                    position: 'MID',
+                    profilePictureUrl: null,
+                  },
+                  {
+                    createdAt: '2026-09-02T12:00:00.000Z',
+                    description: 'Forward.',
+                    id: 'forward',
+                    isActiveSquad: true,
+                    name: 'Frank Forward',
+                    position: 'FWD',
+                    profilePictureUrl: null,
+                  },
+                ],
+              },
+              200,
+            ),
+          );
+        }
+        if (path === '/api/standings/current') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                lastUpdated: '2026-09-08T10:00:00.000Z',
+                season: { id: 'season', name: 'Summer 2026' },
+                standings: [
+                  {
+                    clubName: '24 Hour Party People',
+                    drawn: 0,
+                    ga: 8,
+                    gd: 2,
+                    gf: 10,
+                    id: 'standing',
+                    lost: 1,
+                    played: 4,
+                    points: 9,
+                    position: 2,
+                    scrapedAt: '2026-09-08T10:00:00.000Z',
+                    walkoverGames: 0,
+                    won: 3,
+                  },
+                ],
+              },
+              200,
+            ),
+          );
+        }
+        return Promise.resolve(mockResponse({}, 404));
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByText('Sheffield football, friendship, and trophies.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('2nd')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Current squad formation'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Gary Gloves/ })).toHaveAttribute(
+      'href',
+      '/players/goalkeeper',
+    );
+    expect(screen.getAllByText('Squad place')).toHaveLength(2);
+  });
+
+  it('lets an administrator update the Home page description', async () => {
+    let submittedDescription: string | null = null;
+    window.history.replaceState({}, '', '/admin/home-page');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'jack@example.test',
+                    id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
+                    name: 'Jack',
+                    role: 'ADMIN',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          if (path === '/api/admin/team-profile' && !init?.method) {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  teamProfile: {
+                    description: 'Original description.',
+                    updatedAt: '2026-09-08T10:00:00.000Z',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          if (path === '/api/admin/team-profile' && init?.method === 'PUT') {
+            submittedDescription = JSON.parse(String(init.body)).description;
+            return Promise.resolve(
+              mockResponse(
+                {
+                  teamProfile: {
+                    description: submittedDescription,
+                    updatedAt: '2026-09-08T10:01:00.000Z',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+
+    const description = await screen.findByLabelText('Description');
+    fireEvent.change(description, {
+      target: { value: 'Updated Home page description.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save description' }));
+
+    expect(
+      await screen.findByText('The Home page description has been updated.'),
+    ).toBeInTheDocument();
+    expect(submittedDescription).toBe('Updated Home page description.');
+  });
+
   it('shows the sign-in screen on the admin route for an anonymous visitor', async () => {
     window.history.replaceState({}, '', '/admin');
     vi.stubGlobal(
@@ -75,19 +260,43 @@ describe('App', () => {
   it('shows the signed-in administrator in the website navigation', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        mockResponse(
-          {
-            user: {
-              id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
-              name: 'Jack',
-              email: 'jack@example.test',
-              role: 'ADMIN',
-            },
-          },
-          200,
-        ),
-      ),
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === '/api/auth/me') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                user: {
+                  email: 'jack@example.test',
+                  id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
+                  name: 'Jack',
+                  role: 'ADMIN',
+                },
+              },
+              200,
+            ),
+          );
+        }
+        if (path === '/api/team-profile') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                teamProfile: {
+                  description: 'Team description.',
+                  updatedAt: '2026-09-08T10:00:00.000Z',
+                },
+              },
+              200,
+            ),
+          );
+        }
+        if (path === '/api/players') {
+          return Promise.resolve(mockResponse({ players: [] }, 200));
+        }
+        return Promise.resolve(
+          mockResponse({ lastUpdated: null, season: null, standings: [] }, 200),
+        );
+      }),
     );
 
     render(<App />);
@@ -269,6 +478,16 @@ describe('App', () => {
     expect(
       await screen.findByText('No player profiles have been created.'),
     ).toBeInTheDocument();
+    expect(screen.getByLabelText('Primary position')).toHaveValue('DEF');
+    const midfield = screen.getByRole('checkbox', { name: 'Midfielder' });
+    const forward = screen.getByRole('checkbox', { name: 'Forward' });
+    fireEvent.click(midfield);
+    fireEvent.click(forward);
+    expect(midfield).toBeChecked();
+    expect(forward).toBeChecked();
+    expect(
+      screen.queryByRole('checkbox', { name: 'Defender' }),
+    ).not.toBeInTheDocument();
   });
 
   it('manages seasons and preserves untracked historic games on the administrator statistics route', async () => {

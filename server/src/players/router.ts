@@ -17,17 +17,59 @@ const statValueSchema = z.number().int().min(0).max(10_000);
 const booleanStringSchema = z
   .enum(['true', 'false'])
   .transform((value) => value === 'true');
+const additionalPositionsSchema = z
+  .string()
+  .default('[]')
+  .transform((value, context): unknown => {
+    try {
+      return JSON.parse(value);
+    } catch {
+      context.addIssue({ code: 'custom', message: 'Invalid positions.' });
+      return z.NEVER;
+    }
+  })
+  .pipe(z.array(positionSchema).max(3));
 
-const createPlayerSchema = z.object({
+const playerFieldsSchema = z.object({
+  additionalPositions: additionalPositionsSchema,
   description: z.string().trim().min(1).max(2_000),
   isActiveSquad: booleanStringSchema.default(true),
   name: z.string().trim().min(1).max(100),
   position: positionSchema,
 });
 
-const updatePlayerSchema = createPlayerSchema.extend({
-  removeProfilePicture: booleanStringSchema.default(false),
-});
+function validatePlayerPositions(
+  values: { additionalPositions: PlayerPosition[]; position: PlayerPosition },
+  context: z.RefinementCtx,
+) {
+  if (
+    new Set(values.additionalPositions).size !==
+    values.additionalPositions.length
+  ) {
+    context.addIssue({
+      code: 'custom',
+      message: 'Additional positions must be unique.',
+      path: ['additionalPositions'],
+    });
+  }
+  if (values.additionalPositions.includes(values.position)) {
+    context.addIssue({
+      code: 'custom',
+      message: 'The primary position cannot also be an additional position.',
+      path: ['additionalPositions'],
+    });
+  }
+}
+
+const createPlayerSchema = playerFieldsSchema.superRefine(
+  validatePlayerPositions,
+);
+
+const updatePlayerSchema = playerFieldsSchema
+  .extend({
+    removeProfilePicture: booleanStringSchema.default(false),
+  })
+  .superRefine(validatePlayerPositions);
 
 const seasonStatSchema = z.object({
   assists: statValueSchema,
@@ -39,6 +81,7 @@ const seasonStatSchema = z.object({
 });
 
 const playerSummarySelect = {
+  additionalPositions: true,
   createdAt: true,
   description: true,
   id: true,
@@ -108,7 +151,8 @@ function invalidPlayerResponse(response: Response): void {
   response.status(400).json({
     error: {
       code: 'INVALID_PLAYER',
-      message: 'Enter a valid name, description, position, and squad status.',
+      message:
+        'Enter a valid name, description, primary and additional positions, and squad status.',
     },
   });
 }

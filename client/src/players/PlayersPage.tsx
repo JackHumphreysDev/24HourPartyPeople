@@ -58,9 +58,17 @@ export function PlayersPage() {
               <PlayerAvatar player={player} />
               <div>
                 <p className="position-label">
-                  {positionLabels[player.position]}
+                  Primary: {positionLabels[player.position]}
                 </p>
                 <h3>{player.name}</h3>
+                {(player.additionalPositions?.length ?? 0) > 0 && (
+                  <p className="player-positions">
+                    Also plays:{' '}
+                    {player.additionalPositions
+                      .map((position) => positionLabels[position])
+                      .join(', ')}
+                  </p>
+                )}
                 <p className="player-description">{player.description}</p>
               </div>
             </Link>
