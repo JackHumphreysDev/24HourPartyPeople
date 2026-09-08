@@ -63,6 +63,10 @@ not required for launch.
 admin-editable), updatedAt. The implemented public Home page reads this record,
 and the dedicated `/admin/home-page` editor updates it.
 
+**ScrapeStatus** (one singleton row) — id, lastAttemptedAt,
+lastSucceededAt, lastError. Express updates it after every automated or manual
+refresh so failures and cached-data staleness remain visible across restarts.
+
 **Player** — id, name, description (free text, admin-editable),
 profilePictureUrl (nullable), position (primary enum: `GK` | `DEF` | `MID` |
 `FWD`, used for the formation display — see Section 3), additionalPositions
@@ -273,51 +277,36 @@ Node/Express/React as in Section "Stack" above.
 
 ### How it fits with the Node backend
 
-- **Flag, don't guess:** the exact integration mechanism between the
-  Python scraper and the Express backend is an open decision — options
-  include (a) a standalone Python script run on a schedule that writes
-  directly to the shared Postgres/SQLite DB, or (b) a small Python HTTP
-  microservice (e.g. FastAPI/Flask) that Express calls internally and
-  never exposes to the frontend. Confirm which before building; a scheduled
-  script writing to the shared DB is the simpler default if no other
-  requirement pushes toward a live microservice.
-- Either way, the Node/Express routes in Section 7 (`/api/standings/current`,
-  `/api/fixtures/upcoming`, `/api/admin/scrape/refresh`) are still what the
-  React frontend calls — the frontend never talks to Python directly.
-- `/api/admin/scrape/refresh` triggers the Python scraper (spawned as a
-  subprocess, or called over its internal HTTP endpoint, depending on the
-  option chosen above) rather than duplicating scraping logic in Node.
+- **Implemented decision:** the scraper is a private FastAPI Vercel Service.
+  Express calls it through a private service binding authenticated by
+  `SCRAPER_SERVICE_KEY`; it has no public route and the React frontend never
+  calls Python directly.
+- Python owns HTTP fetching and HTML parsing. It returns a validated payload to
+  Express, which owns all Prisma access and atomically updates the shared Neon
+  database. This avoids duplicating database rules or ORM behaviour in Python.
+- `/api/admin/scrape/refresh` runs the same Express orchestration used by the
+  protected scheduled route. Vercel Cron invokes that route once daily at
+  06:00 UTC, while administrators can refresh immediately when required.
 
 ### Known risk — bot detection
 
-A direct fetch of this URL was attempted while writing this spec and was
-**blocked by bot detection** on Powerleague's site. This means:
-
-- A simple HTTP request + HTML-parse (e.g. Python's `requests` +
-  `BeautifulSoup`) approach may not work at all in production if the same
-  protection applies to server-side requests.
-- **Flag, don't guess:** whether this requires a headless browser (e.g.
-  Playwright for Python, which can run with a real browser fingerprint) to
-  get past bot detection, or whether it's only blocking obviously-automated
-  clients/data-centre IPs, is unconfirmed and should be checked against
-  the live site before committing to an approach. Don't silently build the
-  simple version and call it done if it can't actually reach the page.
-- Because of this risk, the module should be built with a **two-tier
-  strategy** so the app degrades gracefully rather than breaking outright:
+A browser-like direct request was retested on 8 September 2026 and returned
+HTTP 200 with server-rendered standings, fixtures, and results. The implemented
+transport therefore uses `requests` and Beautiful Soup rather than shipping a
+headless browser. If Powerleague later blocks data-centre requests, the fetch
+transport can be replaced with Playwright without changing the parsers or
+Express ingestion. The module uses a **two-tier strategy** so a future block or
+markup change does not break the website:
 
 **Tier 1 — automated scrape of the Powerleague page (Python)**
 
-- Runs on a schedule (e.g. a cron job invoking the Python script — exact
-  cadence is a product decision, default to once daily, flag as
-  configurable) and/or on-demand when `/api/admin/scrape/refresh` is hit.
-- Exact DOM structure/selectors for the standings table, fixtures list,
-  and results list are **unconfirmed** — the page could not be fetched
-  during spec-writing due to bot detection. **Do not hardcode guessed
-  selectors.** Put them in a config file/constants module with a
-  `# TODO: confirm real selectors once the page can be inspected
-  (view-source or browser devtools against the live URL)` comment, and
-  write the parsing generically enough that updating selectors is a
-  config change, not a rewrite.
+- Runs once daily through Vercel Cron and on demand when an administrator uses
+  `/api/admin/scrape/refresh`.
+- The real server-rendered selectors were confirmed against the live page and
+  are isolated in `scraper/powerleague/config.py`. The parser targets the full
+  current-standings table and only the desktop fixtures table, avoiding the
+  duplicate responsive markup, then filters fixtures and results to 24 Hour
+  Party People.
 - Store the raw scrape timestamp alongside the parsed data
   (`scrapedAt` on `SeasonStanding`) so staleness is visible to the user
   rather than silently shown as current.
@@ -356,26 +345,32 @@ type StandingsRow = {
 type ScrapedFixture = {
   opponentClubName: string;
   scheduledDate: string; // ISO date
-  competition?: "LEAGUE" | "CUP"; // may be unknown until confirmed against real markup
+  scheduledTime: string | null; // Sheffield local HH:mm
+  competition: "LEAGUE" | "CUP";
   venue?: string;
+};
+
+type ScrapedResult = {
+  opponentClubName: string;
+  datePlayed: string; // ISO date
+  ourScore: number;
+  opponentScore: number;
+  competition: "LEAGUE" | "CUP";
 };
 ```
 
-If built as a Python HTTP microservice, the equivalent Python-side
-functions would be:
+The implemented Python entry point is:
 
 ```python
-def get_current_standings() -> list[StandingsRow] | None: ...
-def get_upcoming_fixtures() -> list[ScrapedFixture] | None: ...
+def scrape_powerleague() -> ScrapeResult | None: ...
 ```
 
-Both should return `None` (and log) on total failure rather than raising,
-mirroring the fallback behaviour above — let the caller (Node, or the
-scheduled script itself) decide whether to show/keep cached data.
+It returns `None` and logs on fetch or structural failure. Express then records
+the failed attempt and keeps the last successful database snapshot unchanged.
 
 ### Caching
 
-- Cache the last successful scrape (standings + fixtures) in the shared DB
+- Cache the last successful scrape (standings, fixtures, and results) in the shared DB
   (not just in-memory), since it's also the Tier 2 fallback source and
   needs to survive a restart of either the Python job or the Node server.
 - Don't hammer the source site — respect whatever cadence is decided in
@@ -383,7 +378,7 @@ scheduled script itself) decide whether to show/keep cached data.
 
 ### Unit tests required
 
-Using Python's test runner (e.g. `pytest`) for the scraper itself:
+Using pytest for the scraper itself:
 
 1. **Scrape success** — mock the fetched HTML with a known-good fixture
    (once real selectors are confirmed) → assert correct parsed
@@ -398,7 +393,7 @@ Using Python's test runner (e.g. `pytest`) for the scraper itself:
 The Node side (routes that surface `/api/standings/current`,
 `/api/fixtures/upcoming`, etc.) is still covered by the repo's existing
 JS/TS test runner (Jest/Vitest) as normal — only the scraper itself is
-Python/pytest.
+Python/pytest. All required success and failure cases are implemented.
 
 ## 7. Suggested Express routes (adjust to existing API conventions)
 
@@ -446,14 +441,14 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       current-season-onward games-played totals
 - [x] Current league standings tab shows the current-season table with a
       visible "last updated" timestamp and authenticated manual snapshot
-      replacement; automatic scraped ingestion remains pending
+      replacement, plus automatic and administrator-triggered scraped ingestion
 - [x] Game submission supports the walkover → cup-game-instead flow,
       allowing two results to exist for the same date
 - [x] Game history displays every result with date and competition type,
       correctly handling same-date walkover + cup pairs
 - [x] Fixtures tab shows upcoming scheduled games with date, competition,
       opponent, optional Sheffield-local time, and venue; administrators have
-      a manual create/correct fallback while scraped ingestion remains pending
+      a manual create/correct fallback alongside automatic scraped ingestion
 - [x] Club history tab shows our club's own finalised season-end finishes,
       starting from the launch season, with the required columns including
       walkover games; administrators can explicitly finalise an ended season
@@ -463,26 +458,19 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       description, and enter historic season stats
 - [x] Admin can create/edit seasons, maintain exactly one current season, and
       preserve whether games played was recorded for each season
-- [ ] Scraping module (Python) implemented with both tiers, DB-backed
+- [x] Scraping module (Python) implemented with both tiers, DB-backed
       caching, a visible staleness indicator, and the 3 required pytest
       unit tests passing
-- [ ] All scrape failure paths (Section 6) log instead of crashing, and
+- [x] All scrape failure paths (Section 6) log instead of crashing, and
       fall back to cached data or a manual-entry path
 
 ## 9. Things not to guess — flag instead
 
-- The real Powerleague page's DOM structure/selectors (marked TODO in
-  Section 6) — confirmed blocked by bot detection during spec-writing, so
-  this must be checked against the live site (and a headless-browser
-  approach evaluated) before writing the real scraper, not assumed
-- How the Python scraper talks to the Node backend (scheduled script
-  writing to the shared DB vs. an internal Python HTTP microservice) —
-  Section 6 defaults to the simpler script-writes-to-DB option, but
-  confirm before building
-- Scrape cadence/schedule (defaulted to daily, flagged as configurable)
+- If Powerleague later blocks direct server-side requests, confirm the failure
+  in production before replacing the isolated requests transport with a
+  headless-browser implementation.
 - Whether historic games-played data can ever be reliably backfilled —
   current guidance is no; leave as "not recorded" rather than estimating
-- Which ORM/test runner to use if none is already present in the repo
 
 ## 10. Changelog
 

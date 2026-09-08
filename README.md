@@ -24,10 +24,11 @@ remaining team-hub features are still to be built. See
 
 - **Frontend:** React, React Router, Vite, and TypeScript
 - **Backend:** Node.js, Express, and TypeScript
+- **Scraper:** Python 3.13, FastAPI, requests, and Beautiful Soup
 - **Database:** PostgreSQL
 - **ORM:** Prisma
 - **Image storage:** Cloudinary
-- **Testing:** Vitest, Testing Library, and Supertest
+- **Testing:** Vitest, Testing Library, Supertest, and pytest
 - **Linting and formatting:** Oxlint and Prettier
 - **Package management:** npm workspaces
 
@@ -39,6 +40,7 @@ mobile application.
 - `client/` — React website
 - `server/` — Express API, Prisma configuration, and server tests
 - `api/` — Vercel entry point for the Express API
+- `scraper/` — private FastAPI Powerleague scraper and pytest suite
 - `docs/` — full product and engineering specification
 - `compose.yaml` — local PostgreSQL service
 - `vercel.json` — production build, Function region, and SPA routing
@@ -48,9 +50,11 @@ mobile application.
 
 The production website is available at
 [24-hour-party-people.vercel.app](https://24-hour-party-people.vercel.app).
-Vercel serves the Vite build from its CDN and runs the Express API as one
-Function in the London region. Requests under `/api` are routed to Express;
-other non-file routes fall back to `client/dist/index.html` for React Router.
+Vercel deploys three Services together: the Vite frontend, the Express API,
+and a private FastAPI scraper. The Express and Python Functions run in the
+London region. Requests under `/api` are routed to Express; other routes fall
+back to the Vite `index.html` for React Router. The scraper has no public
+route: Express reaches it through a deployment-aware private service binding.
 
 PostgreSQL is hosted by Neon through Vercel Marketplace. `DATABASE_URL` is the
 pooled runtime connection used by Prisma, while `DATABASE_URL_UNPOOLED` is the
@@ -65,11 +69,18 @@ The Vercel project also requires these application secrets:
 - `CLOUDINARY_CLOUD_NAME` — Cloudinary account cloud name
 - `CLOUDINARY_API_KEY` — Cloudinary API key
 - `CLOUDINARY_API_SECRET` — Cloudinary API secret
+- `SCRAPER_SERVICE_KEY` — independent random secret authenticating Express to the scraper
+- `CRON_SECRET` — independent random secret used by Vercel to authenticate scheduled refreshes
 
-Node.js is pinned to the `24.x` release line. Vercel runs `npm install`, which
-generates the Prisma client, followed by `npm run vercel:build`. That build
-applies pending migrations through the direct Neon connection and then creates
-the production Vite bundle. Migrations must remain backward compatible with
+`POWERLEAGUE_SCRAPER_URL` is injected automatically into the Express Service
+by Vercel’s private binding and must not be entered manually in the Vercel
+dashboard. The daily Cron invokes the protected Express refresh route at
+06:00 UTC; Vercel Hobby scheduling can run at any point during that hour.
+
+Node.js is pinned to the `24.x` release line and Python to `3.13`. The frontend
+Service builds the Vite website, the API Service applies pending migrations
+through the direct Neon connection, and the scraper Service installs its
+pinned `uv.lock` dependencies. Migrations must remain backward compatible with
 the currently deployed application because they run before the new deployment
 is promoted.
 
@@ -79,9 +90,9 @@ deployments at the canonical URL above.
 
 ## Core data model
 
-The Prisma schema defines users, the singleton team profile, players, seasons,
-player season statistics, opponents, fixtures, game results, live standings,
-and finalised club history. Migrations are stored in
+The Prisma schema defines users, the singleton team profile, scraper status,
+players, seasons, player season statistics, opponents, fixtures, game results,
+live standings, and finalised club history. Migrations are stored in
 `server/prisma/migrations/`.
 
 Database relationships preserve historical football records. Players are
@@ -191,20 +202,25 @@ table in position order, including Played, Won, Drawn, Lost, GF, GA, GD,
 Points, and Walkovers. The 24 Hour Party People row is highlighted, and the
 snapshot’s update time is displayed in Sheffield local time.
 
-The `/admin/standings` route provides a complete-table editor as the manual
-fallback while the Powerleague scraper is still unconnected. Saving replaces
-only the current season’s table in one transaction; standings belonging to
-historic seasons remain unchanged. Every snapshot requires unique positions
-and club names, includes 24 Hour Party People, and validates that played games
-match the combined results and that walkovers do not exceed games played. Goal
-difference is calculated by the server from GF and GA. Points remain entered
-directly because league scoring rules may vary.
+The table is refreshed from Powerleague daily and can also be refreshed from
+`/admin/standings`. That page retains its complete-table editor as the manual
+fallback. A successful automated refresh replaces only the current season’s
+snapshot and synchronises team fixtures and previously unseen results in one
+transaction. A failed refresh records its reason, preserves all cached data,
+and displays a warning rather than disrupting the public pages.
+
+Every standings snapshot requires unique positions and club names, includes
+24 Hour Party People, and validates that played games match the combined
+results and that walkovers do not exceed games played. Goal difference is
+validated against GF and GA. Powerleague does not identify walkovers in its
+table markup, so automated rows use zero until an administrator corrects them.
 
 The standings API provides:
 
 - `GET /api/standings/current` — return the public current-season snapshot
 - `GET /api/admin/standings` — return the editable current snapshot (administrator)
 - `PUT /api/admin/standings/current` — atomically replace the current snapshot (administrator)
+- `POST /api/admin/scrape/refresh` — refresh Powerleague data immediately (administrator)
 
 ## Club history
 
@@ -238,9 +254,9 @@ case. Normal results require non-negative scores; league walkovers keep scores
 blank and may include a reason. After a league walkover is saved, the form
 prefills a separate cup result with the same season, opponent, and date.
 
-Saving a normal league result displays a standings-refresh warning. The
-Powerleague scraper is not connected yet, so the application flags this work
-instead of claiming that the live table was refreshed.
+Saving a normal league result displays a standings-refresh warning so an
+administrator can run the Powerleague refresh immediately instead of waiting
+for the next daily job.
 
 The game API provides:
 
@@ -256,14 +272,12 @@ times are treated as Sheffield local wall-clock values and are not shifted for
 the viewer's timezone. Each fixture shows its competition, opponent, season,
 and venue when available.
 
-The `/admin/fixtures` route provides the manual fallback required while the
-Powerleague scraper is still unconnected. An authenticated administrator can
-add a scheduled fixture or correct one before its result is recorded. Opponent
-names are reused without regard to letter case, and duplicate fixtures with the
-same season, opponent, competition, date, and time are rejected. Played and
-walkover fixtures remain visible but read-only so historical results cannot be
-silently changed; fixture deletion and cancellation are not included in this
-release.
+Powerleague fixtures are cached automatically. The `/admin/fixtures` route
+remains the manual fallback: an authenticated administrator can add or correct
+a fixture before its result is recorded. Manual fixtures take precedence over
+matching scraped entries. Played and walkover fixtures remain visible but
+read-only so historical results cannot be silently changed; fixture deletion
+and cancellation are not included.
 
 The fixture API provides:
 
@@ -279,11 +293,19 @@ The fixture API provides:
 - Node.js 24.x
 - npm 11
 - Docker with Docker Compose
+- Python 3.13
 
 Install dependencies and generate the Prisma client:
 
 ```bash
 npm install
+```
+
+Create the Python environment and install the pinned scraper dependencies:
+
+```bash
+python3.13 -m venv .venv
+.venv/bin/python -m pip install -e './scraper[test]'
 ```
 
 Start PostgreSQL:
@@ -298,16 +320,20 @@ Apply development migrations after the database is running:
 npm run db:migrate
 ```
 
-Copy `server/.env.example` to `server/.env`, replace `ADMIN_SETUP_KEY` with a
-long random secret, and add the Cloudinary cloud name, API key, and API secret
-for profile-picture uploads. The remaining defaults match the Docker service.
-For example, a setup key can be generated with:
+Copy `server/.env.example` to `server/.env`; add the Cloudinary credentials and
+replace `ADMIN_SETUP_KEY`, `SCRAPER_SERVICE_KEY`, and `CRON_SECRET` with three
+different long random secrets. The remaining local values match the Docker and
+scraper services. For example, each secret can be generated with:
 
 ```bash
 openssl rand -base64 32
 ```
 
-Run the API and client in separate terminals:
+Run the scraper, API, and client in separate terminals:
+
+```bash
+npm run dev:scraper
+```
 
 ```bash
 npm run dev:server
@@ -317,8 +343,10 @@ npm run dev:server
 npm run dev:client
 ```
 
-The website runs at `http://localhost:5173`. The API runs at
-`http://localhost:3000`, with its health endpoint at `/api/health`.
+The website runs at `http://localhost:5173`, the API at
+`http://localhost:3000`, and the private local scraper at
+`http://localhost:8001`. The scraper reads its local service key from
+`server/.env`; browser code must never call it directly.
 
 React Router uses browser-history URLs. Production hosting must rewrite
 non-API routes such as `/players/:playerId`, `/standings`, `/fixtures`,
@@ -336,8 +364,9 @@ npm run db:down
 ## Quality checks
 
 `npm test` automatically creates an isolated PostgreSQL test database on local
-port `55432`, applies all migrations, runs the client and server suites, and
-removes the test container afterward. It does not modify development data.
+port `55432`, applies all migrations, runs the client, server, and Python
+scraper suites, and removes the test container afterwards. It does not modify
+development data.
 
 ```bash
 npm test
