@@ -261,6 +261,7 @@ function StatisticsManager() {
         <NavLink to="/admin/standings">Standings</NavLink>
         <NavLink to="/admin/fixtures">Fixtures</NavLink>
         <NavLink to="/admin/games">Results</NavLink>
+        <NavLink to="/admin/club-history">Club history</NavLink>
       </nav>
 
       <div className="admin-layout">
