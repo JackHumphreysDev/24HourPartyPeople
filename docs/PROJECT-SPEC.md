@@ -54,10 +54,12 @@ Core capabilities:
 ## 2. Data model
 
 **User** — id, name, email, passwordHash, role (`ADMIN` | `PLAYER`),
-createdAt. Only `ADMIN` users can create/edit Player records; a `PLAYER`
-account may optionally be linked to a Player record (nullable FK) so a
-player can eventually log in and view their own stats, but this linkage is
-not required for launch.
+playerId (nullable, unique approved Player FK), requestedPlayerId (nullable,
+unique pending Player FK), createdAt. Only `ADMIN` users can create or edit
+Player records. A player account selects an active, unclaimed Player profile
+when registering; the approved link is created only after administrator
+review. Both relationships use `SetNull` deletion behaviour so account data is
+retained if a profile is removed.
 
 **TeamProfile** (one singleton row) — id, description (free text,
 admin-editable), updatedAt. The implemented public Home page reads this record,
@@ -218,7 +220,20 @@ explicit end-of-season finalisation flow and always receive this timestamp).
 
 ### Admin / profile creation
 
-- The site owner can create an account and be flagged `ADMIN`.
+- The first site owner account is created once as `ADMIN` through the
+  recovery-only setup endpoint and then uses the same email/password login as
+  every other account. The setup key is never shown in the normal website.
+- The administrator can update their own name, email, and password from
+  `/admin/account`; the current password must be confirmed for every update.
+- Players can register publicly and select one active, unclaimed Player
+  profile. The requested link remains pending until an administrator approves
+  it. Rejected or manually unlinked accounts can request another available
+  profile.
+- `/admin/accounts` lets an administrator approve or reject pending claims and
+  manually assign or unassign Player profiles. A Player profile cannot be
+  approved, assigned, or requested by more than one account at a time.
+- An approved player account can open its linked public profile but cannot edit
+  football records.
 - Admin can create, edit, and deactivate Player profiles (name,
   description, profile picture, position), and link a Player to their
   historic `PlayerSeasonStat` rows (entered manually for past seasons,
@@ -398,10 +413,21 @@ Python/pytest. All required success and failure cases are implemented.
 ## 7. Suggested Express routes (adjust to existing API conventions)
 
 ```
-POST   /api/auth/register                 create account
+POST   /api/auth/register                 recovery-only first administrator setup
+GET    /api/auth/player-registration-options
+                                            list active, unclaimed Player profiles
+POST   /api/auth/player-register          create player account and pending claim
 POST   /api/auth/login                    login
+POST   /api/auth/logout                   logout and revoke current session
+GET    /api/auth/me                       current authenticated user
+PUT    /api/auth/me/player-request        request a profile for an unlinked account
 GET    /api/players                        list players
 GET    /api/players/:id                    player profile + current/historic stats
+PUT    /api/admin/account                 (admin) update own account details
+GET    /api/admin/accounts                (admin) list accounts, claims and assignments
+POST   /api/admin/accounts/:id/approve    (admin) approve a pending profile claim
+POST   /api/admin/accounts/:id/reject     (admin) reject a pending profile claim
+PUT    /api/admin/accounts/:id/player     (admin) assign/unassign a Player profile
 GET    /api/admin/players                  (admin) list active/inactive players
 POST   /api/admin/players                  (admin) create player profile
 PUT    /api/admin/players/:id              (admin) edit player profile
@@ -456,6 +482,10 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 - [x] Admin account can create/edit player profiles (description, picture,
       primary and additional playable positions), edit the Home page team
       description, and enter historic season stats
+- [x] Players can create email/password accounts, request an unclaimed Player
+      profile, receive administrator approval, and open their linked profile;
+      administrators can manage claims and their own account without using the
+      setup key in the normal website
 - [x] Admin can create/edit seasons, maintain exactly one current season, and
       preserve whether games played was recorded for each season
 - [x] Scraping module (Python) implemented with both tiers, DB-backed
