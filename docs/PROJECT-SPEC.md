@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.11.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.11.1` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -481,6 +481,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.11.1 | 2026-09-08 | Fixed clean Vercel builds by installing the Prisma CLI as a production dependency for client generation and database migrations |
 | 0.11.0 | 2026-09-08 | Added private Powerleague scraping, automatic standings, fixture and result ingestion, protected scheduled and administrator refreshes, and cached stale-data fallback behaviour |
 | 0.10.0 | 2026-09-08 | Added the public Home page team hub, authenticated team-description editing, and primary plus additional playable positions for players |
 | 0.9.0 | 2026-09-08 | Added public club history and authenticated, one-time finalisation of eligible ended seasons from saved team standings; standardised the project on UK English |

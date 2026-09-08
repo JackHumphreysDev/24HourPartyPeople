@@ -2,6 +2,13 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.11.1] - 2026-09-08
+
+### Fixed
+
+- Install the Prisma CLI as a production dependency so clean Vercel builds can
+  generate the Prisma Client and apply database migrations successfully.
+
 ## [0.11.0] - 2026-09-08
 
 ### Added
