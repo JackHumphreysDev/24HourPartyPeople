@@ -112,7 +112,8 @@ walkoverGames (integer), scrapedAt (timestamp, so staleness is visible).
 **ClubHistory** (our own club's end-of-season summary, one row per season,
 starting from the current season only) — id, seasonId (FK), position,
 played, won, drawn, lost, gf, ga, gd, points, walkoverGames, finalizedAt
-(nullable — null until the season has actually finished).
+(nullable at the schema level; implemented records are created only by the
+explicit end-of-season finalization flow and always receive this timestamp).
 
 ## 3. User-facing flows / tabs
 
@@ -196,6 +197,10 @@ played, won, drawn, lost, gf, ga, gd, points, walkoverGames, finalizedAt
 - Populated from `ClubHistory`, finalized once a season ends (don't treat
   an in-progress `SeasonStanding` row as the final `ClubHistory` row until
   the season is actually over).
+- The implemented administrator flow lists ended, attendance-tracked seasons
+  and explicitly copies the saved 24 Hour Party People standing into club
+  history. A saved team standing is required, finalization is transactional
+  and one-time, and finalized history is immutable through the website.
 
 ### Admin / profile creation
 
@@ -238,10 +243,12 @@ don't merge them into one component that hides which is which:
   calculates goal difference from GF and GA and validates table consistency.
   Automatic scrape ingestion remains part of the separate scraper feature.
 - `ClubHistory` is **our own club's row only**, persisted **once per
-  season**, and only starts existing from the current season forward. It
-  should not be re-derived live from `SeasonStanding` after a season ends —
-  copy/finalize it explicitly so a mid-scrape glitch can't corrupt a
-  season that's already finished.
+  season**, and only starts existing from the app's launch season forward.
+  Eligibility uses the established `Season.tracksGamesPlayed` launch boundary.
+  An administrator must explicitly copy/finalize the saved team standing after
+  the season's Sheffield-local end date, so a mid-scrape glitch cannot corrupt
+  a season that's already finished. Finalized records are immutable through the
+  website.
 
 ## 6. Powerleague scraping module
 
@@ -409,6 +416,9 @@ GET    /api/admin/fixtures                 (admin) list all fixtures
 POST   /api/admin/fixtures                 (admin) create a manual fixture
 PUT    /api/admin/fixtures/:id             (admin) correct a scheduled fixture
 GET    /api/club-history                   our club's season-by-season finishes
+GET    /api/admin/club-history             (admin) finalized history and eligible seasons
+POST   /api/admin/club-history/:seasonId/finalize
+                                            (admin) finalize an ended season
 POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 ```
 
@@ -430,9 +440,10 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 - [x] Fixtures tab shows upcoming scheduled games with date, competition,
       opponent, optional Sheffield-local time, and venue; administrators have
       a manual create/correct fallback while scraped ingestion remains pending
-- [ ] Club history tab shows our club's own season-end finish, starting
-      from the current season, with the required columns including
-      walkover games
+- [x] Club history tab shows our club's own finalized season-end finishes,
+      starting from the launch season, with the required columns including
+      walkover games; administrators can explicitly finalize an ended season
+      from its saved team standing, after which it is immutable through the site
 - [x] Admin account can create/edit player profiles (description,
       picture) and enter historic season stats
 - [x] Admin can create/edit seasons, maintain exactly one current season, and

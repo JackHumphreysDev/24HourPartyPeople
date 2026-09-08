@@ -181,6 +181,25 @@ The standings API provides:
 - `GET /api/admin/standings` — return the editable current snapshot (administrator)
 - `PUT /api/admin/standings/current` — atomically replace the current snapshot (administrator)
 
+## Club history
+
+The public `/club-history` route displays the club's finalized season records,
+newest first. Each row identifies 24 Hour Party People and includes Position,
+Played, Won, Drawn, Lost, GF, GA, GD, Points, and Walkovers.
+
+The `/admin/club-history` route lets an authenticated administrator finalize an
+ended season by copying the saved 24 Hour Party People standings row into the
+permanent club history. Only seasons from the application's attendance-tracked
+launch period onward are eligible, and a complete saved team standing is
+required. Finalization is transactional and can happen only once per season;
+finalized records cannot be edited through the website.
+
+The club history API provides:
+
+- `GET /api/club-history` — list finalized public club-history records
+- `GET /api/admin/club-history` — list finalized records and eligible ended seasons (administrator)
+- `POST /api/admin/club-history/:seasonId/finalize` — finalize an ended season from its saved standing (administrator)
+
 ## Game results and history
 
 The public `/games` route displays every recorded result in reverse
