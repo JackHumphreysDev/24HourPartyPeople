@@ -257,6 +257,228 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 
+  it('lets a player create an account and request an available profile', async () => {
+    const playerId = '12c37c8a-6559-493b-9615-76ddab94dd66';
+    let registration: Record<string, string> | null = null;
+    window.history.replaceState({}, '', '/account');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me')
+            return Promise.resolve(mockResponse({}, 401));
+          if (path === '/api/auth/player-registration-options') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  players: [
+                    { id: playerId, name: 'Alex Example', position: 'DEF' },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
+          if (path === '/api/auth/player-register' && init?.method === 'POST') {
+            registration = JSON.parse(String(init.body));
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'alex@example.test',
+                    id: 'account-id',
+                    name: 'Alex',
+                    playerId: null,
+                    requestedPlayerId: playerId,
+                    role: 'PLAYER',
+                  },
+                },
+                201,
+              ),
+            );
+          }
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Create player account' }),
+    );
+    fireEvent.change(await screen.findByLabelText('Name'), {
+      target: { value: 'Alex' },
+    });
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'alex@example.test' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password/), {
+      target: { value: 'a secure player password' },
+    });
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Create player account' })[1]!,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'Profile request pending' }),
+    ).toBeInTheDocument();
+    expect(registration).toEqual({
+      email: 'alex@example.test',
+      name: 'Alex',
+      password: 'a secure player password',
+      playerId,
+    });
+  });
+
+  it('lets an administrator approve a pending Player profile request', async () => {
+    const accountId = '91ec5ba0-5a14-478d-b16d-83a3dcd5ff5e';
+    const playerId = '12c37c8a-6559-493b-9615-76ddab94dd66';
+    let approved = false;
+    window.history.replaceState({}, '', '/admin/accounts');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'jack@example.test',
+                    id: 'admin-id',
+                    name: 'Jack',
+                    playerId: null,
+                    requestedPlayerId: null,
+                    role: 'ADMIN',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          if (path === '/api/admin/accounts' && !init?.method) {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  accounts: [
+                    {
+                      createdAt: '2026-09-09T00:00:00.000Z',
+                      email: 'alex@example.test',
+                      id: accountId,
+                      name: 'Alex',
+                      player: approved
+                        ? { id: playerId, name: 'Alex Example' }
+                        : null,
+                      requestedPlayer: approved
+                        ? null
+                        : { id: playerId, name: 'Alex Example' },
+                      role: 'PLAYER',
+                    },
+                  ],
+                  players: [
+                    {
+                      id: playerId,
+                      isActiveSquad: true,
+                      name: 'Alex Example',
+                      requestedBy: approved ? null : { id: accountId },
+                      user: approved ? { id: accountId } : null,
+                    },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
+          if (path === `/api/admin/accounts/${accountId}/approve`) {
+            approved = true;
+            return Promise.resolve(mockResponse({ account: {} }, 200));
+          }
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Approve' }));
+    expect(
+      await screen.findByText("Alex's profile request was approved."),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Linked to Alex Example')).toBeInTheDocument();
+  });
+
+  it('lets the administrator update their normal login details', async () => {
+    let accountUpdate: Record<string, string | null> | null = null;
+    window.history.replaceState({}, '', '/admin/account');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'old@example.test',
+                    id: 'admin-id',
+                    name: 'Jack',
+                    playerId: null,
+                    requestedPlayerId: null,
+                    role: 'ADMIN',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          if (path === '/api/admin/account' && init?.method === 'PUT') {
+            accountUpdate = JSON.parse(String(init.body));
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'jackhumphreys.dev@gmail.com',
+                    id: 'admin-id',
+                    name: 'Jack Humphreys',
+                    playerId: null,
+                    requestedPlayerId: null,
+                    role: 'ADMIN',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+    fireEvent.change(await screen.findByLabelText('Name'), {
+      target: { value: 'Jack Humphreys' },
+    });
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'owner.new@example.test' },
+    });
+    fireEvent.change(screen.getByLabelText('Current password'), {
+      target: { value: 'current secure password' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+
+    expect(
+      await screen.findByText('Administrator account updated successfully.'),
+    ).toBeInTheDocument();
+    expect(accountUpdate).toEqual({
+      currentPassword: 'current secure password',
+      email: 'owner.new@example.test',
+      name: 'Jack Humphreys',
+      newPassword: null,
+    });
+  });
+
   it('shows the signed-in administrator in the website navigation', async () => {
     vi.stubGlobal(
       'fetch',

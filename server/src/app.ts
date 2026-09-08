@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 
 import { authRouter } from './auth/router.js';
+import { adminAccountRouter, adminAccountsRouter } from './accounts/router.js';
 import {
   adminClubHistoryRouter,
   publicClubHistoryRouter,
@@ -54,6 +55,8 @@ export function createApp() {
   app.use('/api/standings', publicStandingsRouter);
   app.use('/api/team-profile', publicTeamProfileRouter);
   app.use('/api/admin/fixtures', adminFixturesRouter);
+  app.use('/api/admin/account', adminAccountRouter);
+  app.use('/api/admin/accounts', adminAccountsRouter);
   app.use('/api/admin/club-history', adminClubHistoryRouter);
   app.use('/api/admin/games', adminGamesRouter);
   app.use('/api/admin/players', adminPlayersRouter);

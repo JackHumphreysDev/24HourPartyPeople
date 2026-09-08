@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
+import { getRegistrationPlayers } from './auth/api';
+import type { RegistrationPlayer } from './auth/types';
 import { useAuth } from './auth/useAuth';
 
-type AuthMode = 'login' | 'setup';
+type AuthMode = 'login' | 'register';
 
 function errorMessage(error: unknown): string {
   return error instanceof Error
@@ -11,14 +13,38 @@ function errorMessage(error: unknown): string {
 }
 
 export function AuthScreen() {
-  const { login, registerAdmin } = useAuth();
+  const { login, registerPlayer } = useAuth();
   const [mode, setMode] = useState<AuthMode>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [setupKey, setSetupKey] = useState('');
+  const [playerId, setPlayerId] = useState('');
+  const [players, setPlayers] = useState<RegistrationPlayer[]>([]);
+  const [playersLoading, setPlayersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (mode !== 'register') {
+      return;
+    }
+    let isCurrentRequest = true;
+    void getRegistrationPlayers()
+      .then((nextPlayers) => {
+        if (!isCurrentRequest) return;
+        setPlayers(nextPlayers);
+        setPlayerId((current) => current || nextPlayers[0]?.id || '');
+      })
+      .catch((requestError: unknown) => {
+        if (isCurrentRequest) setError(errorMessage(requestError));
+      })
+      .finally(() => {
+        if (isCurrentRequest) setPlayersLoading(false);
+      });
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [mode]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,8 +52,8 @@ export function AuthScreen() {
     setIsSubmitting(true);
 
     try {
-      if (mode === 'setup') {
-        await registerAdmin({ name, email, password, setupKey });
+      if (mode === 'register') {
+        await registerPlayer({ name, email, password, playerId });
       } else {
         await login({ email, password });
       }
@@ -41,6 +67,7 @@ export function AuthScreen() {
   function changeMode(nextMode: AuthMode) {
     setMode(nextMode);
     setError(null);
+    setPlayersLoading(nextMode === 'register');
   }
 
   return (
@@ -54,28 +81,30 @@ export function AuthScreen() {
           Sign in
         </button>
         <button
-          className={mode === 'setup' ? 'auth-tab auth-tab-active' : 'auth-tab'}
+          className={
+            mode === 'register' ? 'auth-tab auth-tab-active' : 'auth-tab'
+          }
           type="button"
-          onClick={() => changeMode('setup')}
+          onClick={() => changeMode('register')}
         >
-          Set up administrator
+          Create player account
         </button>
       </div>
 
       <div className="auth-copy">
         <p className="eyebrow">Secure team access</p>
         <h2 id="auth-heading">
-          {mode === 'login' ? 'Sign in' : 'Create the administrator'}
+          {mode === 'login' ? 'Sign in' : 'Create your account'}
         </h2>
         <p>
           {mode === 'login'
             ? 'Use your 24 Hour Party People account.'
-            : 'Available once, for the site owner, before any account exists.'}
+            : 'Select your Player profile. An administrator will approve the link.'}
         </p>
       </div>
 
       <form className="auth-form" onSubmit={handleSubmit}>
-        {mode === 'setup' && (
+        {mode === 'register' && (
           <label>
             Name
             <input
@@ -114,21 +143,38 @@ export function AuthScreen() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-          {mode === 'setup' && (
+          {mode === 'register' && (
             <span className="field-hint">Use at least 12 characters.</span>
           )}
         </label>
 
-        {mode === 'setup' && (
+        {mode === 'register' && (
           <label>
-            Administrator setup key
-            <input
-              autoComplete="off"
+            Your Player profile
+            <select
+              disabled={playersLoading || players.length === 0}
               required
-              type="password"
-              value={setupKey}
-              onChange={(event) => setSetupKey(event.target.value)}
-            />
+              value={playerId}
+              onChange={(event) => setPlayerId(event.target.value)}
+            >
+              {players.map((player) => (
+                <option key={player.id} value={player.id}>
+                  {player.name} · {player.position}
+                </option>
+              ))}
+            </select>
+            {playersLoading ? (
+              <span className="field-hint">Loading available players…</span>
+            ) : players.length === 0 ? (
+              <span className="field-hint">
+                No unclaimed active Player profiles are available.
+              </span>
+            ) : (
+              <span className="field-hint">
+                Your selection remains pending until an administrator approves
+                it.
+              </span>
+            )}
           </label>
         )}
 
@@ -140,14 +186,17 @@ export function AuthScreen() {
 
         <button
           className="primary-button"
-          disabled={isSubmitting}
+          disabled={
+            isSubmitting ||
+            (mode === 'register' && (playersLoading || !playerId))
+          }
           type="submit"
         >
           {isSubmitting
             ? 'Please wait…'
             : mode === 'login'
               ? 'Sign in'
-              : 'Create administrator'}
+              : 'Create player account'}
         </button>
       </form>
     </section>

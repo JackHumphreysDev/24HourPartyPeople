@@ -22,6 +22,7 @@ const originalSetupKey = process.env.ADMIN_SETUP_KEY;
 async function clearAuthenticationData() {
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.player.deleteMany();
 }
 
 function registrationPayload() {
@@ -64,6 +65,8 @@ describe('authentication API', () => {
         name: 'Club Admin',
         email: 'admin@example.test',
         role: 'ADMIN',
+        playerId: null,
+        requestedPlayerId: null,
       },
     });
     expect(response.body.user).not.toHaveProperty('passwordHash');
@@ -183,6 +186,86 @@ describe('authentication API', () => {
     const signedOutUser = await agent.get('/api/auth/me');
     expect(signedOutUser.status).toBe(401);
     expect(signedOutUser.body.error.code).toBe('AUTHENTICATION_REQUIRED');
+  });
+
+  it('registers a player account with an administrator-approved profile request', async () => {
+    await request(createApp())
+      .post('/api/auth/register')
+      .send(registrationPayload());
+    const player = await prisma.player.create({
+      data: {
+        description: 'Test goalkeeper.',
+        name: 'Gary Gloves',
+        position: 'GK',
+      },
+    });
+
+    const options = await request(createApp()).get(
+      '/api/auth/player-registration-options',
+    );
+    expect(options.status).toBe(200);
+    expect(options.body.players).toEqual([
+      { id: player.id, name: 'Gary Gloves', position: 'GK' },
+    ]);
+
+    const response = await request(createApp())
+      .post('/api/auth/player-register')
+      .send({
+        email: ' PLAYER@EXAMPLE.TEST ',
+        name: ' Test Player ',
+        password: 'another secure player password',
+        playerId: player.id,
+      });
+    expect(response.status).toBe(201);
+    expect(response.body.user).toMatchObject({
+      email: 'player@example.test',
+      name: 'Test Player',
+      playerId: null,
+      requestedPlayerId: player.id,
+      role: 'PLAYER',
+    });
+    await expect(
+      prisma.user.findUniqueOrThrow({
+        where: { email: 'player@example.test' },
+      }),
+    ).resolves.toMatchObject({ playerId: null, requestedPlayerId: player.id });
+  });
+
+  it('prevents duplicate profile claims and registration before administrator setup', async () => {
+    const player = await prisma.player.create({
+      data: {
+        description: 'Test defender.',
+        name: 'Dan Defence',
+        position: 'DEF',
+      },
+    });
+    const payload = {
+      email: 'player@example.test',
+      name: 'Test Player',
+      password: 'another secure player password',
+      playerId: player.id,
+    };
+    const unavailable = await request(createApp())
+      .post('/api/auth/player-register')
+      .send(payload);
+    expect(unavailable.status).toBe(503);
+    expect(unavailable.body.error.code).toBe('PLAYER_REGISTRATION_UNAVAILABLE');
+
+    await request(createApp())
+      .post('/api/auth/register')
+      .send(registrationPayload());
+    expect(
+      (
+        await request(createApp())
+          .post('/api/auth/player-register')
+          .send(payload)
+      ).status,
+    ).toBe(201);
+    const duplicate = await request(createApp())
+      .post('/api/auth/player-register')
+      .send({ ...payload, email: 'other@example.test' });
+    expect(duplicate.status).toBe(409);
+    expect(duplicate.body.error.code).toBe('ACCOUNT_OR_PLAYER_UNAVAILABLE');
   });
 });
 
