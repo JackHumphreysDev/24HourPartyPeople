@@ -918,6 +918,79 @@ describe('App', () => {
     ]);
   });
 
+  it('lets an administrator refresh cached Powerleague data', async () => {
+    window.history.replaceState({}, '', '/admin/standings');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === '/api/auth/me') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                user: {
+                  email: 'jack@example.test',
+                  id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
+                  name: 'Jack',
+                  role: 'ADMIN',
+                },
+              },
+              200,
+            ),
+          );
+        }
+        if (path === '/api/admin/scrape/refresh') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                imported: {
+                  fixturesImported: 2,
+                  resultsImported: 16,
+                  standingsImported: 10,
+                },
+                scrapeStatus: {
+                  lastAttemptedAt: '2026-09-08T08:30:00.000Z',
+                  lastSucceededAt: '2026-09-08T08:30:00.000Z',
+                  latestRefreshFailed: false,
+                },
+              },
+              200,
+            ),
+          );
+        }
+        if (path === '/api/admin/standings') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                lastUpdated: null,
+                scrapeStatus: {
+                  lastAttemptedAt: null,
+                  lastSucceededAt: null,
+                  latestRefreshFailed: false,
+                },
+                season: { id: 'season', name: 'Summer 2026' },
+                standings: [],
+              },
+              200,
+            ),
+          );
+        }
+        return Promise.resolve(mockResponse({}, 404));
+      }),
+    );
+
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Refresh from Powerleague' }),
+    );
+
+    expect(
+      await screen.findByText(
+        'Powerleague refreshed: 10 standings rows, 2 fixtures and 16 new results imported.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('renders upcoming fixtures with Sheffield-local kick-off times', async () => {
     window.history.replaceState({}, '', '/fixtures');
     vi.stubGlobal(

@@ -15,6 +15,7 @@ import { createSession, SESSION_COOKIE_NAME } from '../src/auth/session.js';
 import { prisma } from '../src/lib/prisma.js';
 
 async function clearDatabase() {
+  await prisma.scrapeStatus.deleteMany();
   await prisma.session.deleteMany();
   await prisma.gameResult.deleteMany();
   await prisma.fixture.deleteMany();
@@ -269,6 +270,11 @@ describe('public upcoming fixture API', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.fixtures).toHaveLength(2);
+    expect(response.body.scrapeStatus).toEqual({
+      lastAttemptedAt: null,
+      lastSucceededAt: null,
+      latestRefreshFailed: false,
+    });
     expect(
       response.body.fixtures.map(
         (fixture: { competition: string }) => fixture.competition,

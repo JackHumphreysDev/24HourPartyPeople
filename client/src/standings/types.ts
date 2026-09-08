@@ -18,9 +18,11 @@ export type StandingRowInput = Omit<StandingRow, 'gd' | 'id' | 'scrapedAt'>;
 
 export type StandingsSnapshot = {
   lastUpdated: string | null;
+  scrapeStatus: ScrapeStatus;
   season: {
     id: string;
     name: string;
   } | null;
   standings: StandingRow[];
 };
+import type { ScrapeStatus } from '../scrape/types';

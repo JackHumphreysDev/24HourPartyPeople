@@ -16,6 +16,7 @@ import { prisma } from '../src/lib/prisma.js';
 const TEAM_NAME = '24 Hour Party People';
 
 async function clearDatabase() {
+  await prisma.scrapeStatus.deleteMany();
   await prisma.session.deleteMany();
   await prisma.gameResult.deleteMany();
   await prisma.fixture.deleteMany();

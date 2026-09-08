@@ -14,6 +14,7 @@ import { createSession, SESSION_COOKIE_NAME } from '../src/auth/session.js';
 import { prisma } from '../src/lib/prisma.js';
 
 async function clearDatabase() {
+  await prisma.scrapeStatus.deleteMany();
   await prisma.session.deleteMany();
   await prisma.gameResult.deleteMany();
   await prisma.fixture.deleteMany();
@@ -247,6 +248,11 @@ describe('public standings API', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       lastUpdated: null,
+      scrapeStatus: {
+        lastAttemptedAt: null,
+        lastSucceededAt: null,
+        latestRefreshFailed: false,
+      },
       season: null,
       standings: [],
     });

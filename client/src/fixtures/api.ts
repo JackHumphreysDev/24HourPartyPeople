@@ -1,4 +1,4 @@
-import type { FixtureInput, FixtureSummary } from './types';
+import type { FixtureInput, FixturesSnapshot, FixtureSummary } from './types';
 
 type ErrorResponse = {
   error?: {
@@ -28,11 +28,8 @@ async function fixtureRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-export async function getUpcomingFixtures(): Promise<FixtureSummary[]> {
-  const response = await fixtureRequest<{ fixtures: FixtureSummary[] }>(
-    '/api/fixtures/upcoming',
-  );
-  return response.fixtures;
+export function getUpcomingFixtures(): Promise<FixturesSnapshot> {
+  return fixtureRequest<FixturesSnapshot>('/api/fixtures/upcoming');
 }
 
 export async function getAdminFixtures(): Promise<FixtureSummary[]> {

@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 
 import { AuthScreen } from '../AuthScreen';
 import { useAuth } from '../auth/useAuth';
+import { refreshPowerleague } from '../scrape/api';
 import { getAdminStandings, replaceCurrentStandings } from './api';
 import type { StandingRowInput, StandingsSnapshot } from './types';
 
@@ -82,6 +83,7 @@ function StandingsManager() {
     'loading',
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -156,6 +158,25 @@ function StandingsManager() {
     }
   }
 
+  async function handleRefresh() {
+    setError(null);
+    setSuccessMessage(null);
+    setIsRefreshing(true);
+    try {
+      const result = await refreshPowerleague();
+      const nextSnapshot = await getAdminStandings();
+      setSnapshot(nextSnapshot);
+      setRows(snapshotDraft(nextSnapshot));
+      setSuccessMessage(
+        `Powerleague refreshed: ${result.imported.standingsImported} standings rows, ${result.imported.fixturesImported} fixtures and ${result.imported.resultsImported} new results imported.`,
+      );
+    } catch (requestError) {
+      setError(errorMessage(requestError));
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+
   if (loadStatus === 'loading') {
     return <p className="status-panel">Loading current standings…</p>;
   }
@@ -196,6 +217,24 @@ function StandingsManager() {
             Last updated {formatLastUpdated(snapshot.lastUpdated)}
           </p>
         )}
+        {snapshot.scrapeStatus?.latestRefreshFailed && (
+          <p className="form-error" role="alert">
+            Latest automated refresh failed
+            {snapshot.scrapeStatus?.lastError
+              ? `: ${snapshot.scrapeStatus.lastError}`
+              : '. Cached data has been preserved.'}
+          </p>
+        )}
+        <button
+          className="secondary-button"
+          disabled={isRefreshing || isSubmitting}
+          type="button"
+          onClick={() => void handleRefresh()}
+        >
+          {isRefreshing
+            ? 'Refreshing Powerleague…'
+            : 'Refresh from Powerleague'}
+        </button>
       </div>
 
       <form className="standings-editor" onSubmit={handleSubmit}>
@@ -332,7 +371,7 @@ function StandingsManager() {
           </button>
           <button
             className="primary-button"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isRefreshing}
             type="submit"
           >
             {isSubmitting ? 'Saving…' : 'Save complete table'}

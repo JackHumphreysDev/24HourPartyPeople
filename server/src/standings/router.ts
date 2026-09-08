@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Prisma } from '../generated/prisma/client.js';
 import { requireAdmin, requireAuthentication } from '../auth/middleware.js';
 import { prisma } from '../lib/prisma.js';
+import { getScrapeStatus } from '../scrape/status.js';
 
 const TEAM_NAME = '24 Hour Party People';
 
@@ -120,7 +121,12 @@ async function getCurrentStandings(client: StandingsClient) {
   });
 
   if (!season) {
-    return { lastUpdated: null, season: null, standings: [] };
+    return {
+      lastUpdated: null,
+      scrapeStatus: await getScrapeStatus(client),
+      season: null,
+      standings: [],
+    };
   }
 
   const standings = await client.seasonStanding.findMany({
@@ -131,6 +137,7 @@ async function getCurrentStandings(client: StandingsClient) {
 
   return {
     lastUpdated: standings[0]?.scrapedAt ?? null,
+    scrapeStatus: await getScrapeStatus(client),
     season,
     standings,
   };
@@ -157,7 +164,11 @@ export const adminStandingsRouter = Router();
 adminStandingsRouter.use(requireAuthentication, requireAdmin);
 
 adminStandingsRouter.get('/', async (_request, response) => {
-  response.status(200).json(await getCurrentStandings(prisma));
+  const snapshot = await getCurrentStandings(prisma);
+  response.status(200).json({
+    ...snapshot,
+    scrapeStatus: await getScrapeStatus(prisma, true),
+  });
 });
 
 adminStandingsRouter.put('/current', async (request, response) => {

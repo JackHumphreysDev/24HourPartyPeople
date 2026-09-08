@@ -27,6 +27,7 @@ import { createSession, SESSION_COOKIE_NAME } from '../src/auth/session.js';
 import { prisma } from '../src/lib/prisma.js';
 
 async function clearDatabase() {
+  await prisma.scrapeStatus.deleteMany();
   await prisma.session.deleteMany();
   await prisma.gameResult.deleteMany();
   await prisma.fixture.deleteMany();

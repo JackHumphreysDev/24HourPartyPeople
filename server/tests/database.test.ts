@@ -5,6 +5,7 @@ import { prisma } from '../src/lib/prisma.js';
 const testDate = new Date('2026-06-01T00:00:00.000Z');
 
 async function clearDatabase() {
+  await prisma.scrapeStatus.deleteMany();
   await prisma.session.deleteMany();
   await prisma.gameResult.deleteMany();
   await prisma.fixture.deleteMany();

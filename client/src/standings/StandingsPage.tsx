@@ -51,6 +51,12 @@ export function StandingsPage() {
         </p>
       </div>
 
+      {snapshot?.scrapeStatus?.latestRefreshFailed && (
+        <p className="status-panel" role="status">
+          The latest automated refresh failed. Showing the last saved standings.
+        </p>
+      )}
+
       {status === 'loading' && (
         <p className="status-panel">Loading current standings…</p>
       )}

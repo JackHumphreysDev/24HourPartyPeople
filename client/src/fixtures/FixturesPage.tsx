@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { getUpcomingFixtures } from './api';
+import type { ScrapeStatus } from '../scrape/types';
 import type { FixtureSummary } from './types';
 
 function formatDate(value: string): string {
@@ -17,8 +18,17 @@ function formatTime(value: string | null): string {
   return value ? value.slice(11, 16) : 'Kick-off TBC';
 }
 
+function formatLastRefreshed(value: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Europe/London',
+  }).format(new Date(value));
+}
+
 export function FixturesPage() {
   const [fixtures, setFixtures] = useState<FixtureSummary[]>([]);
+  const [scrapeStatus, setScrapeStatus] = useState<ScrapeStatus | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
   );
@@ -27,9 +37,10 @@ export function FixturesPage() {
     let isCurrentRequest = true;
 
     void getUpcomingFixtures()
-      .then((nextFixtures) => {
+      .then((snapshot) => {
         if (isCurrentRequest) {
-          setFixtures(nextFixtures);
+          setFixtures(snapshot.fixtures);
+          setScrapeStatus(snapshot.scrapeStatus);
           setStatus('ready');
         }
       })
@@ -54,6 +65,18 @@ export function FixturesPage() {
           times are local to Sheffield.
         </p>
       </div>
+
+      {scrapeStatus?.latestRefreshFailed && (
+        <p className="status-panel" role="status">
+          The latest automated refresh failed. Showing the last saved fixtures.
+        </p>
+      )}
+      {scrapeStatus?.lastSucceededAt && (
+        <p className="standings-last-updated">
+          Powerleague last refreshed{' '}
+          {formatLastRefreshed(scrapeStatus.lastSucceededAt)}
+        </p>
+      )}
 
       {status === 'loading' && (
         <p className="status-panel">Loading upcoming fixtures…</p>

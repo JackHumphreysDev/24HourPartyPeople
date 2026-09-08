@@ -1,4 +1,5 @@
 import type { Competition } from '../games/types';
+import type { ScrapeStatus } from '../scrape/types';
 
 export type FixtureStatus = 'SCHEDULED' | 'PLAYED' | 'WALKOVER';
 export type FixtureSource = 'SCRAPE' | 'MANUAL';
@@ -29,4 +30,9 @@ export type FixtureInput = {
   scheduledTime: string | null;
   seasonId: string;
   venue: string | null;
+};
+
+export type FixturesSnapshot = {
+  fixtures: FixtureSummary[];
+  scrapeStatus: ScrapeStatus;
 };

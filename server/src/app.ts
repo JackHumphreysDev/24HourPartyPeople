@@ -13,6 +13,7 @@ import {
 import { adminGamesRouter, publicGamesRouter } from './games/router.js';
 import { adminPlayersRouter, publicPlayersRouter } from './players/router.js';
 import { adminSeasonsRouter } from './seasons/router.js';
+import { adminScrapeRouter, scheduledScrapeRouter } from './scrape/router.js';
 import {
   adminStandingsRouter,
   publicStandingsRouter,
@@ -56,9 +57,11 @@ export function createApp() {
   app.use('/api/admin/club-history', adminClubHistoryRouter);
   app.use('/api/admin/games', adminGamesRouter);
   app.use('/api/admin/players', adminPlayersRouter);
+  app.use('/api/admin/scrape', adminScrapeRouter);
   app.use('/api/admin/seasons', adminSeasonsRouter);
   app.use('/api/admin/standings', adminStandingsRouter);
   app.use('/api/admin/team-profile', adminTeamProfileRouter);
+  app.use('/api/internal/scrape', scheduledScrapeRouter);
 
   app.use(
     (

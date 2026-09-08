@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Prisma } from '../generated/prisma/client.js';
 import { requireAdmin, requireAuthentication } from '../auth/middleware.js';
 import { prisma } from '../lib/prisma.js';
+import { getScrapeStatus } from '../scrape/status.js';
 
 const fixtureIdSchema = z.uuid();
 const timeSchema = z
@@ -250,7 +251,10 @@ publicFixturesRouter.get('/upcoming', async (_request, response) => {
     },
   });
 
-  response.status(200).json({ fixtures });
+  response.status(200).json({
+    fixtures,
+    scrapeStatus: await getScrapeStatus(),
+  });
 });
 
 export const adminFixturesRouter = Router();
