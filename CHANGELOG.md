@@ -2,6 +2,24 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.10.0] - 2026-09-08
+
+### Added
+
+- Public Home page team hub with the current league position and active squad
+  arranged in the confirmed responsive 1GK–3DEF–1MID–1FWD formation.
+- Dedicated `TeamProfile` record, public API, and protected
+  `/admin/home-page` editor for the team description.
+- Up to three unique additional playable positions per player, displayed on
+  public squad cards and player profiles.
+
+### Changed
+
+- Treat each player's primary position as their sole formation assignment and
+  capacity constraint while keeping additional positions informational.
+- Add explicit empty standings, empty squad, and vacant formation-place states
+  to the Home page.
+
 ## [0.9.0] - 2026-09-08
 
 ### Added
