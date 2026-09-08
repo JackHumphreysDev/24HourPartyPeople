@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.8.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.8.1` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -467,6 +467,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.8.1 | 2026-09-08 | Deployed the website to Vercel with a London Express Function, Neon PostgreSQL, production-safe migrations, SPA routing, and Cloudinary configuration |
 | 0.8.0 | 2026-09-07 | Added public current-season standings and authenticated atomic snapshot replacement with consistency validation |
 | 0.7.0 | 2026-09-07 | Added public upcoming fixtures and authenticated manual fixture creation/correction with recorded-history protection |
 | 0.6.0 | 2026-09-07 | Added fixture/manual result submission, guided league-walkover cup follow-up, and public same-date game history |

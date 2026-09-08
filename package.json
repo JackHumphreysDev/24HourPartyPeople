@@ -1,6 +1,6 @@
 {
   "name": "24-hour-party-people",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -8,7 +8,7 @@
     "server"
   ],
   "engines": {
-    "node": ">=24.0.0"
+    "node": "24.x"
   },
   "packageManager": "npm@11.19.0",
   "overrides": {
@@ -32,7 +32,8 @@
     "postinstall": "npm run db:generate",
     "test": "bash scripts/test.sh",
     "test:workspaces": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "vercel:build": "npm run db:deploy --workspace server && npm run build --workspace client"
   },
   "devDependencies": {
     "prettier": "^3.9.6",

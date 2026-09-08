@@ -12,3 +12,5 @@ server/src/generated/
 *.log
 *.tsbuildinfo
 npm-debug.log*
+.vercel
+recovery-codes.txt

@@ -7,13 +7,14 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.8.0` release includes the project foundation, core football
+The current `0.8.1` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
 which appear in public game history, manage upcoming fixtures, and replace the
-current league table displayed on the public website. The remaining team-hub
-features are still to be built. See
+current league table displayed on the public website. The website is deployed
+to Vercel with Neon PostgreSQL and Cloudinary image storage. The remaining
+team-hub features are still to be built. See
 [the project specification](docs/PROJECT-SPEC.md) for the planned functionality.
 
 ## Technology stack
@@ -34,12 +35,44 @@ mobile application.
 
 - `client/` — React website
 - `server/` — Express API, Prisma configuration, and server tests
+- `api/` — Vercel entry point for the Express API
 - `docs/` — full product and engineering specification
 - `compose.yaml` — local PostgreSQL service
+- `vercel.json` — production build, Function region, and SPA routing
 - `AGENTS.md` — project workflow and collaboration rules
 
-Hosting-specific files such as a Vercel API adapter will be added only after
-the production hosting approach is confirmed.
+## Production hosting
+
+The production website is available at
+[24-hour-party-people.vercel.app](https://24-hour-party-people.vercel.app).
+Vercel serves the Vite build from its CDN and runs the Express API as one
+Function in the London region. Requests under `/api` are routed to Express;
+other non-file routes fall back to `client/dist/index.html` for React Router.
+
+PostgreSQL is hosted by Neon through Vercel Marketplace. `DATABASE_URL` is the
+pooled runtime connection used by Prisma, while `DATABASE_URL_UNPOOLED` is the
+direct connection used by `prisma migrate deploy`. Neon supplies both values
+to production, preview, and development deployments. Preview deployments can
+therefore use Neon’s isolated preview branches without changing application
+code.
+
+The Vercel project also requires these application secrets:
+
+- `ADMIN_SETUP_KEY` — one-time administrator registration secret
+- `CLOUDINARY_CLOUD_NAME` — Cloudinary account cloud name
+- `CLOUDINARY_API_KEY` — Cloudinary API key
+- `CLOUDINARY_API_SECRET` — Cloudinary API secret
+
+Node.js is pinned to the `24.x` release line. Vercel runs `npm install`, which
+generates the Prisma client, followed by `npm run vercel:build`. That build
+applies pending migrations through the direct Neon connection and then creates
+the production Vite bundle. Migrations must remain backward compatible with
+the currently deployed application because they run before the new deployment
+is promoted.
+
+The GitHub repository is connected to Vercel. Pull-request branches receive
+preview deployments, and changes merged to `main` create production
+deployments at the canonical URL above.
 
 ## Core data model
 
@@ -199,7 +232,7 @@ The fixture API provides:
 
 ### Prerequisites
 
-- Node.js 24 or newer
+- Node.js 24.x
 - npm 11
 - Docker with Docker Compose
 
@@ -247,8 +280,8 @@ React Router uses browser-history URLs. Production hosting must rewrite
 non-API routes such as `/players/:playerId`, `/standings`, `/fixtures`,
 `/games`, `/admin`, `/admin/statistics`, `/admin/standings`,
 `/admin/fixtures`, and `/admin/games` to the client `index.html` so direct
-links and refreshes work. The exact rewrite will be added with the hosting
-configuration once the production host is confirmed.
+links and refreshes work. `vercel.json` provides this fallback after routing
+`/api` requests to the Express Function.
 
 Stop the local database service with:
 

@@ -10,4 +10,19 @@ describe('GET /api/health', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ status: 'ok' });
   });
+
+  it('trusts the first Vercel proxy in production', () => {
+    const previousVercel = process.env.VERCEL;
+    process.env.VERCEL = '1';
+
+    try {
+      expect(createApp().get('trust proxy')).toBe(1);
+    } finally {
+      if (previousVercel === undefined) {
+        delete process.env.VERCEL;
+      } else {
+        process.env.VERCEL = previousVercel;
+      }
+    }
+  });
 });

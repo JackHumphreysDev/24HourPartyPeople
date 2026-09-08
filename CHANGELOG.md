@@ -2,6 +2,25 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.8.1] - 2026-09-08
+
+### Added
+
+- Production deployment at `https://24-hour-party-people.vercel.app`, with
+  Vercel CDN hosting for the Vite website and a London-hosted Express Function.
+- Neon PostgreSQL provisioned through Vercel Marketplace, using a pooled
+  runtime connection and a direct connection for build-time migrations.
+- Vercel routing for Express API requests and React Router deep links.
+
+### Changed
+
+- Pin production to Node.js 24.x and fail deployment early when required
+  database credentials are missing.
+- Trust Vercel's first proxy in production and avoid enabling cross-origin
+  access by default on the same-origin deployment.
+- Document the production architecture, required secrets, migration workflow,
+  and live website address.
+
 ## [0.8.0] - 2026-09-07
 
 ### Added
