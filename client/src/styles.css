@@ -255,8 +255,33 @@ select {
 .admin-layout,
 .statistics-admin-page,
 .game-admin-page,
-.standings-admin-page {
+.standings-admin-page,
+.club-history-admin-page {
   padding: clamp(3rem, 7vw, 5rem) 0;
+}
+
+.history-finalisation-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.history-finalisation-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 1rem;
+  background: rgb(9 27 18 / 78%);
+}
+
+.history-finalisation-card h3 {
+  margin: 0.35rem 0;
+}
+
+.history-finalised-section {
+  padding-top: 3rem;
 }
 
 .statistics-admin-page .admin-layout {

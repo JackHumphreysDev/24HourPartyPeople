@@ -5,6 +5,8 @@ import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom';
 import { HomePage } from './HomePage';
 import { AuthProvider } from './auth/AuthProvider';
 import { useAuth } from './auth/useAuth';
+import { AdminClubHistoryPage } from './club-history/AdminClubHistoryPage';
+import { ClubHistoryPage } from './club-history/ClubHistoryPage';
 import { AdminFixturesPage } from './fixtures/AdminFixturesPage';
 import { FixturesPage } from './fixtures/FixturesPage';
 import { AdminGamePage } from './games/AdminGamePage';
@@ -44,6 +46,7 @@ function AppContent() {
             <NavLink to="/standings">Standings</NavLink>
             <NavLink to="/fixtures">Fixtures</NavLink>
             <NavLink to="/games">Games</NavLink>
+            <NavLink to="/club-history">History</NavLink>
             <NavLink to="/admin">Admin</NavLink>
             {status === 'authenticated' && user && (
               <button type="button" onClick={() => void logout()}>
@@ -60,11 +63,16 @@ function AppContent() {
           <Route path="/standings" element={<StandingsPage />} />
           <Route path="/fixtures" element={<FixturesPage />} />
           <Route path="/games" element={<GameHistoryPage />} />
+          <Route path="/club-history" element={<ClubHistoryPage />} />
           <Route path="/admin" element={<AdminPlayersPage />} />
           <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
           <Route path="/admin/standings" element={<AdminStandingsPage />} />
           <Route path="/admin/fixtures" element={<AdminFixturesPage />} />
           <Route path="/admin/games" element={<AdminGamePage />} />
+          <Route
+            path="/admin/club-history"
+            element={<AdminClubHistoryPage />}
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>

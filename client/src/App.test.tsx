@@ -1005,3 +1005,175 @@ describe('App', () => {
     });
   });
 });
+
+describe('club history', () => {
+  it('renders finalised season finishes on the public route', async () => {
+    window.history.replaceState({}, '', '/club-history');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        if (String(input) === '/api/auth/me') {
+          return Promise.resolve(mockResponse({}, 401));
+        }
+
+        return Promise.resolve(
+          mockResponse(
+            {
+              history: [
+                {
+                  clubName: '24 Hour Party People',
+                  drawn: 2,
+                  finalisedAt: '2026-09-01T10:00:00.000Z',
+                  ga: 18,
+                  gd: 6,
+                  gf: 24,
+                  id: 'history-entry',
+                  lost: 3,
+                  played: 12,
+                  points: 23,
+                  position: 2,
+                  season: {
+                    endDate: '2026-08-31T00:00:00.000Z',
+                    id: 'season',
+                    name: 'Summer 2026',
+                    startDate: '2026-06-01T00:00:00.000Z',
+                  },
+                  walkoverGames: 1,
+                  won: 7,
+                },
+              ],
+            },
+            200,
+          ),
+        );
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Club history' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('rowheader', { name: 'Summer 2026' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('cell', { name: '24 Hour Party People' }),
+    ).toBeInTheDocument();
+  });
+
+  it('finalises an eligible season from the administrator route', async () => {
+    const seasonId = '12c37c8a-6559-493b-9615-76ddab94dd66';
+    let finalised = false;
+    window.history.replaceState({}, '', '/admin/club-history');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'jack@example.test',
+                    id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
+                    name: 'Jack',
+                    role: 'ADMIN',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+
+          if (path === '/api/admin/club-history' && !init?.method) {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  candidates: [
+                    {
+                      endDate: '2026-08-31T00:00:00.000Z',
+                      id: seasonId,
+                      name: 'Summer 2026',
+                      standing: {
+                        drawn: 2,
+                        ga: 18,
+                        gd: 6,
+                        gf: 24,
+                        lost: 3,
+                        played: 12,
+                        points: 23,
+                        position: 2,
+                        walkoverGames: 1,
+                        won: 7,
+                      },
+                      startDate: '2026-06-01T00:00:00.000Z',
+                    },
+                  ],
+                  history: [],
+                },
+                200,
+              ),
+            );
+          }
+
+          if (
+            path === `/api/admin/club-history/${seasonId}/finalise` &&
+            init?.method === 'POST'
+          ) {
+            finalised = true;
+            return Promise.resolve(
+              mockResponse(
+                {
+                  history: {
+                    clubName: '24 Hour Party People',
+                    drawn: 2,
+                    finalisedAt: '2026-09-01T10:00:00.000Z',
+                    ga: 18,
+                    gd: 6,
+                    gf: 24,
+                    id: 'history-entry',
+                    lost: 3,
+                    played: 12,
+                    points: 23,
+                    position: 2,
+                    season: {
+                      endDate: '2026-08-31T00:00:00.000Z',
+                      id: seasonId,
+                      name: 'Summer 2026',
+                      startDate: '2026-06-01T00:00:00.000Z',
+                    },
+                    walkoverGames: 1,
+                    won: 7,
+                  },
+                },
+                201,
+              ),
+            );
+          }
+
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Finalise club history' }),
+    ).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Finalise' }));
+
+    expect(
+      await screen.findByText('Summer 2026 was added to club history.'),
+    ).toBeInTheDocument();
+    expect(finalised).toBe(true);
+    expect(
+      screen.getByText('No ended seasons are waiting to be finalised.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('rowheader', { name: 'Summer 2026' }),
+    ).toBeInTheDocument();
+  });
+});

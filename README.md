@@ -7,13 +7,14 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.8.1` release includes the project foundation, core football
+The current `0.9.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
 which appear in public game history, manage upcoming fixtures, and replace the
-current league table displayed on the public website. The website is deployed
-to Vercel with Neon PostgreSQL and Cloudinary image storage. The remaining
+current league table displayed on the public website. Ended seasons can be
+finalised into the permanent public club history. The website is deployed to
+Vercel with Neon PostgreSQL and Cloudinary image storage. The remaining
 team-hub features are still to be built. See
 [the project specification](docs/PROJECT-SPEC.md) for the planned functionality.
 
@@ -77,7 +78,7 @@ deployments at the canonical URL above.
 ## Core data model
 
 The Prisma schema defines users, players, seasons, player season statistics,
-opponents, fixtures, game results, live standings, and finalized club history.
+opponents, fixtures, game results, live standings, and finalised club history.
 The initial migration is stored in `server/prisma/migrations/`.
 
 Database relationships preserve historical football records. Players are
@@ -180,6 +181,25 @@ The standings API provides:
 - `GET /api/standings/current` — return the public current-season snapshot
 - `GET /api/admin/standings` — return the editable current snapshot (administrator)
 - `PUT /api/admin/standings/current` — atomically replace the current snapshot (administrator)
+
+## Club history
+
+The public `/club-history` route displays the club's finalised season records,
+newest first. Each row identifies 24 Hour Party People and includes Position,
+Played, Won, Drawn, Lost, GF, GA, GD, Points, and Walkovers.
+
+The `/admin/club-history` route lets an authenticated administrator finalise an
+ended season by copying the saved 24 Hour Party People standings row into the
+permanent club history. Only seasons from the application's attendance-tracked
+launch period onward are eligible, and a complete saved team standing is
+required. Finalisation is transactional and can happen only once per season;
+finalised records cannot be edited through the website.
+
+The club history API provides:
+
+- `GET /api/club-history` — list finalised public club-history records
+- `GET /api/admin/club-history` — list finalised records and eligible ended seasons (administrator)
+- `POST /api/admin/club-history/:seasonId/finalise` — finalise an ended season from its saved standing (administrator)
 
 ## Game results and history
 

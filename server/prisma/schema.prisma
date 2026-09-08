@@ -186,6 +186,6 @@ model ClubHistory {
   gd            Int
   points        Int
   walkoverGames Int       @default(0)
-  finalizedAt   DateTime? @db.Timestamptz(3)
+  finalisedAt   DateTime? @db.Timestamptz(3)
   season        Season    @relation(fields: [seasonId], references: [id], onDelete: Restrict)
 }

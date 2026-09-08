@@ -2,6 +2,25 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.9.0] - 2026-09-08
+
+### Added
+
+- Public club history at `/club-history`, showing finalised season records in
+  reverse chronological order with the club's full league-table totals.
+- Protected club-history management at `/admin/club-history`, including
+  eligible ended-season guidance and explicit one-time finalisation from the
+  saved 24 Hour Party People standing.
+- Public and administrator club-history APIs with authenticated,
+  transactional finalisation and integration coverage.
+
+### Changed
+
+- Restrict club-history finalisation to ended, attendance-tracked seasons with
+  a saved team standing, and keep finalised records immutable through the site.
+- Standardise project-owned documentation, user-facing text, API names, code
+  identifiers, tests, and the club-history database field on UK English.
+
 ## [0.8.1] - 2026-09-08
 
 ### Added
@@ -108,7 +127,7 @@ All notable changes to 24 Hour Party People are recorded here.
 - Cloudinary-backed JPEG, PNG, and WebP uploads with an 800 × 800 transform,
   a 5 MB limit, and cleanup when pictures are replaced or removed.
 - A migration for private Cloudinary public IDs and integration coverage for
-  player visibility, authorization, uploads, and image lifecycle behaviour.
+  player visibility, authorisation, uploads, and image lifecycle behaviour.
 
 ### Changed
 
@@ -125,7 +144,7 @@ All notable changes to 24 Hour Party People are recorded here.
 
 - One-time administrator account setup and browser sign-in experience.
 - Register, login, logout, and current-user API endpoints with reusable
-  authentication and administrator authorization middleware.
+  authentication and administrator authorisation middleware.
 - Database-backed, seven-day sessions storing SHA-256 hashes of opaque tokens.
 - Session migration, request validation, authentication rate limiting, and
   coverage for password, session, and role boundaries.
