@@ -11,6 +11,7 @@ import { AdminFixturesPage } from './fixtures/AdminFixturesPage';
 import { FixturesPage } from './fixtures/FixturesPage';
 import { AdminGamePage } from './games/AdminGamePage';
 import { GameHistoryPage } from './games/GameHistoryPage';
+import { AdminHomePage } from './home/AdminHomePage';
 import { AdminPlayersPage } from './players/AdminPlayersPage';
 import { AdminStatisticsPage } from './players/AdminStatisticsPage';
 import { PlayerProfilePage } from './players/PlayerProfilePage';
@@ -65,6 +66,7 @@ function AppContent() {
           <Route path="/games" element={<GameHistoryPage />} />
           <Route path="/club-history" element={<ClubHistoryPage />} />
           <Route path="/admin" element={<AdminPlayersPage />} />
+          <Route path="/admin/home-page" element={<AdminHomePage />} />
           <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
           <Route path="/admin/standings" element={<AdminStandingsPage />} />
           <Route path="/admin/fixtures" element={<AdminFixturesPage />} />

@@ -55,6 +55,10 @@ async function playerRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 function toFormData(input: PlayerInput): FormData {
   const formData = new FormData();
+  formData.set(
+    'additionalPositions',
+    JSON.stringify(input.additionalPositions),
+  );
   formData.set('description', input.description);
   formData.set('isActiveSquad', String(input.isActiveSquad));
   formData.set('name', input.name);

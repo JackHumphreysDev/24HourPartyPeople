@@ -365,6 +365,7 @@ export function AdminStandingsPage() {
   return (
     <>
       <nav className="admin-nav" aria-label="Administrator sections">
+        <NavLink to="/admin/home-page">Home page</NavLink>
         <NavLink to="/admin" end>
           Players
         </NavLink>
