@@ -77,9 +77,10 @@ deployments at the canonical URL above.
 
 ## Core data model
 
-The Prisma schema defines users, players, seasons, player season statistics,
-opponents, fixtures, game results, live standings, and finalised club history.
-The initial migration is stored in `server/prisma/migrations/`.
+The Prisma schema defines users, the singleton team profile, players, seasons,
+player season statistics, opponents, fixtures, game results, live standings,
+and finalised club history. Migrations are stored in
+`server/prisma/migrations/`.
 
 Database relationships preserve historical football records. Players are
 deactivated rather than deleted once statistics reference them, while optional
@@ -110,6 +111,25 @@ The authentication API provides:
 - `POST /api/auth/logout` — revoke the current session
 - `GET /api/auth/me` — return the currently authenticated user
 
+## Home page
+
+The public `/` route displays the administrator-editable team description, the
+current 24 Hour Party People league position, and active players arranged on a
+responsive pitch in the confirmed 1GK–3DEF–1MID–1FWD formation. Empty league
+tables and incomplete squads have explicit placeholder states rather than
+misleading values.
+
+The `/admin/home-page` route allows an authenticated administrator to update
+the team description. It is stored in a dedicated singleton `TeamProfile`
+record and seeded with the original site introduction when the migration is
+applied.
+
+The Team Profile API provides:
+
+- `GET /api/team-profile` — return the public team description
+- `GET /api/admin/team-profile` — return the editable team description (administrator)
+- `PUT /api/admin/team-profile` — update the team description (administrator)
+
 ## Player profiles and squad management
 
 The public website provides a routed home page, current-squad list, and an
@@ -119,11 +139,13 @@ and recorded career totals. Historic seasons with no attendance data show
 games played as **Not recorded** rather than `0`.
 
 The `/admin` route allows an authenticated administrator to create and edit
-profiles, replace or remove pictures, and move players in or out of the active
-squad. Active positions are transactionally limited to the confirmed
-six-a-side formation: one goalkeeper, three defenders, one midfielder, and
-one forward. Inactive players remain available to administrators but are not
-exposed by the public API.
+profiles, replace or remove pictures, select playable positions, and move
+players in or out of the active squad. Every player has one primary formation
+position and may have up to three unique additional positions. The primary
+position alone controls placement and the transactional active-squad limits:
+one goalkeeper, three defenders, one midfielder, and one forward. Inactive
+players remain available to administrators but are not exposed by the public
+API.
 
 Profile pictures are uploaded through the API to Cloudinary. Uploads accept
 JPEG, PNG, or WebP files up to 5 MB and are cropped to an 800 × 800 square.

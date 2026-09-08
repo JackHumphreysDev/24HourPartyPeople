@@ -59,15 +59,21 @@ account may optionally be linked to a Player record (nullable FK) so a
 player can eventually log in and view their own stats, but this linkage is
 not required for launch.
 
+**TeamProfile** (one singleton row) — id, description (free text,
+admin-editable), updatedAt. The implemented public Home page reads this record,
+and the dedicated `/admin/home-page` editor updates it.
+
 **Player** — id, name, description (free text, admin-editable),
-profilePictureUrl (nullable), position (enum: `GK` | `DEF` | `MID` | `FWD`,
-used for the formation display — see Section 3), isActiveSquad (boolean),
+profilePictureUrl (nullable), position (primary enum: `GK` | `DEF` | `MID` |
+`FWD`, used for the formation display — see Section 3), additionalPositions
+(unique array of any other `PlayerPosition` values), isActiveSquad (boolean),
 createdAt.
 
 > Formation is 1 GK + 3 DEF + 1 MID + 1 FWD (six players total, confirmed
 > by product owner), so the `position` enum's `DEF` value should support
 > up to 3 concurrent players in the active-squad formation view, with
-> `MID` and `FWD` at exactly 1 each.
+> `MID` and `FWD` at exactly 1 each. Additional playable positions do not
+> affect formation placement or capacity; only the primary `position` does.
 
 **Season** — id, name (e.g. "Summer 2026"), startDate, endDate,
 isCurrent (boolean, exactly one season should be current at a time —
@@ -121,7 +127,8 @@ explicit end-of-season finalisation flow and always receive this timestamp).
 
 - Current league position for **24 Hour Party People** (pulled from
   `SeasonStanding` for the current season, filtered to our club name).
-- Short description of the team (static/admin-editable text block).
+- Short description of the team, stored in the singleton `TeamProfile` and
+  editable by an administrator at `/admin/home-page`.
 - Current squad shown in a **1GK-3DEF-1MID-1FWD** formation (1 goalkeeper,
   3 defenders, 1 midfielder, 1 forward — confirmed by product owner).
   Layout the outfield players by their `position` field, with the
@@ -129,6 +136,9 @@ explicit end-of-season finalisation flow and always receive this timestamp).
   config constant rather than hardcoding it inline, so it can still be
   changed later without a rewrite, but this shape itself is confirmed —
   no longer an open decision.
+- The implemented responsive pitch uses each active player's primary position,
+  links players to their profiles, and shows explicit empty and vacant-place
+  states when standings or squad data is incomplete.
 
 ### Player profiles (tab)
 
@@ -405,6 +415,9 @@ POST   /api/admin/players/:id/season-stats (admin) add/edit a season's stats
 GET    /api/admin/seasons                  (admin) list seasons
 POST   /api/admin/seasons                  (admin) create a season
 PUT    /api/admin/seasons/:id              (admin) edit/make a season current
+GET    /api/team-profile                   public team description
+GET    /api/admin/team-profile             (admin) editable team description
+PUT    /api/admin/team-profile             (admin) update team description
 GET    /api/games                          game history
 GET    /api/admin/games/fixtures           (admin) scheduled result options
 POST   /api/admin/games                    (admin) submit a result (incl. walkover flow)
@@ -424,8 +437,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 
 ## 8. Definition of done
 
-- [ ] Home page shows current league position, team description, and
-      current squad in a 1GK-3DEF-1MID-1FWD formation
+- [x] Home page shows current league position, an administrator-editable team
+      description, and the current squad in a responsive 1GK-3DEF-1MID-1FWD
+      formation based on each player's primary position
 - [x] Player profiles show current-season stats, per-season historic
       stats (goals/assists/clean sheets only), and an overall/history
       section that clearly separates career totals from
@@ -444,8 +458,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       starting from the launch season, with the required columns including
       walkover games; administrators can explicitly finalise an ended season
       from its saved team standing, after which it is immutable through the site
-- [x] Admin account can create/edit player profiles (description,
-      picture) and enter historic season stats
+- [x] Admin account can create/edit player profiles (description, picture,
+      primary and additional playable positions), edit the Home page team
+      description, and enter historic season stats
 - [x] Admin can create/edit seasons, maintain exactly one current season, and
       preserve whether games played was recorded for each season
 - [ ] Scraping module (Python) implemented with both tiers, DB-backed
