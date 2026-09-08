@@ -9,7 +9,7 @@ const TEAM_NAME = '24 Hour Party People';
 const seasonIdSchema = z.uuid();
 
 const historySelect = {
-  finalizedAt: true,
+  finalisedAt: true,
   ga: true,
   gd: true,
   gf: true,
@@ -47,7 +47,7 @@ const standingSelect = {
 class SeasonNotFoundError extends Error {}
 class SeasonNotEndedError extends Error {}
 class SeasonPredatesHistoryError extends Error {}
-class HistoryAlreadyFinalizedError extends Error {}
+class HistoryAlreadyFinalisedError extends Error {}
 class TeamStandingRequiredError extends Error {}
 
 function hasErrorCode(error: unknown, code: string): boolean {
@@ -77,17 +77,17 @@ function withClubName<T>(history: T): T & { clubName: string } {
   return { ...history, clubName: TEAM_NAME };
 }
 
-async function getFinalizedHistory() {
+async function getFinalisedHistory() {
   const history = await prisma.clubHistory.findMany({
     orderBy: { season: { endDate: 'desc' } },
     select: historySelect,
-    where: { finalizedAt: { not: null } },
+    where: { finalisedAt: { not: null } },
   });
 
   return history.map(withClubName);
 }
 
-async function getFinalizationCandidates() {
+async function getFinalisationCandidates() {
   const seasons = await prisma.season.findMany({
     orderBy: { endDate: 'desc' },
     select: {
@@ -132,10 +132,10 @@ async function runSerializableTransaction<T>(
     }
   }
 
-  throw new Error('Club history could not be finalized.');
+  throw new Error('Club history could not be finalised.');
 }
 
-function handleFinalizationError(error: unknown, response: Response): boolean {
+function handleFinalisationError(error: unknown, response: Response): boolean {
   if (error instanceof SeasonNotFoundError) {
     response.status(404).json({
       error: { code: 'SEASON_NOT_FOUND', message: 'Season not found.' },
@@ -147,7 +147,7 @@ function handleFinalizationError(error: unknown, response: Response): boolean {
     response.status(409).json({
       error: {
         code: 'SEASON_NOT_ENDED',
-        message: 'Club history can only be finalized after the season ends.',
+        message: 'Club history can only be finalised after the season ends.',
       },
     });
     return true;
@@ -164,13 +164,13 @@ function handleFinalizationError(error: unknown, response: Response): boolean {
   }
 
   if (
-    error instanceof HistoryAlreadyFinalizedError ||
+    error instanceof HistoryAlreadyFinalisedError ||
     hasErrorCode(error, 'P2002')
   ) {
     response.status(409).json({
       error: {
-        code: 'HISTORY_ALREADY_FINALIZED',
-        message: 'That season has already been finalized.',
+        code: 'HISTORY_ALREADY_FINALISED',
+        message: 'That season has already been finalised.',
       },
     });
     return true;
@@ -181,7 +181,7 @@ function handleFinalizationError(error: unknown, response: Response): boolean {
       error: {
         code: 'TEAM_STANDING_REQUIRED',
         message:
-          'Save a 24 Hour Party People standings row before finalizing this season.',
+          'Save a 24 Hour Party People standings row before finalising this season.',
       },
     });
     return true;
@@ -193,7 +193,7 @@ function handleFinalizationError(error: unknown, response: Response): boolean {
 export const publicClubHistoryRouter = Router();
 
 publicClubHistoryRouter.get('/', async (_request, response) => {
-  response.status(200).json({ history: await getFinalizedHistory() });
+  response.status(200).json({ history: await getFinalisedHistory() });
 });
 
 export const adminClubHistoryRouter = Router();
@@ -202,18 +202,18 @@ adminClubHistoryRouter.use(requireAuthentication, requireAdmin);
 
 adminClubHistoryRouter.get('/', async (_request, response) => {
   const [history, candidates] = await Promise.all([
-    getFinalizedHistory(),
-    getFinalizationCandidates(),
+    getFinalisedHistory(),
+    getFinalisationCandidates(),
   ]);
   response.status(200).json({ candidates, history });
 });
 
 adminClubHistoryRouter.post(
-  '/:seasonId/finalize',
+  '/:seasonId/finalise',
   async (request, response) => {
     const seasonId = seasonIdSchema.safeParse(request.params.seasonId);
     if (!seasonId.success) {
-      handleFinalizationError(new SeasonNotFoundError(), response);
+      handleFinalisationError(new SeasonNotFoundError(), response);
       return;
     }
 
@@ -245,7 +245,7 @@ adminClubHistoryRouter.post(
           throw new SeasonPredatesHistoryError();
         }
         if (season.clubHistory) {
-          throw new HistoryAlreadyFinalizedError();
+          throw new HistoryAlreadyFinalisedError();
         }
 
         const standing = season.standings[0];
@@ -256,7 +256,7 @@ adminClubHistoryRouter.post(
         return transaction.clubHistory.create({
           data: {
             ...standing,
-            finalizedAt: new Date(),
+            finalisedAt: new Date(),
             seasonId: season.id,
           },
           select: historySelect,
@@ -265,7 +265,7 @@ adminClubHistoryRouter.post(
 
       response.status(201).json({ history: withClubName(history) });
     } catch (error) {
-      if (!handleFinalizationError(error, response)) {
+      if (!handleFinalisationError(error, response)) {
         throw error;
       }
     }

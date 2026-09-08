@@ -111,9 +111,9 @@ walkoverGames (integer), scrapedAt (timestamp, so staleness is visible).
 
 **ClubHistory** (our own club's end-of-season summary, one row per season,
 starting from the current season only) — id, seasonId (FK), position,
-played, won, drawn, lost, gf, ga, gd, points, walkoverGames, finalizedAt
+played, won, drawn, lost, gf, ga, gd, points, walkoverGames, finalisedAt
 (nullable at the schema level; implemented records are created only by the
-explicit end-of-season finalization flow and always receive this timestamp).
+explicit end-of-season finalisation flow and always receive this timestamp).
 
 ## 3. User-facing flows / tabs
 
@@ -194,13 +194,13 @@ explicit end-of-season finalization flow and always receive this timestamp).
   before it, since this is the app's own record rather than backfilled
   data): Position, Club (our club name), Played, Won, Drawn, Lost, GF, GA,
   GD, Points, Walk-over games.
-- Populated from `ClubHistory`, finalized once a season ends (don't treat
+- Populated from `ClubHistory`, finalised once a season ends (don't treat
   an in-progress `SeasonStanding` row as the final `ClubHistory` row until
   the season is actually over).
 - The implemented administrator flow lists ended, attendance-tracked seasons
   and explicitly copies the saved 24 Hour Party People standing into club
-  history. A saved team standing is required, finalization is transactional
-  and one-time, and finalized history is immutable through the website.
+  history. A saved team standing is required, finalisation is transactional
+  and one-time, and finalised history is immutable through the website.
 
 ### Admin / profile creation
 
@@ -245,9 +245,9 @@ don't merge them into one component that hides which is which:
 - `ClubHistory` is **our own club's row only**, persisted **once per
   season**, and only starts existing from the app's launch season forward.
   Eligibility uses the established `Season.tracksGamesPlayed` launch boundary.
-  An administrator must explicitly copy/finalize the saved team standing after
+  An administrator must explicitly copy/finalise the saved team standing after
   the season's Sheffield-local end date, so a mid-scrape glitch cannot corrupt
-  a season that's already finished. Finalized records are immutable through the
+  a season that's already finished. Finalised records are immutable through the
   website.
 
 ## 6. Powerleague scraping module
@@ -289,7 +289,7 @@ A direct fetch of this URL was attempted while writing this spec and was
 - **Flag, don't guess:** whether this requires a headless browser (e.g.
   Playwright for Python, which can run with a real browser fingerprint) to
   get past bot detection, or whether it's only blocking obviously-automated
-  clients/data-center IPs, is unconfirmed and should be checked against
+  clients/data-centre IPs, is unconfirmed and should be checked against
   the live site before committing to an approach. Don't silently build the
   simple version and call it done if it can't actually reach the page.
 - Because of this risk, the module should be built with a **two-tier
@@ -416,9 +416,9 @@ GET    /api/admin/fixtures                 (admin) list all fixtures
 POST   /api/admin/fixtures                 (admin) create a manual fixture
 PUT    /api/admin/fixtures/:id             (admin) correct a scheduled fixture
 GET    /api/club-history                   our club's season-by-season finishes
-GET    /api/admin/club-history             (admin) finalized history and eligible seasons
-POST   /api/admin/club-history/:seasonId/finalize
-                                            (admin) finalize an ended season
+GET    /api/admin/club-history             (admin) finalised history and eligible seasons
+POST   /api/admin/club-history/:seasonId/finalise
+                                            (admin) finalise an ended season
 POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 ```
 
@@ -440,9 +440,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 - [x] Fixtures tab shows upcoming scheduled games with date, competition,
       opponent, optional Sheffield-local time, and venue; administrators have
       a manual create/correct fallback while scraped ingestion remains pending
-- [x] Club history tab shows our club's own finalized season-end finishes,
+- [x] Club history tab shows our club's own finalised season-end finishes,
       starting from the launch season, with the required columns including
-      walkover games; administrators can explicitly finalize an ended season
+      walkover games; administrators can explicitly finalise an ended season
       from its saved team standing, after which it is immutable through the site
 - [x] Admin account can create/edit player profiles (description,
       picture) and enter historic season stats

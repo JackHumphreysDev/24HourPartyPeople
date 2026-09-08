@@ -38,11 +38,11 @@ export function getAdminClubHistory(): Promise<AdminClubHistory> {
   return historyRequest<AdminClubHistory>('/api/admin/club-history');
 }
 
-export async function finalizeClubHistory(
+export async function finaliseClubHistory(
   seasonId: string,
 ): Promise<ClubHistoryEntry> {
   const response = await historyRequest<{ history: ClubHistoryEntry }>(
-    `/api/admin/club-history/${encodeURIComponent(seasonId)}/finalize`,
+    `/api/admin/club-history/${encodeURIComponent(seasonId)}/finalise`,
     { method: 'POST' },
   );
   return response.history;

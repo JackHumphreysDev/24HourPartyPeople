@@ -108,7 +108,7 @@ All notable changes to 24 Hour Party People are recorded here.
 - Cloudinary-backed JPEG, PNG, and WebP uploads with an 800 × 800 transform,
   a 5 MB limit, and cleanup when pictures are replaced or removed.
 - A migration for private Cloudinary public IDs and integration coverage for
-  player visibility, authorization, uploads, and image lifecycle behaviour.
+  player visibility, authorisation, uploads, and image lifecycle behaviour.
 
 ### Changed
 
@@ -125,7 +125,7 @@ All notable changes to 24 Hour Party People are recorded here.
 
 - One-time administrator account setup and browser sign-in experience.
 - Register, login, logout, and current-user API endpoints with reusable
-  authentication and administrator authorization middleware.
+  authentication and administrator authorisation middleware.
 - Database-backed, seven-day sessions storing SHA-256 hashes of opaque tokens.
 - Session migration, request validation, authentication rate limiting, and
   coverage for password, session, and role boundaries.

@@ -13,7 +13,7 @@ export type ClubHistoryStanding = {
 
 export type ClubHistoryEntry = ClubHistoryStanding & {
   clubName: string;
-  finalizedAt: string;
+  finalisedAt: string;
   id: string;
   season: {
     endDate: string;

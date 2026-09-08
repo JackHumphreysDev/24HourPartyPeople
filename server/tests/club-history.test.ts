@@ -97,13 +97,13 @@ describe('administrator club history API', () => {
     const playerCookie = await createUserSession('PLAYER');
     const player = await request(app)
       .post(
-        '/api/admin/club-history/21aff50f-8385-4721-844d-d2615f882985/finalize',
+        '/api/admin/club-history/21aff50f-8385-4721-844d-d2615f882985/finalise',
       )
       .set('Cookie', playerCookie);
     expect(player.status).toBe(403);
   });
 
-  it('lists only ended tracked seasons that have not been finalized', async () => {
+  it('lists only ended tracked seasons that have not been finalised', async () => {
     const adminCookie = await createUserSession('ADMIN');
     const readySeason = await createSeason();
     await createTeamStanding(readySeason.id);
@@ -127,14 +127,14 @@ describe('administrator club history API', () => {
     });
   });
 
-  it('copies the saved team standing into immutable finalized history', async () => {
+  it('copies the saved team standing into immutable finalised history', async () => {
     const adminCookie = await createUserSession('ADMIN');
     const season = await createSeason();
     await createTeamStanding(season.id);
     const app = createApp();
 
     const created = await request(app)
-      .post(`/api/admin/club-history/${season.id}/finalize`)
+      .post(`/api/admin/club-history/${season.id}/finalise`)
       .set('Cookie', adminCookie);
 
     expect(created.status).toBe(201);
@@ -152,7 +152,7 @@ describe('administrator club history API', () => {
       walkoverGames: 1,
       won: 7,
     });
-    expect(created.body.history.finalizedAt).toEqual(expect.any(String));
+    expect(created.body.history.finalisedAt).toEqual(expect.any(String));
 
     await prisma.seasonStanding.update({
       data: { points: 999 },
@@ -164,10 +164,10 @@ describe('administrator club history API', () => {
     expect(publicResponse.body.history[0].points).toBe(23);
 
     const repeated = await request(app)
-      .post(`/api/admin/club-history/${season.id}/finalize`)
+      .post(`/api/admin/club-history/${season.id}/finalise`)
       .set('Cookie', adminCookie);
     expect(repeated.status).toBe(409);
-    expect(repeated.body.error.code).toBe('HISTORY_ALREADY_FINALIZED');
+    expect(repeated.body.error.code).toBe('HISTORY_ALREADY_FINALISED');
   });
 
   it('requires the season to have ended and its team standing to exist', async () => {
@@ -181,13 +181,13 @@ describe('administrator club history API', () => {
     const app = createApp();
 
     const future = await request(app)
-      .post(`/api/admin/club-history/${futureSeason.id}/finalize`)
+      .post(`/api/admin/club-history/${futureSeason.id}/finalise`)
       .set('Cookie', adminCookie);
     expect(future.status).toBe(409);
     expect(future.body.error.code).toBe('SEASON_NOT_ENDED');
 
     const missingStanding = await request(app)
-      .post(`/api/admin/club-history/${missingStandingSeason.id}/finalize`)
+      .post(`/api/admin/club-history/${missingStandingSeason.id}/finalise`)
       .set('Cookie', adminCookie);
     expect(missingStanding.status).toBe(409);
     expect(missingStanding.body.error.code).toBe('TEAM_STANDING_REQUIRED');
@@ -202,7 +202,7 @@ describe('administrator club history API', () => {
     await createTeamStanding(historicSeason.id);
 
     const response = await request(createApp())
-      .post(`/api/admin/club-history/${historicSeason.id}/finalize`)
+      .post(`/api/admin/club-history/${historicSeason.id}/finalise`)
       .set('Cookie', adminCookie);
 
     expect(response.status).toBe(409);
@@ -212,7 +212,7 @@ describe('administrator club history API', () => {
 });
 
 describe('public club history API', () => {
-  it('returns finalized seasons newest first and excludes unfinished rows', async () => {
+  it('returns finalised seasons newest first and excludes unfinished rows', async () => {
     const olderSeason = await createSeason({ name: 'Summer 2020' });
     const newerSeason = await createSeason({
       endDate: '2021-08-31',
@@ -222,7 +222,7 @@ describe('public club history API', () => {
       data: [
         {
           drawn: 1,
-          finalizedAt: new Date('2020-09-01T10:00:00.000Z'),
+          finalisedAt: new Date('2020-09-01T10:00:00.000Z'),
           ga: 10,
           gd: 5,
           gf: 15,
@@ -236,7 +236,7 @@ describe('public club history API', () => {
         },
         {
           drawn: 0,
-          finalizedAt: new Date('2021-09-01T10:00:00.000Z'),
+          finalisedAt: new Date('2021-09-01T10:00:00.000Z'),
           ga: 8,
           gd: 12,
           gf: 20,

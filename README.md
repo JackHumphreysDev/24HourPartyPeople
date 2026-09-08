@@ -77,7 +77,7 @@ deployments at the canonical URL above.
 ## Core data model
 
 The Prisma schema defines users, players, seasons, player season statistics,
-opponents, fixtures, game results, live standings, and finalized club history.
+opponents, fixtures, game results, live standings, and finalised club history.
 The initial migration is stored in `server/prisma/migrations/`.
 
 Database relationships preserve historical football records. Players are
@@ -183,22 +183,22 @@ The standings API provides:
 
 ## Club history
 
-The public `/club-history` route displays the club's finalized season records,
+The public `/club-history` route displays the club's finalised season records,
 newest first. Each row identifies 24 Hour Party People and includes Position,
 Played, Won, Drawn, Lost, GF, GA, GD, Points, and Walkovers.
 
-The `/admin/club-history` route lets an authenticated administrator finalize an
+The `/admin/club-history` route lets an authenticated administrator finalise an
 ended season by copying the saved 24 Hour Party People standings row into the
 permanent club history. Only seasons from the application's attendance-tracked
 launch period onward are eligible, and a complete saved team standing is
-required. Finalization is transactional and can happen only once per season;
-finalized records cannot be edited through the website.
+required. Finalisation is transactional and can happen only once per season;
+finalised records cannot be edited through the website.
 
 The club history API provides:
 
-- `GET /api/club-history` — list finalized public club-history records
-- `GET /api/admin/club-history` — list finalized records and eligible ended seasons (administrator)
-- `POST /api/admin/club-history/:seasonId/finalize` — finalize an ended season from its saved standing (administrator)
+- `GET /api/club-history` — list finalised public club-history records
+- `GET /api/admin/club-history` — list finalised records and eligible ended seasons (administrator)
+- `POST /api/admin/club-history/:seasonId/finalise` — finalise an ended season from its saved standing (administrator)
 
 ## Game results and history
 

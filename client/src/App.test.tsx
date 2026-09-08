@@ -1007,7 +1007,7 @@ describe('App', () => {
 });
 
 describe('club history', () => {
-  it('renders finalized season finishes on the public route', async () => {
+  it('renders finalised season finishes on the public route', async () => {
     window.history.replaceState({}, '', '/club-history');
     vi.stubGlobal(
       'fetch',
@@ -1023,7 +1023,7 @@ describe('club history', () => {
                 {
                   clubName: '24 Hour Party People',
                   drawn: 2,
-                  finalizedAt: '2026-09-01T10:00:00.000Z',
+                  finalisedAt: '2026-09-01T10:00:00.000Z',
                   ga: 18,
                   gd: 6,
                   gf: 24,
@@ -1062,9 +1062,9 @@ describe('club history', () => {
     ).toBeInTheDocument();
   });
 
-  it('finalizes an eligible season from the administrator route', async () => {
+  it('finalises an eligible season from the administrator route', async () => {
     const seasonId = '12c37c8a-6559-493b-9615-76ddab94dd66';
-    let finalized = false;
+    let finalised = false;
     window.history.replaceState({}, '', '/admin/club-history');
     vi.stubGlobal(
       'fetch',
@@ -1120,17 +1120,17 @@ describe('club history', () => {
           }
 
           if (
-            path === `/api/admin/club-history/${seasonId}/finalize` &&
+            path === `/api/admin/club-history/${seasonId}/finalise` &&
             init?.method === 'POST'
           ) {
-            finalized = true;
+            finalised = true;
             return Promise.resolve(
               mockResponse(
                 {
                   history: {
                     clubName: '24 Hour Party People',
                     drawn: 2,
-                    finalizedAt: '2026-09-01T10:00:00.000Z',
+                    finalisedAt: '2026-09-01T10:00:00.000Z',
                     ga: 18,
                     gd: 6,
                     gf: 24,
@@ -1161,16 +1161,16 @@ describe('club history', () => {
     render(<App />);
 
     expect(
-      await screen.findByRole('heading', { name: 'Finalize club history' }),
+      await screen.findByRole('heading', { name: 'Finalise club history' }),
     ).toBeInTheDocument();
-    fireEvent.click(await screen.findByRole('button', { name: 'Finalize' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Finalise' }));
 
     expect(
       await screen.findByText('Summer 2026 was added to club history.'),
     ).toBeInTheDocument();
-    expect(finalized).toBe(true);
+    expect(finalised).toBe(true);
     expect(
-      screen.getByText('No ended seasons are waiting to be finalized.'),
+      screen.getByText('No ended seasons are waiting to be finalised.'),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('rowheader', { name: 'Summer 2026' }),

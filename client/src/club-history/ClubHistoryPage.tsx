@@ -36,7 +36,7 @@ export function ClubHistoryPage() {
         <p className="eyebrow">The record</p>
         <h2>Club history</h2>
         <p>
-          Every finalized 24 Hour Party People league finish, recorded from the
+          Every finalised 24 Hour Party People league finish, recorded from the
           launch season onward.
         </p>
       </div>
@@ -51,7 +51,7 @@ export function ClubHistoryPage() {
       )}
       {status === 'ready' && history.length === 0 && (
         <p className="status-panel">
-          No seasons have been finalized yet. The first finish will appear after
+          No seasons have been finalised yet. The first finish will appear after
           the current season ends.
         </p>
       )}

@@ -260,12 +260,12 @@ select {
   padding: clamp(3rem, 7vw, 5rem) 0;
 }
 
-.history-finalization-list {
+.history-finalisation-list {
   display: grid;
   gap: 0.75rem;
 }
 
-.history-finalization-card {
+.history-finalisation-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -276,11 +276,11 @@ select {
   background: rgb(9 27 18 / 78%);
 }
 
-.history-finalization-card h3 {
+.history-finalisation-card h3 {
   margin: 0.35rem 0;
 }
 
-.history-finalized-section {
+.history-finalised-section {
   padding-top: 3rem;
 }
 

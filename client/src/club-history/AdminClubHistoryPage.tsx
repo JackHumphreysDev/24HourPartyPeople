@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 
 import { AuthScreen } from '../AuthScreen';
 import { useAuth } from '../auth/useAuth';
-import { finalizeClubHistory, getAdminClubHistory } from './api';
+import { finaliseClubHistory, getAdminClubHistory } from './api';
 import type { ClubHistoryCandidate, ClubHistoryEntry } from './types';
 
 function shortDate(value: string): string {
@@ -16,7 +16,7 @@ function shortDate(value: string): string {
 function errorMessage(error: unknown): string {
   return error instanceof Error
     ? error.message
-    : 'The season could not be finalized.';
+    : 'The season could not be finalised.';
 }
 
 function ClubHistoryManager() {
@@ -25,7 +25,7 @@ function ClubHistoryManager() {
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
   );
-  const [finalizingId, setFinalizingId] = useState<string | null>(null);
+  const [finalisingId, setFinalisingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -51,13 +51,13 @@ function ClubHistoryManager() {
     };
   }, []);
 
-  async function finalize(candidate: ClubHistoryCandidate) {
-    setFinalizingId(candidate.id);
+  async function finalise(candidate: ClubHistoryCandidate) {
+    setFinalisingId(candidate.id);
     setError(null);
     setSuccessMessage(null);
 
     try {
-      const entry = await finalizeClubHistory(candidate.id);
+      const entry = await finaliseClubHistory(candidate.id);
       setCandidates((current) =>
         current.filter((season) => season.id !== candidate.id),
       );
@@ -72,7 +72,7 @@ function ClubHistoryManager() {
     } catch (requestError) {
       setError(errorMessage(requestError));
     } finally {
-      setFinalizingId(null);
+      setFinalisingId(null);
     }
   }
 
@@ -80,10 +80,10 @@ function ClubHistoryManager() {
     <section className="club-history-admin-page">
       <div className="section-heading">
         <p className="eyebrow">Administrator</p>
-        <h2>Finalize club history</h2>
+        <h2>Finalise club history</h2>
         <p>
           Copy an ended season’s saved team standings into the permanent club
-          record. Finalized finishes cannot be edited through the website.
+          record. Finalised finishes cannot be edited through the website.
         </p>
       </div>
 
@@ -109,14 +109,14 @@ function ClubHistoryManager() {
             </p>
           )}
 
-          <div className="history-finalization-list">
+          <div className="history-finalisation-list">
             {candidates.length === 0 && (
               <p className="status-panel">
-                No ended seasons are waiting to be finalized.
+                No ended seasons are waiting to be finalised.
               </p>
             )}
             {candidates.map((candidate) => (
-              <article className="history-finalization-card" key={candidate.id}>
+              <article className="history-finalisation-card" key={candidate.id}>
                 <div>
                   <p className="position-label">
                     Ended {shortDate(candidate.endDate)}
@@ -136,23 +136,23 @@ function ClubHistoryManager() {
                 </div>
                 <button
                   className="primary-button"
-                  disabled={!candidate.standing || finalizingId !== null}
+                  disabled={!candidate.standing || finalisingId !== null}
                   type="button"
-                  onClick={() => void finalize(candidate)}
+                  onClick={() => void finalise(candidate)}
                 >
-                  {finalizingId === candidate.id ? 'Finalizing…' : 'Finalize'}
+                  {finalisingId === candidate.id ? 'Finalising…' : 'Finalise'}
                 </button>
               </article>
             ))}
           </div>
 
-          <div className="history-finalized-section">
+          <div className="history-finalised-section">
             <div className="section-heading section-heading-compact">
               <p className="eyebrow">Permanent record</p>
-              <h3>Finalized seasons</h3>
+              <h3>Finalised seasons</h3>
             </div>
             {history.length === 0 ? (
-              <p className="status-panel">No seasons have been finalized.</p>
+              <p className="status-panel">No seasons have been finalised.</p>
             ) : (
               <div className="table-scroll">
                 <table className="standings-table">

@@ -186,7 +186,7 @@ describe('authentication API', () => {
   });
 });
 
-describe('authorization middleware', () => {
+describe('authorisation middleware', () => {
   it('requires an authenticated administrator', async () => {
     const app = express();
     app.get(
