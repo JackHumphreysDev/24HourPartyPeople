@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.13.1` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.14.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -567,6 +567,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.14.0 | 2026-09-09 | Added active substitutes, club branding, and finalised season records with representative formations, benches, awards, and full league finishes from Summer 2026 onwards |
 | 0.13.1 | 2026-09-09 | Exposed inactive historical players and their statistics in a separate public archive while preserving active-only formation and account claims |
 | 0.13.0 | 2026-09-09 | Added validated historical-statistics import, inactive historical profiles, per-game player contributions with derived tracked-season totals, and position-grouped squad sections |
 | 0.12.0 | 2026-09-09 | Added public player accounts with administrator-approved profile claims, manual profile assignment, linked-profile access, and administrator account settings |
