@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.14.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.15.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -530,17 +530,22 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       primary and additional playable positions), edit the Home page team
       description, and enter historic season stats
 - [x] Players can create email/password accounts, request an unclaimed Player
-      profile, receive administrator approval, and open their linked profile;
-      administrators can manage claims and their own account without using the
-      setup key in the normal website
+      profile from the current or historical player list, receive administrator
+      approval, and open their linked profile; each profile can belong to only
+      one account, including while approval is pending, and administrators can
+      manage claims and their own account without using the setup key in the
+      normal website
 - [x] Admin can create/edit seasons, maintain exactly one current season, and
       preserve whether games played was recorded for each season
 - [x] Admin can record player appearances, goals, assists, and clean sheets
       per normal game in a tracked season; profiles derive tracked totals from
       those game records
 - [x] Approved historical totals can be previewed and imported idempotently,
-      with missing names created as inactive historical players and games
-      played left unrecorded through Summer 2026
+      covering every supplied season from January 2019 through Summer 2026,
+      with missing names created as inactive historical players, known aliases
+      merged into canonical profiles, fractional values rounded down, all
+      imported totals authoritatively recalculated, and games played left
+      unrecorded through Summer 2026
 - [x] The public Players page groups the active squad into keeper, defender,
       midfielder, and attacker sections, followed by an inactive historical
       player archive with public profile and statistic access
@@ -567,6 +572,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.15.0 | 2026-09-09 | Completed the supplied 24-season player record, canonical player merges, authoritative total recalculation, historical profile claims, clearer per-game match-stat entry, and global header branding |
 | 0.14.0 | 2026-09-09 | Added active substitutes, club branding, and finalised season records with representative formations, benches, awards, and full league finishes from Summer 2026 onwards |
 | 0.13.1 | 2026-09-09 | Exposed inactive historical players and their statistics in a separate public archive while preserving active-only formation and account claims |
 | 0.13.0 | 2026-09-09 | Added validated historical-statistics import, inactive historical profiles, per-game player contributions with derived tracked-season totals, and position-grouped squad sections |

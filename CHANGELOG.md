@@ -2,6 +2,28 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.15.0] - 2026-09-09
+
+### Added
+
+- Complete supplied player statistics for all 24 seasons from January 2019 to
+  Summer 2026, including inactive historical profiles for previously missing
+  players.
+- A clearer administrator match sheet for recording each player's appearance,
+  goals, assists, and clean sheet against a selected game.
+- Historical Player profiles in the account-registration selector.
+
+### Changed
+
+- Recalculate imported season and career totals authoritatively so rerunning
+  the import replaces stale values without double-counting.
+- Merge duplicate player identities, including Birch into Kyle, while
+  preserving profile links and associated records.
+- Round fractional supplied statistics down to whole numbers during import.
+- Move the club crest beside the global team name and Sheffield strapline.
+- Prevent Player profiles from being claimed by more than one account,
+  including profiles awaiting administrator approval.
+
 ## [0.14.0] - 2026-09-09
 
 ### Added
