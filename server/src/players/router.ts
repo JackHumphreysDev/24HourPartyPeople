@@ -197,13 +197,20 @@ async function removeStoredImage(publicId: string | null): Promise<void> {
 export const publicPlayersRouter = Router();
 
 publicPlayersRouter.get('/', async (_request, response) => {
-  const players = await prisma.player.findMany({
-    orderBy: [{ position: 'asc' }, { name: 'asc' }],
-    select: playerSummarySelect,
-    where: { isActiveSquad: true },
-  });
+  const [players, historicalPlayers] = await Promise.all([
+    prisma.player.findMany({
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
+      select: playerSummarySelect,
+      where: { isActiveSquad: true },
+    }),
+    prisma.player.findMany({
+      orderBy: { name: 'asc' },
+      select: playerSummarySelect,
+      where: { isActiveSquad: false },
+    }),
+  ]);
 
-  response.status(200).json({ players });
+  response.status(200).json({ historicalPlayers, players });
 });
 
 publicPlayersRouter.get('/:playerId', async (request, response) => {
@@ -218,11 +225,8 @@ publicPlayersRouter.get('/:playerId', async (request, response) => {
     return;
   }
 
-  const player = await prisma.player.findFirst({
-    where: {
-      id: playerId.data,
-      isActiveSquad: true,
-    },
+  const player = await prisma.player.findUnique({
+    where: { id: playerId.data },
     select: {
       ...playerSummarySelect,
       seasonStats: {

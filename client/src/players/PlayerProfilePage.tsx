@@ -131,7 +131,7 @@ export function PlayerProfilePage() {
   return (
     <article className="profile-page">
       <Link className="back-link" to="/players">
-        ← Current squad
+        ← All players
       </Link>
 
       <header className="profile-header">

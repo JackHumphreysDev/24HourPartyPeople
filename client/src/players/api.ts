@@ -79,6 +79,20 @@ export async function getPlayers(): Promise<PlayerSummary[]> {
   return response.players;
 }
 
+export async function getPlayerDirectory(): Promise<{
+  historicalPlayers: PlayerSummary[];
+  players: PlayerSummary[];
+}> {
+  const response = await playerRequest<{
+    historicalPlayers?: PlayerSummary[];
+    players: PlayerSummary[];
+  }>('/api/players');
+  return {
+    historicalPlayers: response.historicalPlayers ?? [],
+    players: response.players,
+  };
+}
+
 export async function getPlayer(playerId: string): Promise<PlayerDetail> {
   const response = await playerRequest<{ player: PlayerDetail }>(
     `/api/players/${encodeURIComponent(playerId)}`,

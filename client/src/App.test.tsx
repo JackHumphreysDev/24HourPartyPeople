@@ -102,6 +102,18 @@ describe('App', () => {
                     profilePictureUrl: null,
                   },
                 ],
+                historicalPlayers: [
+                  {
+                    additionalPositions: [],
+                    createdAt: '',
+                    description: 'Historical player.',
+                    id: 'historic',
+                    isActiveSquad: false,
+                    name: 'Birch',
+                    position: null,
+                    profilePictureUrl: null,
+                  },
+                ],
               },
               200,
             ),
@@ -127,6 +139,10 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Twiggy/ })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Luke/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Historical players' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Birch/ })).toBeInTheDocument();
   });
 
   it('renders the editable description, league position, and squad formation on the Home page', async () => {
