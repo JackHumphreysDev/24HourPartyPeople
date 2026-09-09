@@ -72,11 +72,19 @@ export function HomePage() {
       standing.clubName.toLocaleLowerCase('en-GB') ===
       TEAM_NAME.toLocaleLowerCase('en-GB'),
   );
+  const startingPlayers =
+    data?.players.filter((player) => !player.isOnBench) ?? [];
+  const benchPlayers = data?.players.filter((player) => player.isOnBench) ?? [];
 
   return (
     <section className="home-page" aria-labelledby="home-heading">
       <div className="home-hero">
-        <div>
+        <div className="home-hero-copy">
+          <img
+            className="home-logo"
+            src="/assets/brand/logo-transparent-512.webp"
+            alt="24 Hour Party People club crest"
+          />
           <p className="eyebrow">Established 2016</p>
           <h2 id="home-heading">Football, friends, and the full story.</h2>
           <p>{data?.teamProfile.description ?? DEFAULT_DESCRIPTION}</p>
@@ -124,7 +132,7 @@ export function HomePage() {
         {status === 'ready' && data && data.players.length > 0 && (
           <div className="formation-pitch" aria-label="Current squad formation">
             {FORMATION_LINES.map((line) => {
-              const players = data.players.filter(
+              const players = startingPlayers.filter(
                 (player) => player.position === line.position,
               );
 
@@ -159,6 +167,31 @@ export function HomePage() {
                 </div>
               );
             })}
+          </div>
+        )}
+        {status === 'ready' && benchPlayers.length > 0 && (
+          <div className="formation-bench" aria-label="Current substitutes">
+            <div className="section-heading section-heading-compact">
+              <p className="eyebrow">Substitutes</p>
+              <h3>Bench</h3>
+            </div>
+            <div className="formation-bench-players">
+              {benchPlayers.map((player) => (
+                <Link
+                  className="formation-player formation-bench-player"
+                  key={player.id}
+                  to={`/players/${player.id}`}
+                >
+                  <PlayerAvatar player={player} />
+                  <strong>{player.name}</strong>
+                  <span>
+                    {player.position
+                      ? positionLabels[player.position]
+                      : 'Position pending'}
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
       </div>

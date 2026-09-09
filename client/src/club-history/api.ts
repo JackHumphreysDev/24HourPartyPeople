@@ -1,4 +1,9 @@
-import type { AdminClubHistory, ClubHistoryEntry } from './types';
+import type {
+  AdminClubHistory,
+  ClubHistoryEntry,
+  SeasonSquadEntry,
+  SeasonSquadInput,
+} from './types';
 
 type ErrorResponse = {
   error?: {
@@ -46,4 +51,19 @@ export async function finaliseClubHistory(
     { method: 'POST' },
   );
   return response.history;
+}
+
+export async function saveSeasonSquad(
+  seasonId: string,
+  entries: SeasonSquadInput,
+): Promise<SeasonSquadEntry[]> {
+  const response = await historyRequest<{ entries: SeasonSquadEntry[] }>(
+    `/api/admin/club-history/${encodeURIComponent(seasonId)}/squad`,
+    {
+      body: JSON.stringify({ entries }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
+    },
+  );
+  return response.entries;
 }

@@ -137,7 +137,7 @@ async function applyImport() {
         where: { seasonId: currentSeason.id },
       });
       await transaction.season.update({
-        data: { tracksGamesPlayed: false },
+        data: { isClubHistoryEligible: true, tracksGamesPlayed: false },
         where: { id: currentSeason.id },
       });
 
@@ -155,6 +155,7 @@ async function applyImport() {
         const existing = matchingSeasons[0];
         const data = {
           endDate: dateFromInput(season.endDate!),
+          isClubHistoryEligible: false,
           isCurrent: false,
           name: season.name,
           startDate: dateFromInput(season.startDate!),

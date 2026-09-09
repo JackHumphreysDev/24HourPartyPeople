@@ -38,6 +38,7 @@ const playerFieldsSchema = z.object({
   additionalPositions: additionalPositionsSchema,
   description: z.string().trim().min(1).max(2_000),
   isActiveSquad: booleanStringSchema.default(true),
+  isOnBench: booleanStringSchema.default(false),
   name: z.string().trim().min(1).max(100),
   position: nullablePositionSchema,
 });
@@ -46,6 +47,7 @@ function validatePlayerPositions(
   values: {
     additionalPositions: PlayerPosition[];
     isActiveSquad: boolean;
+    isOnBench: boolean;
     position: PlayerPosition | null;
   },
   context: z.RefinementCtx,
@@ -55,6 +57,13 @@ function validatePlayerPositions(
       code: 'custom',
       message: 'An active player must have a primary position.',
       path: ['position'],
+    });
+  }
+  if (!values.isActiveSquad && values.isOnBench) {
+    context.addIssue({
+      code: 'custom',
+      message: 'Only an active player can be placed on the bench.',
+      path: ['isOnBench'],
     });
   }
   if (values.position === null && values.additionalPositions.length > 0) {
@@ -111,6 +120,7 @@ const playerSummarySelect = {
   description: true,
   id: true,
   isActiveSquad: true,
+  isOnBench: true,
   name: true,
   position: true,
   profilePictureUrl: true,
@@ -162,6 +172,7 @@ async function requireFormationSpace(
   const activePlayersInPosition = await transaction.player.count({
     where: {
       isActiveSquad: true,
+      isOnBench: false,
       position,
       ...(excludingPlayerId ? { id: { not: excludingPlayerId } } : {}),
     },
@@ -509,7 +520,11 @@ adminPlayersRouter.post('/', parsePlayerImage, async (request, response) => {
     }
 
     const player = await runSerializableTransaction(async (transaction) => {
-      if (parsed.data.isActiveSquad && parsed.data.position) {
+      if (
+        parsed.data.isActiveSquad &&
+        !parsed.data.isOnBench &&
+        parsed.data.position
+      ) {
         await requireFormationSpace(transaction, parsed.data.position);
       }
 
@@ -600,7 +615,11 @@ adminPlayersRouter.put(
       const { removeProfilePicture: _removeProfilePicture, ...playerData } =
         parsed.data;
       const player = await runSerializableTransaction(async (transaction) => {
-        if (playerData.isActiveSquad && playerData.position) {
+        if (
+          playerData.isActiveSquad &&
+          !playerData.isOnBench &&
+          playerData.position
+        ) {
           await requireFormationSpace(
             transaction,
             playerData.position,

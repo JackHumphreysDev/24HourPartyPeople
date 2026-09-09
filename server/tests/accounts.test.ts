@@ -10,6 +10,7 @@ const password = 'correct horse battery staple';
 
 async function clearDatabase() {
   await prisma.session.deleteMany();
+  await prisma.seasonSquadEntry.deleteMany();
   await prisma.user.deleteMany();
   await prisma.player.deleteMany();
 }

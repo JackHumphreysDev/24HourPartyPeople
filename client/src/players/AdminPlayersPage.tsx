@@ -13,6 +13,7 @@ const emptyInput: PlayerInput = {
   description: '',
   image: null,
   isActiveSquad: true,
+  isOnBench: false,
   name: '',
   position: 'DEF',
   removeProfilePicture: false,
@@ -38,6 +39,7 @@ function PlayerForm({ editingPlayer, onCancel, onSaved }: PlayerFormProps) {
           description: editingPlayer.description,
           image: null,
           isActiveSquad: editingPlayer.isActiveSquad,
+          isOnBench: editingPlayer.isOnBench,
           name: editingPlayer.name,
           position: editingPlayer.position,
           removeProfilePicture: false,
@@ -202,10 +204,26 @@ function PlayerForm({ editingPlayer, onCancel, onSaved }: PlayerFormProps) {
           checked={input.isActiveSquad}
           type="checkbox"
           onChange={(event) =>
-            setInput({ ...input, isActiveSquad: event.target.checked })
+            setInput({
+              ...input,
+              isActiveSquad: event.target.checked,
+              isOnBench: event.target.checked ? input.isOnBench : false,
+            })
           }
         />
         Show in the current squad
+      </label>
+
+      <label className="checkbox-label">
+        <input
+          checked={input.isOnBench}
+          disabled={!input.isActiveSquad}
+          type="checkbox"
+          onChange={(event) =>
+            setInput({ ...input, isOnBench: event.target.checked })
+          }
+        />
+        Show as a substitute on the bench
       </label>
 
       {error && (
@@ -311,7 +329,12 @@ function PlayerManager() {
                         .join(', ')}
                     </>
                   )}{' '}
-                  · {player.isActiveSquad ? 'Active' : 'Inactive'}
+                  ·{' '}
+                  {player.isActiveSquad
+                    ? player.isOnBench
+                      ? 'Active · Bench'
+                      : 'Active · Starting six'
+                    : 'Inactive'}
                 </p>
                 <h3>{player.name}</h3>
               </div>

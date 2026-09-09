@@ -61,6 +61,7 @@ function toFormData(input: PlayerInput): FormData {
   );
   formData.set('description', input.description);
   formData.set('isActiveSquad', String(input.isActiveSquad));
+  formData.set('isOnBench', String(input.isOnBench));
   formData.set('name', input.name);
   formData.set('position', input.position ?? '');
   formData.set('removeProfilePicture', String(input.removeProfilePicture));

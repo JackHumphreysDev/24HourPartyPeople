@@ -34,6 +34,7 @@ async function clearDatabase() {
   await prisma.playerSeasonStat.deleteMany();
   await prisma.seasonStanding.deleteMany();
   await prisma.clubHistory.deleteMany();
+  await prisma.seasonSquadEntry.deleteMany();
   await prisma.user.deleteMany();
   await prisma.player.deleteMany();
   await prisma.opponentClub.deleteMany();
@@ -58,6 +59,7 @@ function validPlayerFields() {
     additionalPositions: JSON.stringify(['MID', 'FWD']),
     description: 'A dependable defender with an eye for a pass.',
     isActiveSquad: 'true',
+    isOnBench: 'false',
     name: 'Alex Example',
     position: 'DEF',
   };
@@ -112,6 +114,7 @@ describe('public player API', () => {
     expect(response.body.players[0]).toMatchObject({
       additionalPositions: [],
       isActiveSquad: true,
+      isOnBench: false,
       name: 'Active Player',
       position: 'MID',
       profilePictureUrl: 'https://example.test/active.webp',
@@ -258,6 +261,7 @@ describe('administrator player API', () => {
     expect(response.body.player).toMatchObject({
       additionalPositions: ['MID', 'FWD'],
       isActiveSquad: true,
+      isOnBench: false,
       name: 'Alex Example',
       position: 'DEF',
       profilePictureUrl:
@@ -392,6 +396,48 @@ describe('administrator player API', () => {
     await expect(
       prisma.player.count({ where: { position: 'GK' } }),
     ).resolves.toBe(1);
+  });
+
+  it('allows substitutes beyond the starting formation limits', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    await prisma.player.create({
+      data: {
+        description: 'The starting goalkeeper.',
+        name: 'Starting Keeper',
+        position: 'GK',
+      },
+    });
+
+    const response = await request(createApp())
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field({ ...validPlayerFields(), isOnBench: 'true', position: 'GK' });
+
+    expect(response.status).toBe(201);
+    expect(response.body.player).toMatchObject({
+      isActiveSquad: true,
+      isOnBench: true,
+      position: 'GK',
+    });
+    await expect(
+      prisma.player.count({ where: { isOnBench: true, position: 'GK' } }),
+    ).resolves.toBe(1);
+  });
+
+  it('rejects bench status for an inactive historical player', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const response = await request(createApp())
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field({
+        ...validPlayerFields(),
+        isActiveSquad: 'false',
+        isOnBench: 'true',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('INVALID_PLAYER');
+    await expect(prisma.player.count()).resolves.toBe(0);
   });
 
   it('updates squad status and safely replaces a managed image', async () => {
