@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.12.0` release includes the project foundation, core football
+The current `0.13.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -21,6 +21,10 @@ private scraper, with cached data and administrator entry retained as safe
 fallbacks. Players can create accounts and request their Player profile, with
 administrator approval and manual assignment controls; administrators can
 manage their own normal login details without using the recovery setup key.
+Historical season totals can be imported with a validated preview, while new
+games-tracked seasons derive appearances, goals, assists, and clean sheets
+from the administrator's per-game records. The public squad is grouped by
+keepers, defenders, midfielders, and attackers.
 The website is deployed to Vercel with Neon PostgreSQL and Cloudinary image
 storage. See
 [the project specification](docs/PROJECT-SPEC.md) for full functionality.
@@ -96,8 +100,9 @@ deployments at the canonical URL above.
 ## Core data model
 
 The Prisma schema defines users, the singleton team profile, scraper status,
-players, seasons, player season statistics, opponents, fixtures, game results,
-live standings, and finalised club history. Migrations are stored in
+players, seasons, historical player season statistics, opponents, fixtures,
+game results, per-game player statistics, live standings, and finalised club
+history. Migrations are stored in
 `server/prisma/migrations/`.
 
 Database relationships preserve historical football records. Players are
@@ -168,8 +173,9 @@ The Team Profile API provides:
 
 ## Player profiles and squad management
 
-The public website provides a routed home page, current-squad list, and an
-individual profile URL for each active player. Profiles display the player's
+The public website provides a routed home page, a current-squad list grouped
+into keepers, defenders, midfielders, and attackers, and an individual profile
+URL for each active player. Profiles display the player's
 description and picture, current-season statistics, previous-season records,
 and recorded career totals. Historic seasons with no attendance data show
 games played as **Not recorded** rather than `0`.
@@ -180,8 +186,10 @@ players in or out of the active squad. Every player has one primary formation
 position and may have up to three unique additional positions. The primary
 position alone controls placement and the transactional active-squad limits:
 one goalkeeper, three defenders, one midfielder, and one forward. Inactive
-players remain available to administrators but are not exposed by the public
-API.
+historical players may retain an unknown primary position until an
+administrator completes their profile; a primary position is required before
+activation. Inactive players remain available to administrators but are not
+exposed by the public API.
 
 Profile pictures are uploaded through the API to Cloudinary. Uploads accept
 JPEG, PNG, or WebP files up to 5 MB and are cropped to an 800 × 800 square.
@@ -199,16 +207,19 @@ The player API provides:
 ## Season and statistics management
 
 The `/admin/statistics` route allows an authenticated administrator to create
-and edit seasons and to add or update each player's totals for any season.
+and edit seasons and to add or update each player's totals for an untracked
+historical season.
 Making a season current replaces the previous current season atomically, and
 the current season cannot be left unset.
 
-Each season records whether games played was tracked. Seasons from before
-attendance tracking began keep that setting disabled, require
-`PlayerSeasonStat.gamesPlayed` to remain `null`, and display **Not recorded**.
-Seasons configured to track attendance require games played as a non-negative
-whole number. This avoids turning unknown historical attendance into a
-misleading zero.
+Each season records whether games played is tracked. Seasons through Summer
+2026 keep that setting disabled, require `PlayerSeasonStat.gamesPlayed` to
+remain `null`, and display **Not recorded**. An administrator can enable
+tracking explicitly when creating the following season. Tracked seasons use
+the per-game records entered at `/admin/games`: selecting a participant adds
+one appearance, and season goals, assists, and clean sheets are calculated
+from those records instead of editable aggregate rows. Walkovers do not accept
+per-game player statistics.
 
 The administration API provides:
 
@@ -217,6 +228,23 @@ The administration API provides:
 - `PUT /api/admin/seasons/:seasonId` — edit or make a season current
 - `GET /api/admin/players/:playerId/season-stats` — list a player's statistics
 - `POST /api/admin/players/:playerId/season-stats` — add or update a season's statistics
+
+### Historical statistics import
+
+`npm run stats:import` reads the approved historical dataset and produces a
+preview without changing the database. It reports existing profile matches,
+including the Broomhead/Broom alias, and the inactive historical profiles it
+would create. After checking the preview against the intended database, apply
+the same import explicitly:
+
+```bash
+npm run stats:import -- --apply
+```
+
+The command uses `DATABASE_URL`, can be run repeatedly without duplicating
+records, and refuses ambiguous player or season matches. It also refuses to
+convert Summer 2026 if per-game statistics already exist. Games played is
+never estimated for imported seasons.
 
 ## Current league standings
 
@@ -281,11 +309,19 @@ Saving a normal league result displays a standings-refresh warning so an
 administrator can run the Powerleague refresh immediately instead of waiting
 for the next daily job.
 
+For a non-walkover result in a games-tracked season, the same page lets the
+administrator select every participating player and assign their goals,
+assists, and clean sheet. The total player goals and assists cannot exceed the
+team score, and a clean sheet can be selected only when the opposition scored
+zero.
+
 The game API provides:
 
 - `GET /api/games` — list public game history
 - `GET /api/admin/games/fixtures` — list scheduled fixtures available for result entry
+- `GET /api/admin/games/player-stats` — list tracked games, players, and saved contributions
 - `POST /api/admin/games` — record a fixture-based or manual result
+- `PUT /api/admin/games/:gameId/player-stats` — replace a game's player contributions
 
 ## Upcoming fixtures
 

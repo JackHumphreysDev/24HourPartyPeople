@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.12.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.13.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -70,8 +70,9 @@ lastSucceededAt, lastError. Express updates it after every automated or manual
 refresh so failures and cached-data staleness remain visible across restarts.
 
 **Player** — id, name, description (free text, admin-editable),
-profilePictureUrl (nullable), position (primary enum: `GK` | `DEF` | `MID` |
-`FWD`, used for the formation display — see Section 3), additionalPositions
+profilePictureUrl (nullable), position (nullable primary enum: `GK` | `DEF` |
+`MID` | `FWD`, used for the formation display — null is allowed only for an
+inactive historical player), additionalPositions
 (unique array of any other `PlayerPosition` values), isActiveSquad (boolean),
 createdAt.
 
@@ -84,15 +85,15 @@ createdAt.
 **Season** — id, name (e.g. "Summer 2026"), startDate, endDate,
 isCurrent (boolean, exactly one season should be current at a time —
 enforce in application logic, not just convention), tracksGamesPlayed
-(boolean — false for seasons before attendance tracking began and true for
-the current season onward).
+(boolean — false through Summer 2026 and explicitly enabled from the first
+later season in which per-game appearances are recorded).
 
 **PlayerSeasonStat** — id, playerId (FK), seasonId (FK), goals (integer),
 assists (integer), cleanSheets (integer), gamesPlayed (integer, nullable —
 **null/unknown whenever the related season has `tracksGamesPlayed = false`**,
 since historic games-played data was never recorded; only populate for tracked
 seasons — see Section 4), note (optional text, e.g. flagging incomplete
-historic data).
+historic data). Aggregate rows are not edited for games-tracked seasons.
 
 **OpponentClub** — id, name (the other teams in the league, from the
 scraped standings/fixtures — not our own club).
@@ -110,6 +111,11 @@ Fixture first), seasonId (FK), competition (enum: `LEAGUE` | `CUP`),
 datePlayed, opponentClubId (FK), ourScore (integer, nullable if walkover),
 opponentScore (integer, nullable if walkover), isWalkover (boolean),
 walkoverReason (text, nullable), createdAt.
+
+**GamePlayerStat** — id, gameResultId (FK), playerId (FK), goals (integer),
+assists (integer), cleanSheet (boolean), createdAt, updatedAt. The unique
+game/player pair records an appearance and supplies the player totals for a
+games-tracked season. Walkovers never receive these rows.
 
 > A single calendar date can have **two** GameResult rows: the league
 > fixture recorded as a walkover, plus a separate cup GameResult played
@@ -148,7 +154,8 @@ explicit end-of-season finalisation flow and always receive this timestamp).
 
 ### Player profiles (tab)
 
-- List of players → individual profile view per player showing:
+- List active players in vertically ordered Keepers, Defenders, Midfielders,
+  and Attackers sections → individual profile view per player showing:
   - Description + profile picture (admin-set).
   - Current season stats: goals, assists, clean sheets, games played.
   - Previous season stats, per season: goals, assists, clean sheets.
@@ -178,6 +185,9 @@ explicit end-of-season finalisation flow and always receive this timestamp).
      date (since a walkover means a cup game is played instead) — this
      should feel like a natural next step in the same flow, not a
      separate hidden feature.
+  4. For a normal result in a games-tracked season, select every participant
+     and record their goals, assists, and clean-sheet contribution. Each
+     selected player receives one appearance for that game.
   4. Otherwise, enter our score and the opponent's score as normal.
 - Saving a non-walkover league result should trigger a re-fetch/refresh of
   `SeasonStanding` (or at minimum flag it as stale) since the scrape source
@@ -241,17 +251,24 @@ explicit end-of-season finalisation flow and always receive this timestamp).
   Powerleague scrape covers team-level standings/fixtures/results, not
   individual player stats).
 - Admin can create and edit seasons, make exactly one season current, record
-  whether each season tracked games played, and add or update non-negative
-  player statistics for active and inactive players.
+  whether each season tracks games played, add or update non-negative
+  aggregate player statistics for untracked seasons, and record player
+  contributions per game for tracked seasons.
+- Historical imports match existing profiles by name or approved alias and
+  create missing names as inactive players with an unknown position. An
+  administrator must assign a primary position before activating one.
 
 ## 4. Games-played tracking — historic data note
 
 Previous seasons have goals, assists, and clean sheets recorded, but
 **games played was never tracked** before now. Per product decision:
 
-- Set `Season.tracksGamesPlayed` to `true` from the first tracked season onward
-  and require `gamesPlayed` on every related `PlayerSeasonStat`.
-- Set `Season.tracksGamesPlayed` to `false` for all prior seasons; their
+- Keep `Season.tracksGamesPlayed` false through Summer 2026. Enable it
+  explicitly when the first later attendance-tracked season is created.
+- For tracked seasons, derive appearances, goals, assists, and clean sheets
+  from `GamePlayerStat` rows rather than storing editable
+  `PlayerSeasonStat` aggregates.
+- For all prior seasons, their
   `gamesPlayed` values stay `null` and render as "not recorded," not `0` or
   blank. This season-level fact remains accurate after a current season later
   becomes historic.
@@ -442,6 +459,8 @@ PUT    /api/admin/team-profile             (admin) update team description
 GET    /api/games                          game history
 GET    /api/admin/games/fixtures           (admin) scheduled result options
 POST   /api/admin/games                    (admin) submit a result (incl. walkover flow)
+GET    /api/admin/games/player-stats       (admin) tracked games, players and contributions
+PUT    /api/admin/games/:id/player-stats   (admin) replace a game's player contributions
 GET    /api/standings/current              current league standings (scraped, cached)
 GET    /api/admin/standings                (admin) current standings snapshot
 PUT    /api/admin/standings/current        (admin) replace current standings snapshot
@@ -488,6 +507,14 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       setup key in the normal website
 - [x] Admin can create/edit seasons, maintain exactly one current season, and
       preserve whether games played was recorded for each season
+- [x] Admin can record player appearances, goals, assists, and clean sheets
+      per normal game in a tracked season; profiles derive tracked totals from
+      those game records
+- [x] Approved historical totals can be previewed and imported idempotently,
+      with missing names created as inactive historical players and games
+      played left unrecorded through Summer 2026
+- [x] The public Players page groups the active squad into keeper, defender,
+      midfielder, and attacker sections
 - [x] Scraping module (Python) implemented with both tiers, DB-backed
       caching, a visible staleness indicator, and the 3 required pytest
       unit tests passing
@@ -511,6 +538,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.13.0 | 2026-09-09 | Added validated historical-statistics import, inactive historical profiles, per-game player contributions with derived tracked-season totals, and position-grouped squad sections |
 | 0.12.0 | 2026-09-09 | Added public player accounts with administrator-approved profile claims, manual profile assignment, linked-profile access, and administrator account settings |
 | 0.11.1 | 2026-09-08 | Fixed clean Vercel builds by installing the Prisma CLI as a production dependency for client generation and database migrations |
 | 0.11.0 | 2026-09-08 | Added private Powerleague scraping, automatic standings, fixture and result ingestion, protected scheduled and administrator refreshes, and cached stale-data fallback behaviour |

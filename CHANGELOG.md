@@ -2,6 +2,28 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.13.0] - 2026-09-09
+
+### Added
+
+- Per-game player appearances, goals, assists, and clean sheets for seasons
+  configured to track games played, with season totals calculated from the
+  saved game records.
+- A validated historical-statistics importer with a read-only preview,
+  idempotent application, name aliases, and inactive historical-player
+  creation.
+- Position-grouped public squad sections for keepers, defenders, midfielders,
+  and attackers.
+
+### Changed
+
+- Keep games played unrecorded through Summer 2026 and allow administrators to
+  enable per-game tracking explicitly for a later season.
+- Allow inactive historical players to have an unknown position while still
+  requiring every active player to have a primary position.
+- Prevent aggregate statistic editing for tracked seasons so their totals
+  remain consistent with their underlying game records.
+
 ## [0.12.0] - 2026-09-09
 
 ### Added
