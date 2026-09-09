@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getPlayers } from './api';
+import { getPlayerDirectory } from './api';
 import { PlayerAvatar } from './PlayerAvatar';
 import type { PlayerPosition, PlayerSummary } from './types';
 import { positionLabels } from './types';
@@ -18,6 +18,9 @@ const positionSections: ReadonlyArray<{
 
 export function PlayersPage() {
   const [players, setPlayers] = useState<PlayerSummary[]>([]);
+  const [historicalPlayers, setHistoricalPlayers] = useState<PlayerSummary[]>(
+    [],
+  );
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
   );
@@ -25,9 +28,10 @@ export function PlayersPage() {
   useEffect(() => {
     const controller = new AbortController();
 
-    void getPlayers()
-      .then((nextPlayers) => {
-        setPlayers(nextPlayers);
+    void getPlayerDirectory()
+      .then((directory) => {
+        setPlayers(directory.players);
+        setHistoricalPlayers(directory.historicalPlayers);
         setStatus('ready');
       })
       .catch(() => {
@@ -111,6 +115,40 @@ export function PlayersPage() {
             );
           })}
         </div>
+      )}
+
+      {status === 'ready' && historicalPlayers.length > 0 && (
+        <section
+          className="player-position-section historical-player-section"
+          aria-labelledby="historical-players-heading"
+        >
+          <div className="section-heading">
+            <p className="eyebrow">Club archive</p>
+            <h2 id="historical-players-heading">Historical players</h2>
+            <p>Former players with statistics recorded in the club history.</p>
+          </div>
+          <div className="player-grid">
+            {historicalPlayers.map((player) => (
+              <Link
+                className="player-card"
+                key={player.id}
+                to={`/players/${player.id}`}
+              >
+                <PlayerAvatar player={player} />
+                <div>
+                  <p className="position-label">
+                    Historical player
+                    {player.position
+                      ? ` · ${positionLabels[player.position]}`
+                      : ''}
+                  </p>
+                  <h3>{player.name}</h3>
+                  <p className="player-description">{player.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
     </section>
   );

@@ -108,6 +108,7 @@ describe('public player API', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.players).toHaveLength(1);
+    expect(response.body.historicalPlayers).toHaveLength(1);
     expect(response.body.players[0]).toMatchObject({
       additionalPositions: [],
       isActiveSquad: true,
@@ -116,6 +117,13 @@ describe('public player API', () => {
       profilePictureUrl: 'https://example.test/active.webp',
     });
     expect(response.body.players[0]).not.toHaveProperty(
+      'profilePicturePublicId',
+    );
+    expect(response.body.historicalPlayers[0]).toMatchObject({
+      isActiveSquad: false,
+      name: 'Inactive Player',
+    });
+    expect(response.body.historicalPlayers[0]).not.toHaveProperty(
       'profilePicturePublicId',
     );
   });
@@ -195,7 +203,7 @@ describe('public player API', () => {
     });
   });
 
-  it('does not expose inactive players or accept malformed profile IDs', async () => {
+  it('returns inactive historical profiles and rejects malformed profile IDs', async () => {
     const inactivePlayer = await prisma.player.create({
       data: {
         description: 'Not in the current squad.',
@@ -205,10 +213,14 @@ describe('public player API', () => {
       },
     });
 
-    expect(
-      (await request(createApp()).get(`/api/players/${inactivePlayer.id}`))
-        .status,
-    ).toBe(404);
+    const historicalProfile = await request(createApp()).get(
+      `/api/players/${inactivePlayer.id}`,
+    );
+    expect(historicalProfile.status).toBe(200);
+    expect(historicalProfile.body.player).toMatchObject({
+      isActiveSquad: false,
+      name: 'Inactive Player',
+    });
     expect(
       (await request(createApp()).get('/api/players/not-a-uuid')).status,
     ).toBe(404);
