@@ -2,6 +2,15 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.13.1] - 2026-09-09
+
+### Fixed
+
+- Expose inactive historical players and their recorded statistics in a
+  dedicated public archive beneath the position-grouped current squad.
+- Keep historical players excluded from the Home formation and player account
+  claims while allowing their individual profile pages to be viewed.
+
 ## [0.13.0] - 2026-09-09
 
 ### Added

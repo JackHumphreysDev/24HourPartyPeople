@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.13.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.13.1` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -155,7 +155,9 @@ explicit end-of-season finalisation flow and always receive this timestamp).
 ### Player profiles (tab)
 
 - List active players in vertically ordered Keepers, Defenders, Midfielders,
-  and Attackers sections → individual profile view per player showing:
+  and Attackers sections, followed by a separate inactive Historical players
+  archive. Active and historical players link to individual profile views
+  showing:
   - Description + profile picture (admin-set).
   - Current season stats: goals, assists, clean sheets, games played.
   - Previous season stats, per season: goals, assists, clean sheets.
@@ -514,7 +516,8 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       with missing names created as inactive historical players and games
       played left unrecorded through Summer 2026
 - [x] The public Players page groups the active squad into keeper, defender,
-      midfielder, and attacker sections
+      midfielder, and attacker sections, followed by an inactive historical
+      player archive with public profile and statistic access
 - [x] Scraping module (Python) implemented with both tiers, DB-backed
       caching, a visible staleness indicator, and the 3 required pytest
       unit tests passing
@@ -538,6 +541,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.13.1 | 2026-09-09 | Exposed inactive historical players and their statistics in a separate public archive while preserving active-only formation and account claims |
 | 0.13.0 | 2026-09-09 | Added validated historical-statistics import, inactive historical profiles, per-game player contributions with derived tracked-season totals, and position-grouped squad sections |
 | 0.12.0 | 2026-09-09 | Added public player accounts with administrator-approved profile claims, manual profile assignment, linked-profile access, and administrator account settings |
 | 0.11.1 | 2026-09-08 | Fixed clean Vercel builds by installing the Prisma CLI as a production dependency for client generation and database migrations |

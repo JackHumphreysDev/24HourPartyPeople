@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.13.0` release includes the project foundation, core football
+The current `0.13.1` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -24,7 +24,8 @@ manage their own normal login details without using the recovery setup key.
 Historical season totals can be imported with a validated preview, while new
 games-tracked seasons derive appearances, goals, assists, and clean sheets
 from the administrator's per-game records. The public squad is grouped by
-keepers, defenders, midfielders, and attackers.
+keepers, defenders, midfielders, and attackers, followed by a separate archive
+of inactive historical players and their recorded statistics.
 The website is deployed to Vercel with Neon PostgreSQL and Cloudinary image
 storage. See
 [the project specification](docs/PROJECT-SPEC.md) for full functionality.
@@ -174,11 +175,11 @@ The Team Profile API provides:
 ## Player profiles and squad management
 
 The public website provides a routed home page, a current-squad list grouped
-into keepers, defenders, midfielders, and attackers, and an individual profile
-URL for each active player. Profiles display the player's
-description and picture, current-season statistics, previous-season records,
-and recorded career totals. Historic seasons with no attendance data show
-games played as **Not recorded** rather than `0`.
+into keepers, defenders, midfielders, and attackers, and a separate historical
+player archive. Active and historical players have individual profile URLs
+showing their description, picture, available season records, and recorded
+career totals. Historic seasons with no attendance data show games played as
+**Not recorded** rather than `0`.
 
 The `/admin` route allows an authenticated administrator to create and edit
 profiles, replace or remove pictures, select playable positions, and move
@@ -189,7 +190,8 @@ one goalkeeper, three defenders, one midfielder, and one forward. Inactive
 historical players may retain an unknown primary position until an
 administrator completes their profile; a primary position is required before
 activation. Inactive players remain available to administrators but are not
-exposed by the public API.
+included in the Home formation or player account claims. Their public summary
+and profile statistics remain available through the historical archive.
 
 Profile pictures are uploaded through the API to Cloudinary. Uploads accept
 JPEG, PNG, or WebP files up to 5 MB and are cropped to an 800 × 800 square.
@@ -198,8 +200,8 @@ database so replaced and removed images can be deleted safely.
 
 The player API provides:
 
-- `GET /api/players` — list the active squad
-- `GET /api/players/:playerId` — return an active player and season statistics
+- `GET /api/players` — list the active squad and historical-player archive
+- `GET /api/players/:playerId` — return an active or historical player and season statistics
 - `GET /api/admin/players` — list active and inactive players (administrator)
 - `POST /api/admin/players` — create a player using multipart form data
 - `PUT /api/admin/players/:playerId` — update a player using multipart form data
