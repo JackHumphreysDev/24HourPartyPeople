@@ -1,6 +1,6 @@
 {
   "name": "24-hour-party-people",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -27,6 +27,7 @@
     "dev:client": "npm run dev --workspace client",
     "dev:scraper": "cd scraper && ../.venv/bin/python -m uvicorn app:app --reload --port 8001",
     "dev:server": "npm run dev --workspace server",
+    "stats:import": "npm run stats:import --workspace server --",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "npm run lint --workspaces --if-present",

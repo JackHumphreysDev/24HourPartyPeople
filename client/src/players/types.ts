@@ -7,7 +7,7 @@ export type PlayerSummary = {
   id: string;
   isActiveSquad: boolean;
   name: string;
-  position: PlayerPosition;
+  position: PlayerPosition | null;
   profilePictureUrl: string | null;
 };
 
@@ -37,7 +37,7 @@ export type PlayerInput = {
   image: File | null;
   isActiveSquad: boolean;
   name: string;
-  position: PlayerPosition;
+  position: PlayerPosition | null;
   removeProfilePicture: boolean;
 };
 

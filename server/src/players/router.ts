@@ -12,6 +12,10 @@ import {
 import { parsePlayerImage } from './upload.js';
 
 const positionSchema = z.enum(['GK', 'DEF', 'MID', 'FWD']);
+const nullablePositionSchema = z.union([
+  positionSchema,
+  z.literal('').transform(() => null),
+]);
 const playerIdSchema = z.uuid();
 const statValueSchema = z.number().int().min(0).max(10_000);
 const booleanStringSchema = z
@@ -35,13 +39,31 @@ const playerFieldsSchema = z.object({
   description: z.string().trim().min(1).max(2_000),
   isActiveSquad: booleanStringSchema.default(true),
   name: z.string().trim().min(1).max(100),
-  position: positionSchema,
+  position: nullablePositionSchema,
 });
 
 function validatePlayerPositions(
-  values: { additionalPositions: PlayerPosition[]; position: PlayerPosition },
+  values: {
+    additionalPositions: PlayerPosition[];
+    isActiveSquad: boolean;
+    position: PlayerPosition | null;
+  },
   context: z.RefinementCtx,
 ) {
+  if (values.isActiveSquad && values.position === null) {
+    context.addIssue({
+      code: 'custom',
+      message: 'An active player must have a primary position.',
+      path: ['position'],
+    });
+  }
+  if (values.position === null && values.additionalPositions.length > 0) {
+    context.addIssue({
+      code: 'custom',
+      message: 'Choose a primary position before additional positions.',
+      path: ['additionalPositions'],
+    });
+  }
   if (
     new Set(values.additionalPositions).size !==
     values.additionalPositions.length
@@ -52,7 +74,10 @@ function validatePlayerPositions(
       path: ['additionalPositions'],
     });
   }
-  if (values.additionalPositions.includes(values.position)) {
+  if (
+    values.position !== null &&
+    values.additionalPositions.includes(values.position)
+  ) {
     context.addIssue({
       code: 'custom',
       message: 'The primary position cannot also be an additional position.',
@@ -216,8 +241,31 @@ publicPlayersRouter.get('/:playerId', async (request, response) => {
               isCurrent: true,
               name: true,
               startDate: true,
+              tracksGamesPlayed: true,
             },
           },
+        },
+      },
+      gameStats: {
+        select: {
+          assists: true,
+          cleanSheet: true,
+          gameResult: {
+            select: {
+              season: {
+                select: {
+                  endDate: true,
+                  id: true,
+                  isCurrent: true,
+                  name: true,
+                  startDate: true,
+                  tracksGamesPlayed: true,
+                },
+              },
+            },
+          },
+          goals: true,
+          id: true,
         },
       },
     },
@@ -233,7 +281,50 @@ publicPlayersRouter.get('/:playerId', async (request, response) => {
     return;
   }
 
-  response.status(200).json({ player });
+  const trackedStats = new Map<
+    string,
+    {
+      assists: number;
+      cleanSheets: number;
+      gamesPlayed: number;
+      goals: number;
+      id: string;
+      note: null;
+      season: (typeof player.gameStats)[number]['gameResult']['season'];
+    }
+  >();
+  for (const gameStat of player.gameStats) {
+    const season = gameStat.gameResult.season;
+    if (!season.tracksGamesPlayed) continue;
+    const existing = trackedStats.get(season.id);
+    if (existing) {
+      existing.assists += gameStat.assists;
+      existing.cleanSheets += gameStat.cleanSheet ? 1 : 0;
+      existing.gamesPlayed += 1;
+      existing.goals += gameStat.goals;
+    } else {
+      trackedStats.set(season.id, {
+        assists: gameStat.assists,
+        cleanSheets: gameStat.cleanSheet ? 1 : 0,
+        gamesPlayed: 1,
+        goals: gameStat.goals,
+        id: `games-${player.id}-${season.id}`,
+        note: null,
+        season,
+      });
+    }
+  }
+  const seasonStats = [
+    ...player.seasonStats.filter((stat) => !stat.season.tracksGamesPlayed),
+    ...trackedStats.values(),
+  ].sort(
+    (left, right) =>
+      right.season.startDate.getTime() - left.season.startDate.getTime(),
+  );
+  const { gameStats: _gameStats, ...playerDetails } = player;
+  response.status(200).json({
+    player: { ...playerDetails, seasonStats },
+  });
 });
 
 export const adminPlayersRouter = Router();
@@ -348,11 +439,12 @@ adminPlayersRouter.post(
       return;
     }
 
-    if (season.tracksGamesPlayed && parsed.data.gamesPlayed === null) {
-      response.status(400).json({
+    if (season.tracksGamesPlayed) {
+      response.status(409).json({
         error: {
-          code: 'GAMES_PLAYED_REQUIRED',
-          message: 'Games played is required for this season.',
+          code: 'PER_GAME_STATS_REQUIRED',
+          message:
+            'This season is tracked per game. Record player contributions from the Results administration page.',
         },
       });
       return;
@@ -413,7 +505,7 @@ adminPlayersRouter.post('/', parsePlayerImage, async (request, response) => {
     }
 
     const player = await runSerializableTransaction(async (transaction) => {
-      if (parsed.data.isActiveSquad) {
+      if (parsed.data.isActiveSquad && parsed.data.position) {
         await requireFormationSpace(transaction, parsed.data.position);
       }
 
@@ -504,7 +596,7 @@ adminPlayersRouter.put(
       const { removeProfilePicture: _removeProfilePicture, ...playerData } =
         parsed.data;
       const player = await runSerializableTransaction(async (transaction) => {
-        if (playerData.isActiveSquad) {
+        if (playerData.isActiveSquad && playerData.position) {
           await requireFormationSpace(
             transaction,
             playerData.position,

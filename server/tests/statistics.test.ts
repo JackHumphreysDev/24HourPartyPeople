@@ -87,7 +87,7 @@ describe('administrator season API', () => {
     expect(player.status).toBe(403);
   });
 
-  it('requires the first season to be current and to track games played', async () => {
+  it('requires the first season to be current but allows tracking to start later', async () => {
     const adminCookie = await createUserSession('ADMIN');
     const app = createApp();
 
@@ -104,8 +104,11 @@ describe('administrator season API', () => {
       .set('Cookie', adminCookie)
       .send(seasonInput({ tracksGamesPlayed: false }));
 
-    expect(untrackedCurrent.status).toBe(400);
-    expect(untrackedCurrent.body.error.code).toBe('INVALID_SEASON');
+    expect(untrackedCurrent.status).toBe(201);
+    expect(untrackedCurrent.body.season).toMatchObject({
+      isCurrent: true,
+      tracksGamesPlayed: false,
+    });
   });
 
   it('switches the current season atomically and keeps exactly one current', async () => {
@@ -245,8 +248,8 @@ describe('administrator player statistics API', () => {
 
     expect(historicWithGames.status).toBe(400);
     expect(historicWithGames.body.error.code).toBe('GAMES_PLAYED_NOT_TRACKED');
-    expect(currentWithoutGames.status).toBe(400);
-    expect(currentWithoutGames.body.error.code).toBe('GAMES_PLAYED_REQUIRED');
+    expect(currentWithoutGames.status).toBe(409);
+    expect(currentWithoutGames.body.error.code).toBe('PER_GAME_STATS_REQUIRED');
   });
 
   it('upserts non-negative statistics for inactive players', async () => {
@@ -265,7 +268,7 @@ describe('administrator player statistics API', () => {
         isCurrent: true,
         name: 'Summer 2026',
         startDate: new Date('2026-06-01T00:00:00.000Z'),
-        tracksGamesPlayed: true,
+        tracksGamesPlayed: false,
       },
     });
     const app = createApp();
@@ -277,7 +280,7 @@ describe('administrator player statistics API', () => {
       .send({
         assists: 1,
         cleanSheets: 0,
-        gamesPlayed: 2,
+        gamesPlayed: null,
         goals: -1,
         note: null,
         seasonId: season.id,
@@ -291,7 +294,7 @@ describe('administrator player statistics API', () => {
       .send({
         assists: 1,
         cleanSheets: 0,
-        gamesPlayed: 2,
+        gamesPlayed: null,
         goals: 1,
         note: null,
         seasonId: season.id,
@@ -302,7 +305,7 @@ describe('administrator player statistics API', () => {
       .send({
         assists: 3,
         cleanSheets: 1,
-        gamesPlayed: 5,
+        gamesPlayed: null,
         goals: 4,
         note: 'Updated after the final fixture.',
         seasonId: season.id,
@@ -312,7 +315,7 @@ describe('administrator player statistics API', () => {
     expect(updated.status).toBe(200);
     expect(updated.body.seasonStats).toMatchObject({
       assists: 3,
-      gamesPlayed: 5,
+      gamesPlayed: null,
       goals: 4,
       seasonId: season.id,
     });

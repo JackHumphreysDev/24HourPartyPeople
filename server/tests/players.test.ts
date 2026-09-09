@@ -141,28 +141,40 @@ describe('public player API', () => {
         isCurrent: true,
         name: 'Summer 2026',
         startDate: new Date('2026-06-01T00:00:00.000Z'),
+        tracksGamesPlayed: true,
       },
     });
-    await prisma.playerSeasonStat.createMany({
-      data: [
-        {
-          assists: 1,
-          cleanSheets: 2,
-          gamesPlayed: null,
-          goals: 3,
-          playerId: player.id,
-          seasonId: previousSeason.id,
-        },
-        {
-          assists: 2,
-          cleanSheets: 4,
-          gamesPlayed: 8,
-          goals: 1,
-          playerId: player.id,
+    await prisma.playerSeasonStat.create({
+      data: {
+        assists: 1,
+        cleanSheets: 2,
+        gamesPlayed: null,
+        goals: 3,
+        playerId: player.id,
+        seasonId: previousSeason.id,
+      },
+    });
+    const opponent = await prisma.opponentClub.create({
+      data: { name: 'Profile Opponent' },
+    });
+    for (const [datePlayed, goals, assists, cleanSheet] of [
+      ['2026-07-01', 1, 2, true],
+      ['2026-07-08', 2, 0, false],
+    ] as const) {
+      await prisma.gameResult.create({
+        data: {
+          competition: 'LEAGUE',
+          datePlayed: new Date(`${datePlayed}T00:00:00.000Z`),
+          opponentClubId: opponent.id,
+          opponentScore: cleanSheet ? 0 : 1,
+          ourScore: 3,
+          playerStats: {
+            create: { assists, cleanSheet, goals, playerId: player.id },
+          },
           seasonId: currentSeason.id,
         },
-      ],
-    });
+      });
+    }
 
     const response = await request(createApp()).get(
       `/api/players/${player.id}`,
@@ -171,7 +183,10 @@ describe('public player API', () => {
     expect(response.status).toBe(200);
     expect(response.body.player.seasonStats).toHaveLength(2);
     expect(response.body.player.seasonStats[0]).toMatchObject({
-      gamesPlayed: 8,
+      assists: 2,
+      cleanSheets: 1,
+      gamesPlayed: 2,
+      goals: 3,
       season: { isCurrent: true, name: 'Summer 2026' },
     });
     expect(response.body.player.seasonStats[1]).toMatchObject({
@@ -247,6 +262,37 @@ describe('administrator player API', () => {
       additionalPositions: ['MID', 'FWD'],
       profilePicturePublicId: '24-hour-party-people/players/test-image',
     });
+  });
+
+  it('allows unknown positions only for inactive historical players', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const app = createApp();
+    const historicalFields = {
+      additionalPositions: '[]',
+      description: 'Imported historical player.',
+      isActiveSquad: 'false',
+      name: 'Historical Player',
+      position: '',
+    };
+    const historical = await request(app)
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field(historicalFields);
+    const activeWithoutPosition = await request(app)
+      .post('/api/admin/players')
+      .set('Cookie', adminCookie)
+      .field({
+        ...historicalFields,
+        isActiveSquad: 'true',
+        name: 'Invalid Active Player',
+      });
+
+    expect(historical.status).toBe(201);
+    expect(historical.body.player).toMatchObject({
+      isActiveSquad: false,
+      position: null,
+    });
+    expect(activeWithoutPosition.status).toBe(400);
   });
 
   it('rejects duplicate additional positions and the primary position', async () => {
@@ -393,7 +439,7 @@ describe('administrator player API', () => {
         description: player.description,
         isActiveSquad: 'true',
         name: player.name,
-        position: player.position,
+        position: player.position!,
         removeProfilePicture: 'true',
       });
 

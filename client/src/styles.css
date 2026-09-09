@@ -586,6 +586,15 @@ select {
   gap: 1rem;
 }
 
+.player-position-sections {
+  display: grid;
+  gap: clamp(3rem, 7vw, 5rem);
+}
+
+.player-position-section {
+  scroll-margin-top: 1.5rem;
+}
+
 .player-card {
   display: grid;
   gap: 1.25rem;
@@ -1094,6 +1103,31 @@ select {
   background: rgb(9 27 18 / 78%);
 }
 
+.player-game-stats {
+  padding-top: 0;
+}
+
+.game-player-stat-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.game-player-stat-row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1.5fr) repeat(3, minmax(7rem, 1fr));
+  align-items: end;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgb(217 172 85 / 20%);
+  border-radius: 0.8rem;
+  background: rgb(0 0 0 / 22%);
+}
+
+.game-player-stat-row .game-player-name {
+  align-self: center;
+  font-size: 1rem;
+}
+
 .game-result-form label,
 .manual-result-fields label,
 .score-entry-fields label {
@@ -1291,7 +1325,8 @@ select {
 
   .entry-mode-tabs,
   .manual-result-fields,
-  .score-entry-fields {
+  .score-entry-fields,
+  .game-player-stat-row {
     grid-template-columns: 1fr;
   }
 

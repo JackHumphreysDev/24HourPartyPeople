@@ -3,8 +3,18 @@ import { Link } from 'react-router-dom';
 
 import { getPlayers } from './api';
 import { PlayerAvatar } from './PlayerAvatar';
-import type { PlayerSummary } from './types';
+import type { PlayerPosition, PlayerSummary } from './types';
 import { positionLabels } from './types';
+
+const positionSections: ReadonlyArray<{
+  heading: string;
+  position: PlayerPosition;
+}> = [
+  { heading: 'Keepers', position: 'GK' },
+  { heading: 'Defenders', position: 'DEF' },
+  { heading: 'Midfielders', position: 'MID' },
+  { heading: 'Attackers', position: 'FWD' },
+];
 
 export function PlayersPage() {
   const [players, setPlayers] = useState<PlayerSummary[]>([]);
@@ -48,31 +58,58 @@ export function PlayersPage() {
       )}
 
       {players.length > 0 && (
-        <div className="player-grid">
-          {players.map((player) => (
-            <Link
-              className="player-card"
-              key={player.id}
-              to={`/players/${player.id}`}
-            >
-              <PlayerAvatar player={player} />
-              <div>
-                <p className="position-label">
-                  Primary: {positionLabels[player.position]}
-                </p>
-                <h3>{player.name}</h3>
-                {(player.additionalPositions?.length ?? 0) > 0 && (
-                  <p className="player-positions">
-                    Also plays:{' '}
-                    {player.additionalPositions
-                      .map((position) => positionLabels[position])
-                      .join(', ')}
+        <div className="player-position-sections">
+          {positionSections.map((section) => {
+            const sectionPlayers = players.filter(
+              (player) => player.position === section.position,
+            );
+            return (
+              <section
+                className="player-position-section"
+                key={section.position}
+              >
+                <div className="section-heading section-heading-compact">
+                  <p className="eyebrow">{positionLabels[section.position]}</p>
+                  <h3>{section.heading}</h3>
+                </div>
+                {sectionPlayers.length === 0 ? (
+                  <p className="status-panel">
+                    No {section.heading.toLocaleLowerCase('en-GB')} are in the
+                    current squad.
                   </p>
+                ) : (
+                  <div className="player-grid">
+                    {sectionPlayers.map((player) => (
+                      <Link
+                        className="player-card"
+                        key={player.id}
+                        to={`/players/${player.id}`}
+                      >
+                        <PlayerAvatar player={player} />
+                        <div>
+                          <p className="position-label">
+                            Primary: {positionLabels[section.position]}
+                          </p>
+                          <h3>{player.name}</h3>
+                          {(player.additionalPositions?.length ?? 0) > 0 && (
+                            <p className="player-positions">
+                              Also plays:{' '}
+                              {player.additionalPositions
+                                .map((position) => positionLabels[position])
+                                .join(', ')}
+                            </p>
+                          )}
+                          <p className="player-description">
+                            {player.description}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 )}
-                <p className="player-description">{player.description}</p>
-              </div>
-            </Link>
-          ))}
+              </section>
+            );
+          })}
         </div>
       )}
     </section>

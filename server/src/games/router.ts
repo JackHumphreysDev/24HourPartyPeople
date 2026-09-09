@@ -52,6 +52,16 @@ const manualResultSchema = z
   .and(resultScoreSchema);
 
 const gameResultSchema = z.union([fixtureResultSchema, manualResultSchema]);
+const gameIdSchema = z.uuid();
+const playerContributionSchema = z.object({
+  assists: z.number().int().min(0).max(100),
+  cleanSheet: z.boolean(),
+  goals: z.number().int().min(0).max(100),
+  playerId: z.uuid(),
+});
+const playerContributionsSchema = z.object({
+  playerStats: z.array(playerContributionSchema).max(50),
+});
 
 const gameResultSelect = {
   competition: true,
@@ -82,6 +92,9 @@ class FixtureAlreadyRecordedError extends Error {}
 class SeasonNotFoundError extends Error {}
 class ResultOutsideSeasonError extends Error {}
 class CupWalkoverError extends Error {}
+class GameNotFoundError extends Error {}
+class PerGameStatsUnavailableError extends Error {}
+class InvalidPlayerContributionsError extends Error {}
 
 function hasErrorCode(error: unknown, code: string): boolean {
   return (
@@ -171,6 +184,169 @@ adminGamesRouter.get('/fixtures', async (_request, response) => {
   });
 
   response.status(200).json({ fixtures });
+});
+
+adminGamesRouter.get('/player-stats', async (_request, response) => {
+  const [games, players] = await Promise.all([
+    prisma.gameResult.findMany({
+      orderBy: [{ datePlayed: 'desc' }, { createdAt: 'desc' }],
+      select: {
+        competition: true,
+        datePlayed: true,
+        id: true,
+        opponentClub: { select: { name: true } },
+        opponentScore: true,
+        ourScore: true,
+        playerStats: {
+          orderBy: { player: { name: 'asc' } },
+          select: {
+            assists: true,
+            cleanSheet: true,
+            goals: true,
+            playerId: true,
+          },
+        },
+        season: { select: { id: true, name: true } },
+      },
+      where: {
+        isWalkover: false,
+        season: { tracksGamesPlayed: true },
+      },
+    }),
+    prisma.player.findMany({
+      orderBy: [{ isActiveSquad: 'desc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        isActiveSquad: true,
+        name: true,
+        position: true,
+      },
+    }),
+  ]);
+  response.status(200).json({ games, players });
+});
+
+adminGamesRouter.put('/:gameId/player-stats', async (request, response) => {
+  const gameId = gameIdSchema.safeParse(request.params.gameId);
+  const parsed = playerContributionsSchema.safeParse(request.body);
+  if (!gameId.success || !parsed.success) {
+    response.status(400).json({
+      error: {
+        code: 'INVALID_PLAYER_STATS',
+        message: 'Enter valid player contributions for this game.',
+      },
+    });
+    return;
+  }
+
+  const uniquePlayerIds = new Set(
+    parsed.data.playerStats.map((stat) => stat.playerId),
+  );
+  if (uniquePlayerIds.size !== parsed.data.playerStats.length) {
+    response.status(400).json({
+      error: {
+        code: 'DUPLICATE_PLAYER_STATS',
+        message: 'Each player can appear only once for a game.',
+      },
+    });
+    return;
+  }
+
+  try {
+    const playerStats = await runSerializableTransaction(
+      async (transaction) => {
+        const game = await transaction.gameResult.findUnique({
+          select: {
+            isWalkover: true,
+            opponentScore: true,
+            ourScore: true,
+            season: { select: { tracksGamesPlayed: true } },
+          },
+          where: { id: gameId.data },
+        });
+        if (!game) throw new GameNotFoundError();
+        if (game.isWalkover || !game.season.tracksGamesPlayed) {
+          throw new PerGameStatsUnavailableError();
+        }
+
+        const goals = parsed.data.playerStats.reduce(
+          (total, stat) => total + stat.goals,
+          0,
+        );
+        const assists = parsed.data.playerStats.reduce(
+          (total, stat) => total + stat.assists,
+          0,
+        );
+        if (
+          game.ourScore === null ||
+          goals > game.ourScore ||
+          assists > game.ourScore ||
+          (game.opponentScore !== 0 &&
+            parsed.data.playerStats.some((stat) => stat.cleanSheet))
+        ) {
+          throw new InvalidPlayerContributionsError();
+        }
+
+        const playerCount = await transaction.player.count({
+          where: { id: { in: [...uniquePlayerIds] } },
+        });
+        if (playerCount !== uniquePlayerIds.size) {
+          throw new InvalidPlayerContributionsError();
+        }
+
+        await transaction.gamePlayerStat.deleteMany({
+          where: { gameResultId: gameId.data },
+        });
+        if (parsed.data.playerStats.length > 0) {
+          await transaction.gamePlayerStat.createMany({
+            data: parsed.data.playerStats.map((stat) => ({
+              ...stat,
+              gameResultId: gameId.data,
+            })),
+          });
+        }
+        return transaction.gamePlayerStat.findMany({
+          orderBy: { player: { name: 'asc' } },
+          select: {
+            assists: true,
+            cleanSheet: true,
+            goals: true,
+            playerId: true,
+          },
+          where: { gameResultId: gameId.data },
+        });
+      },
+    );
+    response.status(200).json({ playerStats });
+  } catch (error) {
+    if (error instanceof GameNotFoundError) {
+      response.status(404).json({
+        error: { code: 'GAME_NOT_FOUND', message: 'Game not found.' },
+      });
+      return;
+    }
+    if (error instanceof PerGameStatsUnavailableError) {
+      response.status(409).json({
+        error: {
+          code: 'PLAYER_STATS_UNAVAILABLE',
+          message:
+            'Per-game player statistics start with a tracked season and are not recorded for walkovers.',
+        },
+      });
+      return;
+    }
+    if (error instanceof InvalidPlayerContributionsError) {
+      response.status(400).json({
+        error: {
+          code: 'INVALID_PLAYER_STATS',
+          message:
+            'Player goals and assists cannot exceed the team score, and clean sheets require a zero opposition score.',
+        },
+      });
+      return;
+    }
+    throw error;
+  }
 });
 
 adminGamesRouter.post('/', async (request, response) => {

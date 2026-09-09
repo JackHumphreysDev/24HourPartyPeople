@@ -6,8 +6,19 @@ import { AdminNavigation } from '../admin/AdminNavigation';
 import { useAuth } from '../auth/useAuth';
 import { getAdminSeasons } from '../players/api';
 import type { SeasonSummary } from '../players/types';
-import { createGame, getAdminFixtures } from './api';
-import type { AdminFixture, Competition, GameResultInput } from './types';
+import {
+  createGame,
+  getAdminFixtures,
+  getPlayerStatsSnapshot,
+  saveGamePlayerStats,
+} from './api';
+import type {
+  AdminFixture,
+  Competition,
+  GameResultInput,
+  PlayerStatsSnapshot,
+  TrackedGame,
+} from './types';
 
 function dateInputValue(value: string): string {
   return value.slice(0, 10);
@@ -19,7 +30,7 @@ function errorMessage(error: unknown): string {
     : 'The result could not be recorded.';
 }
 
-function GameResultManager() {
+function GameResultManager({ onGameCreated }: { onGameCreated: () => void }) {
   const [fixtures, setFixtures] = useState<AdminFixture[]>([]);
   const [seasons, setSeasons] = useState<SeasonSummary[]>([]);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>(
@@ -132,6 +143,7 @@ function GameResultManager() {
 
     try {
       const created = await createGame(input);
+      onGameCreated();
       const remainingFixtures = fixtures.filter(
         (fixture) => fixture.id !== created.game.fixtureId,
       );
@@ -408,8 +420,249 @@ function GameResultManager() {
   );
 }
 
+type ContributionDraft = Record<
+  string,
+  { assists: string; cleanSheet: boolean; goals: string; included: boolean }
+>;
+
+function draftForGame(
+  game: TrackedGame,
+  snapshot: PlayerStatsSnapshot,
+): ContributionDraft {
+  return Object.fromEntries(
+    snapshot.players.map((player) => {
+      const existing = game.playerStats.find(
+        (stat) => stat.playerId === player.id,
+      );
+      return [
+        player.id,
+        {
+          assists: String(existing?.assists ?? 0),
+          cleanSheet: existing?.cleanSheet ?? false,
+          goals: String(existing?.goals ?? 0),
+          included: Boolean(existing),
+        },
+      ];
+    }),
+  );
+}
+
+function PlayerStatsManager() {
+  const [snapshot, setSnapshot] = useState<PlayerStatsSnapshot | null>(null);
+  const [selectedGameId, setSelectedGameId] = useState('');
+  const [draft, setDraft] = useState<ContributionDraft>({});
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
+    'loading',
+  );
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCurrentRequest = true;
+    void getPlayerStatsSnapshot()
+      .then((nextSnapshot) => {
+        if (!isCurrentRequest) return;
+        setSnapshot(nextSnapshot);
+        const firstGame = nextSnapshot.games[0];
+        if (firstGame) {
+          setSelectedGameId(firstGame.id);
+          setDraft(draftForGame(firstGame, nextSnapshot));
+        }
+        setStatus('ready');
+      })
+      .catch(() => {
+        if (isCurrentRequest) setStatus('error');
+      });
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, []);
+
+  const selectedGame = snapshot?.games.find(
+    (game) => game.id === selectedGameId,
+  );
+
+  function selectGame(gameId: string) {
+    const game = snapshot?.games.find((candidate) => candidate.id === gameId);
+    setSelectedGameId(gameId);
+    setDraft(game && snapshot ? draftForGame(game, snapshot) : {});
+    setError(null);
+    setSuccess(null);
+  }
+
+  function updateDraft(
+    playerId: string,
+    values: Partial<ContributionDraft[string]>,
+  ) {
+    setDraft((current) => ({
+      ...current,
+      [playerId]: { ...current[playerId]!, ...values },
+    }));
+  }
+
+  async function handleSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedGame) return;
+    setError(null);
+    setSuccess(null);
+    setIsSaving(true);
+    try {
+      const playerStats = await saveGamePlayerStats(
+        selectedGame.id,
+        (snapshot?.players ?? [])
+          .filter((player) => draft[player.id]?.included)
+          .map((player) => ({
+            assists: Number(draft[player.id]?.assists ?? 0),
+            cleanSheet: draft[player.id]?.cleanSheet ?? false,
+            goals: Number(draft[player.id]?.goals ?? 0),
+            playerId: player.id,
+          })),
+      );
+      setSnapshot((current) =>
+        current
+          ? {
+              ...current,
+              games: current.games.map((game) =>
+                game.id === selectedGame.id ? { ...game, playerStats } : game,
+              ),
+            }
+          : current,
+      );
+      setSuccess('Player contributions saved successfully.');
+    } catch (saveError) {
+      setError(errorMessage(saveError));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <section className="game-admin-page player-game-stats">
+      <div className="section-heading">
+        <p className="eyebrow">Player records</p>
+        <h2>Per-game statistics</h2>
+        <p>
+          Select every player who appeared. An appearance counts as one game
+          played even when their other figures are zero.
+        </p>
+      </div>
+      {status === 'loading' && (
+        <p className="status-panel">Loading tracked games…</p>
+      )}
+      {status === 'error' && (
+        <p className="status-panel status-panel-error" role="alert">
+          Player statistics could not be loaded.
+        </p>
+      )}
+      {status === 'ready' && snapshot?.games.length === 0 && (
+        <p className="status-panel">
+          Per-game statistics will become available when a result is recorded in
+          the next games-tracked season.
+        </p>
+      )}
+      {status === 'ready' && selectedGame && snapshot && (
+        <form className="game-result-form" onSubmit={handleSave}>
+          <label>
+            Game
+            <select
+              value={selectedGameId}
+              onChange={(event) => selectGame(event.target.value)}
+            >
+              {snapshot.games.map((game) => (
+                <option key={game.id} value={game.id}>
+                  {dateInputValue(game.datePlayed)} · {game.opponentClub.name} ·{' '}
+                  {game.competition === 'LEAGUE' ? 'League' : 'Cup'}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="fixture-detail">
+            {selectedGame.season.name} · {selectedGame.ourScore}–
+            {selectedGame.opponentScore}
+          </p>
+          <div className="game-player-stat-list">
+            {snapshot.players.map((player) => {
+              const values = draft[player.id];
+              if (!values) return null;
+              return (
+                <fieldset className="game-player-stat-row" key={player.id}>
+                  <label className="checkbox-label game-player-name">
+                    <input
+                      checked={values.included}
+                      type="checkbox"
+                      onChange={(event) =>
+                        updateDraft(player.id, {
+                          included: event.target.checked,
+                        })
+                      }
+                    />
+                    {player.name}
+                    {!player.isActiveSquad && ' · historical'}
+                  </label>
+                  <label>
+                    Goals
+                    <input
+                      disabled={!values.included}
+                      min={0}
+                      step={1}
+                      type="number"
+                      value={values.goals}
+                      onChange={(event) =>
+                        updateDraft(player.id, { goals: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label>
+                    Assists
+                    <input
+                      disabled={!values.included}
+                      min={0}
+                      step={1}
+                      type="number"
+                      value={values.assists}
+                      onChange={(event) =>
+                        updateDraft(player.id, { assists: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      checked={values.cleanSheet}
+                      disabled={
+                        !values.included || selectedGame.opponentScore !== 0
+                      }
+                      type="checkbox"
+                      onChange={(event) =>
+                        updateDraft(player.id, {
+                          cleanSheet: event.target.checked,
+                        })
+                      }
+                    />
+                    Clean sheet
+                  </label>
+                </fieldset>
+              );
+            })}
+          </div>
+          {success && <p className="form-success">{success}</p>}
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button className="primary-button" disabled={isSaving} type="submit">
+            {isSaving ? 'Saving…' : 'Save player statistics'}
+          </button>
+        </form>
+      )}
+    </section>
+  );
+}
+
 export function AdminGamePage() {
   const { status, user } = useAuth();
+  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
 
   if (status === 'loading') {
     return <p className="status-panel">Checking your session…</p>;
@@ -430,7 +683,10 @@ export function AdminGamePage() {
   return (
     <>
       <AdminNavigation />
-      <GameResultManager />
+      <GameResultManager
+        onGameCreated={() => setStatsRefreshKey((current) => current + 1)}
+      />
+      <PlayerStatsManager key={statsRefreshKey} />
     </>
   );
 }

@@ -111,9 +111,11 @@ function PlayerForm({ editingPlayer, onCancel, onSaved }: PlayerFormProps) {
       <label>
         Primary position
         <select
-          value={input.position}
+          required={input.isActiveSquad}
+          value={input.position ?? ''}
           onChange={(event) => {
-            const position = event.target.value as PlayerPosition;
+            const position = (event.target.value ||
+              null) as PlayerPosition | null;
             setInput({
               ...input,
               additionalPositions: input.additionalPositions.filter(
@@ -123,6 +125,7 @@ function PlayerForm({ editingPlayer, onCancel, onSaved }: PlayerFormProps) {
             });
           }}
         >
+          <option value="">Unknown (historical player)</option>
           {Object.entries(positionLabels).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
@@ -146,6 +149,7 @@ function PlayerForm({ editingPlayer, onCancel, onSaved }: PlayerFormProps) {
               <label className="checkbox-label" key={position}>
                 <input
                   checked={input.additionalPositions.includes(position)}
+                  disabled={input.position === null}
                   type="checkbox"
                   onChange={(event) =>
                     setInput({
@@ -294,7 +298,10 @@ function PlayerManager() {
               <PlayerAvatar player={player} />
               <div>
                 <p className="position-label">
-                  Primary: {positionLabels[player.position]}
+                  Primary:{' '}
+                  {player.position
+                    ? positionLabels[player.position]
+                    : 'Unknown (historical)'}
                   {(player.additionalPositions?.length ?? 0) > 0 && (
                     <>
                       {' '}
