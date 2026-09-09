@@ -237,6 +237,93 @@ describe('administrator game API', () => {
       }),
     ).toEqual({ status: 'PLAYED' });
   });
+
+  it('records auditable player contributions for games-tracked seasons', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const season = await createSeason();
+    const [player, historicalPlayer] = await Promise.all([
+      prisma.player.create({
+        data: {
+          description: 'Current player.',
+          name: 'Current Player',
+          position: 'FWD',
+        },
+      }),
+      prisma.player.create({
+        data: {
+          description: 'Historical player.',
+          isActiveSquad: false,
+          name: 'Historical Player',
+          position: null,
+        },
+      }),
+    ]);
+    const app = createApp();
+    const created = await request(app)
+      .post('/api/admin/games')
+      .set('Cookie', adminCookie)
+      .send(manualResultInput(season.id));
+
+    const listed = await request(app)
+      .get('/api/admin/games/player-stats')
+      .set('Cookie', adminCookie);
+    expect(listed.status).toBe(200);
+    expect(listed.body.games[0]).toMatchObject({
+      id: created.body.game.id,
+      playerStats: [],
+    });
+    expect(listed.body.players).toHaveLength(2);
+
+    const saved = await request(app)
+      .put(`/api/admin/games/${created.body.game.id}/player-stats`)
+      .set('Cookie', adminCookie)
+      .send({
+        playerStats: [
+          { assists: 1, cleanSheet: false, goals: 2, playerId: player.id },
+          {
+            assists: 1,
+            cleanSheet: false,
+            goals: 1,
+            playerId: historicalPlayer.id,
+          },
+        ],
+      });
+    expect(saved.status).toBe(200);
+    expect(saved.body.playerStats).toHaveLength(2);
+    expect(await prisma.gamePlayerStat.count()).toBe(2);
+
+    const invalid = await request(app)
+      .put(`/api/admin/games/${created.body.game.id}/player-stats`)
+      .set('Cookie', adminCookie)
+      .send({
+        playerStats: [
+          { assists: 0, cleanSheet: true, goals: 5, playerId: player.id },
+        ],
+      });
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error.code).toBe('INVALID_PLAYER_STATS');
+    expect(await prisma.gamePlayerStat.count()).toBe(2);
+  });
+
+  it('keeps per-game statistics unavailable for untracked seasons', async () => {
+    const adminCookie = await createUserSession('ADMIN');
+    const season = await createSeason();
+    await prisma.season.update({
+      data: { tracksGamesPlayed: false },
+      where: { id: season.id },
+    });
+    const created = await request(createApp())
+      .post('/api/admin/games')
+      .set('Cookie', adminCookie)
+      .send(manualResultInput(season.id));
+    const response = await request(createApp())
+      .put(`/api/admin/games/${created.body.game.id}/player-stats`)
+      .set('Cookie', adminCookie)
+      .send({ playerStats: [] });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('PLAYER_STATS_UNAVAILABLE');
+  });
 });
 
 describe('public game history API', () => {

@@ -80,13 +80,14 @@ model Player {
   description            String
   profilePictureUrl      String?
   profilePicturePublicId String?
-  position               PlayerPosition
+  position               PlayerPosition?
   additionalPositions    PlayerPosition[]   @default([])
   isActiveSquad          Boolean            @default(true)
   createdAt              DateTime           @default(now()) @db.Timestamptz(3)
   user                   User?              @relation("PlayerAccount")
   requestedBy            User?              @relation("PlayerAccountRequest")
   seasonStats            PlayerSeasonStat[]
+  gameStats              GamePlayerStat[]
 
   @@index([isActiveSquad, position])
 }
@@ -164,9 +165,26 @@ model GameResult {
   fixture        Fixture?     @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
   season         Season       @relation(fields: [seasonId], references: [id], onDelete: Restrict)
   opponentClub   OpponentClub @relation(fields: [opponentClubId], references: [id], onDelete: Restrict)
+  playerStats    GamePlayerStat[]
 
   @@index([seasonId, datePlayed])
   @@index([opponentClubId, datePlayed])
+}
+
+model GamePlayerStat {
+  id           String     @id @default(uuid()) @db.Uuid
+  gameResultId String     @db.Uuid
+  playerId     String     @db.Uuid
+  goals        Int        @default(0)
+  assists      Int        @default(0)
+  cleanSheet   Boolean    @default(false)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+  gameResult   GameResult @relation(fields: [gameResultId], references: [id], onDelete: Cascade)
+  player       Player     @relation(fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@unique([gameResultId, playerId])
+  @@index([playerId, gameResultId])
 }
 
 model SeasonStanding {

@@ -13,6 +13,7 @@
     "db:test:deploy": "prisma migrate deploy --config prisma.test.config.ts",
     "db:validate": "prisma validate",
     "dev": "tsx watch src/index.ts",
+    "stats:import": "tsx src/importSeasonStats.ts",
     "lint": "oxlint src tests",
     "start": "node dist/index.js",
     "test": "vitest run",

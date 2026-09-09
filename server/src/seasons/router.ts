@@ -22,14 +22,6 @@ const seasonSchema = z
         path: ['endDate'],
       });
     }
-
-    if (season.isCurrent && !season.tracksGamesPlayed) {
-      context.addIssue({
-        code: 'custom',
-        message: 'The current season must track games played.',
-        path: ['tracksGamesPlayed'],
-      });
-    }
   });
 
 const seasonSelect = {
