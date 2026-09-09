@@ -3,6 +3,8 @@ import type {
   CreatedGameResult,
   GameResultInput,
   GameSummary,
+  GamePlayerContribution,
+  PlayerStatsSnapshot,
 } from './types';
 
 type ErrorResponse = {
@@ -51,4 +53,22 @@ export function createGame(input: GameResultInput): Promise<CreatedGameResult> {
     headers: { 'Content-Type': 'application/json' },
     method: 'POST',
   });
+}
+
+export async function getPlayerStatsSnapshot(): Promise<PlayerStatsSnapshot> {
+  return gameRequest<PlayerStatsSnapshot>('/api/admin/games/player-stats');
+}
+
+export async function saveGamePlayerStats(
+  gameId: string,
+  playerStats: GamePlayerContribution[],
+): Promise<GamePlayerContribution[]> {
+  const response = await gameRequest<{
+    playerStats: GamePlayerContribution[];
+  }>(`/api/admin/games/${encodeURIComponent(gameId)}/player-stats`, {
+    body: JSON.stringify({ playerStats }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PUT',
+  });
+  return response.playerStats;
 }

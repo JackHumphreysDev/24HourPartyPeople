@@ -176,7 +176,7 @@ function StatisticsManager() {
     setSeasonInput({
       ...emptySeasonInput,
       isCurrent: seasons.length === 0,
-      tracksGamesPlayed: seasons.length === 0,
+      tracksGamesPlayed: false,
     });
     setSeasonError(null);
   }
@@ -374,9 +374,6 @@ function StatisticsManager() {
                 setSeasonInput({
                   ...seasonInput,
                   isCurrent: event.target.checked,
-                  tracksGamesPlayed: event.target.checked
-                    ? true
-                    : seasonInput.tracksGamesPlayed,
                 })
               }
             />
@@ -391,7 +388,6 @@ function StatisticsManager() {
           <label className="checkbox-label">
             <input
               checked={seasonInput.tracksGamesPlayed}
-              disabled={seasonInput.isCurrent}
               type="checkbox"
               onChange={(event) =>
                 setSeasonInput({
@@ -478,9 +474,17 @@ function StatisticsManager() {
               </select>
             </label>
 
+            {selectedSeason?.tracksGamesPlayed && (
+              <p className="form-warning statistics-form-message">
+                This season is calculated from per-game contributions. Update
+                them from the Results administration page.
+              </p>
+            )}
+
             <label>
               Goals
               <input
+                disabled={selectedSeason?.tracksGamesPlayed}
                 max={10000}
                 min={0}
                 required
@@ -496,6 +500,7 @@ function StatisticsManager() {
             <label>
               Assists
               <input
+                disabled={selectedSeason?.tracksGamesPlayed}
                 max={10000}
                 min={0}
                 required
@@ -511,6 +516,7 @@ function StatisticsManager() {
             <label>
               Clean sheets
               <input
+                disabled={selectedSeason?.tracksGamesPlayed}
                 max={10000}
                 min={0}
                 required
@@ -529,10 +535,9 @@ function StatisticsManager() {
             <label>
               Games played
               <input
-                disabled={!selectedSeason?.tracksGamesPlayed}
+                disabled
                 max={10000}
                 min={0}
-                required={selectedSeason?.tracksGamesPlayed}
                 step={1}
                 type="number"
                 value={statDraft.gamesPlayed}
@@ -543,14 +548,17 @@ function StatisticsManager() {
                   })
                 }
               />
-              {!selectedSeason?.tracksGamesPlayed && (
-                <span className="field-hint">Not recorded</span>
-              )}
+              <span className="field-hint">
+                {selectedSeason?.tracksGamesPlayed
+                  ? 'Calculated from selected game appearances'
+                  : 'Not recorded'}
+              </span>
             </label>
 
             <label className="statistics-note-field">
               Note
               <textarea
+                disabled={selectedSeason?.tracksGamesPlayed}
                 maxLength={500}
                 rows={3}
                 value={statDraft.note}
@@ -578,7 +586,11 @@ function StatisticsManager() {
 
             <button
               className="primary-button statistics-form-action"
-              disabled={isSavingStats || statsStatus === 'loading'}
+              disabled={
+                isSavingStats ||
+                statsStatus === 'loading' ||
+                selectedSeason?.tracksGamesPlayed
+              }
               type="submit"
             >
               {isSavingStats ? 'Saving…' : 'Save statistics'}

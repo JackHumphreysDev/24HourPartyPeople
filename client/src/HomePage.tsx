@@ -142,7 +142,7 @@ export function HomePage() {
                         >
                           <PlayerAvatar player={player} />
                           <strong>{player.name}</strong>
-                          <span>{positionLabels[player.position]}</span>
+                          <span>{positionLabels[line.position]}</span>
                         </Link>
                       ) : (
                         <div

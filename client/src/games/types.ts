@@ -61,3 +61,33 @@ export type CreatedGameResult = {
   game: GameSummary;
   standingsRefreshRequired: boolean;
 };
+
+export type GamePlayerContribution = {
+  assists: number;
+  cleanSheet: boolean;
+  goals: number;
+  playerId: string;
+};
+
+export type TrackedGame = {
+  competition: Competition;
+  datePlayed: string;
+  id: string;
+  opponentClub: { name: string };
+  opponentScore: number;
+  ourScore: number;
+  playerStats: GamePlayerContribution[];
+  season: { id: string; name: string };
+};
+
+export type StatisticsPlayer = {
+  id: string;
+  isActiveSquad: boolean;
+  name: string;
+  position: 'GK' | 'DEF' | 'MID' | 'FWD' | null;
+};
+
+export type PlayerStatsSnapshot = {
+  games: TrackedGame[];
+  players: StatisticsPlayer[];
+};

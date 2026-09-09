@@ -48,6 +48,87 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Players' })).toBeInTheDocument();
   });
 
+  it('groups the public squad by primary position', async () => {
+    window.history.replaceState({}, '', '/players');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        if (String(input) === '/api/auth/me') {
+          return Promise.resolve(mockResponse({}, 401));
+        }
+        if (String(input) === '/api/players') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                players: [
+                  {
+                    additionalPositions: [],
+                    createdAt: '',
+                    description: 'Keeper.',
+                    id: 'gk',
+                    isActiveSquad: true,
+                    name: 'Twiggy',
+                    position: 'GK',
+                    profilePictureUrl: null,
+                  },
+                  {
+                    additionalPositions: [],
+                    createdAt: '',
+                    description: 'Defender.',
+                    id: 'def',
+                    isActiveSquad: true,
+                    name: 'Doug',
+                    position: 'DEF',
+                    profilePictureUrl: null,
+                  },
+                  {
+                    additionalPositions: [],
+                    createdAt: '',
+                    description: 'Midfielder.',
+                    id: 'mid',
+                    isActiveSquad: true,
+                    name: 'Javi',
+                    position: 'MID',
+                    profilePictureUrl: null,
+                  },
+                  {
+                    additionalPositions: [],
+                    createdAt: '',
+                    description: 'Attacker.',
+                    id: 'fwd',
+                    isActiveSquad: true,
+                    name: 'Luke',
+                    position: 'FWD',
+                    profilePictureUrl: null,
+                  },
+                ],
+              },
+              200,
+            ),
+          );
+        }
+        return Promise.resolve(mockResponse({}, 404));
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Keepers' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Defenders' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Midfielders' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Attackers' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Twiggy/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Luke/ })).toBeInTheDocument();
+  });
+
   it('renders the editable description, league position, and squad formation on the Home page', async () => {
     vi.stubGlobal(
       'fetch',
@@ -1516,6 +1597,124 @@ describe('App', () => {
       opponentScore: null,
       ourScore: null,
       seasonId,
+    });
+  });
+
+  it('lets an administrator save player contributions for a tracked game', async () => {
+    const gameId = 'e2032560-3b69-4ee6-90f5-79806fe48acb';
+    const playerId = '9c0846a0-0c65-4a60-8a64-d735d78d00ca';
+    let submittedBody: unknown;
+    window.history.replaceState({}, '', '/admin/games');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'jack@example.test',
+                    id: 'f035c5b7-243a-4e3d-931d-83cd57ad615a',
+                    name: 'Jack',
+                    role: 'ADMIN',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          if (path === '/api/admin/games/fixtures') {
+            return Promise.resolve(mockResponse({ fixtures: [] }, 200));
+          }
+          if (path === '/api/admin/seasons') {
+            return Promise.resolve(mockResponse({ seasons: [] }, 200));
+          }
+          if (path === '/api/admin/games/player-stats') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  games: [
+                    {
+                      competition: 'LEAGUE',
+                      datePlayed: '2026-10-06T00:00:00.000Z',
+                      id: gameId,
+                      opponentClub: { name: 'Norton Rivals' },
+                      opponentScore: 0,
+                      ourScore: 3,
+                      playerStats: [],
+                      season: { id: 'next-season', name: 'Autumn 2026' },
+                    },
+                  ],
+                  players: [
+                    {
+                      id: playerId,
+                      isActiveSquad: true,
+                      name: 'Luke',
+                      position: 'FWD',
+                    },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
+          if (
+            path === `/api/admin/games/${gameId}/player-stats` &&
+            init?.method === 'PUT'
+          ) {
+            submittedBody = JSON.parse(String(init.body));
+            return Promise.resolve(
+              mockResponse(
+                {
+                  playerStats: [
+                    {
+                      assists: 1,
+                      cleanSheet: true,
+                      goals: 2,
+                      playerId,
+                    },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Per-game statistics' }),
+    ).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Luke' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Goals' }), {
+      target: { value: '2' },
+    });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Assists' }), {
+      target: { value: '1' },
+    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Clean sheet' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Save player statistics' }),
+    );
+
+    expect(
+      await screen.findByText('Player contributions saved successfully.'),
+    ).toBeInTheDocument();
+    expect(submittedBody).toEqual({
+      playerStats: [
+        {
+          assists: 1,
+          cleanSheet: true,
+          goals: 2,
+          playerId,
+        },
+      ],
     });
   });
 });
