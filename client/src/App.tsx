@@ -38,9 +38,16 @@ function AppContent() {
     <main className="app-shell">
       <div className="page-frame">
         <header className="team-header">
-          <div>
-            <p className="eyebrow">6-a-side football · Sheffield</p>
-            <h1 id="team-name">24 Hour Party People</h1>
+          <div className="team-brand">
+            <img
+              className="team-brand-logo"
+              src="/assets/brand/logo-transparent-512.webp"
+              alt="24 Hour Party People club crest"
+            />
+            <div className="team-brand-copy">
+              <p className="eyebrow">6-a-side football · Sheffield</p>
+              <h1 id="team-name">24 Hour Party People</h1>
+            </div>
           </div>
           <nav className="site-nav" aria-label="Main navigation">
             <NavLink to="/" end>

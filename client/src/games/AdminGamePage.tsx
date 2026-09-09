@@ -529,7 +529,9 @@ function PlayerStatsManager() {
             }
           : current,
       );
-      setSuccess('Player contributions saved successfully.');
+      setSuccess(
+        'Match statistics saved. Season totals have been recalculated.',
+      );
     } catch (saveError) {
       setError(errorMessage(saveError));
     } finally {
@@ -544,7 +546,9 @@ function PlayerStatsManager() {
         <h2>Per-game statistics</h2>
         <p>
           Select every player who appeared. An appearance counts as one game
-          played even when their other figures are zero.
+          played even when their other figures are zero. Saving an edited match
+          replaces its previous contribution, so season totals are not counted
+          twice.
         </p>
       </div>
       {status === 'loading' && (
@@ -582,6 +586,12 @@ function PlayerStatsManager() {
             {selectedGame.opponentScore}
           </p>
           <div className="game-player-stat-list">
+            <div className="game-player-stat-headings" aria-hidden="true">
+              <span>Appearance</span>
+              <span>Goals</span>
+              <span>Assists</span>
+              <span>Clean sheet</span>
+            </div>
             {snapshot.players.map((player) => {
               const values = draft[player.id];
               if (!values) return null;
@@ -589,6 +599,7 @@ function PlayerStatsManager() {
                 <fieldset className="game-player-stat-row" key={player.id}>
                   <label className="checkbox-label game-player-name">
                     <input
+                      aria-label={`${player.name} appearance`}
                       checked={values.included}
                       type="checkbox"
                       onChange={(event) =>
@@ -603,6 +614,7 @@ function PlayerStatsManager() {
                   <label>
                     Goals
                     <input
+                      aria-label={`${player.name} goals`}
                       disabled={!values.included}
                       min={0}
                       step={1}
@@ -616,6 +628,7 @@ function PlayerStatsManager() {
                   <label>
                     Assists
                     <input
+                      aria-label={`${player.name} assists`}
                       disabled={!values.included}
                       min={0}
                       step={1}
@@ -628,6 +641,7 @@ function PlayerStatsManager() {
                   </label>
                   <label className="checkbox-label">
                     <input
+                      aria-label={`${player.name} clean sheet`}
                       checked={values.cleanSheet}
                       disabled={
                         !values.included || selectedGame.opponentScore !== 0

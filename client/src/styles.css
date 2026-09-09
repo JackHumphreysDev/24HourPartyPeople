@@ -64,6 +64,23 @@ select {
   text-wrap: balance;
 }
 
+.team-brand {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+}
+
+.team-brand-copy {
+  min-width: 0;
+}
+
+.team-brand-logo {
+  width: clamp(5.5rem, 10vw, 8.5rem);
+  height: auto;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 1rem 2rem rgb(0 0 0 / 35%));
+}
+
 .site-nav {
   display: flex;
   align-items: center;
@@ -157,17 +174,6 @@ select {
 
 .home-formation-section {
   padding-bottom: clamp(4rem, 10vw, 8rem);
-}
-
-.home-hero-copy {
-  position: relative;
-}
-
-.home-logo {
-  width: clamp(8rem, 18vw, 13rem);
-  height: auto;
-  margin-bottom: 1.5rem;
-  filter: drop-shadow(0 1.25rem 2.5rem rgb(0 0 0 / 35%));
 }
 
 .formation-pitch {
@@ -1317,6 +1323,18 @@ select {
   gap: 0.75rem;
 }
 
+.game-player-stat-headings {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1.5fr) repeat(3, minmax(7rem, 1fr));
+  gap: 1rem;
+  padding: 0 1rem;
+  color: #9e9a90;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .game-player-stat-row {
   display: grid;
   grid-template-columns: minmax(12rem, 1.5fr) repeat(3, minmax(7rem, 1fr));
@@ -1485,6 +1503,10 @@ select {
     align-items: start;
   }
 
+  .team-brand {
+    align-items: flex-start;
+  }
+
   .site-nav {
     justify-content: flex-start;
   }
@@ -1549,6 +1571,10 @@ select {
   .score-entry-fields,
   .game-player-stat-row {
     grid-template-columns: 1fr;
+  }
+
+  .game-player-stat-headings {
+    display: none;
   }
 
   .game-card-result {

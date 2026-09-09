@@ -11,7 +11,9 @@ import {
 
 import { createApp } from '../src/app.js';
 import { createSession, SESSION_COOKIE_NAME } from '../src/auth/session.js';
+import { applyImport } from '../src/importSeasonStats.js';
 import { prisma } from '../src/lib/prisma.js';
+import { historicalSeasons } from '../src/statistics/historicalData.js';
 
 async function clearDatabase() {
   await prisma.scrapeStatus.deleteMany();
@@ -329,4 +331,129 @@ describe('administrator player statistics API', () => {
       'Updated after the final fixture.',
     );
   });
+});
+
+describe('historical statistics import', () => {
+  it('merges duplicate identities and authoritatively recalculates every imported total', async () => {
+    const season = await prisma.season.create({
+      data: {
+        endDate: new Date('2026-09-15T00:00:00.000Z'),
+        isCurrent: true,
+        name: 'Summer 2026',
+        startDate: new Date('2026-05-12T00:00:00.000Z'),
+        tracksGamesPlayed: true,
+      },
+    });
+    const [kyle, birch] = await Promise.all([
+      prisma.player.create({
+        data: {
+          description: 'Current player.',
+          name: 'Kyle',
+          position: 'DEF',
+        },
+      }),
+      prisma.player.create({
+        data: {
+          description: 'Duplicate historical player.',
+          isActiveSquad: false,
+          name: 'Birch',
+          position: null,
+        },
+      }),
+    ]);
+    await prisma.playerSeasonStat.createMany({
+      data: [
+        {
+          assists: 99,
+          cleanSheets: 99,
+          goals: 99,
+          playerId: kyle.id,
+          seasonId: season.id,
+        },
+        {
+          assists: 1,
+          cleanSheets: 0,
+          goals: 1,
+          playerId: birch.id,
+          seasonId: season.id,
+        },
+      ],
+    });
+    const account = await prisma.user.create({
+      data: {
+        email: 'kyle@example.test',
+        name: 'Kyle',
+        passwordHash: 'not-used-by-this-test',
+        playerId: birch.id,
+      },
+    });
+
+    const result = await applyImport();
+
+    expect(result.playersMerged).toBe(1);
+    expect(await prisma.season.count()).toBe(historicalSeasons.length);
+    expect(await prisma.player.count({ where: { name: 'Birch' } })).toBe(0);
+    const savedKyle = await prisma.player.findFirstOrThrow({
+      where: { name: 'Kyle' },
+    });
+    await expect(
+      prisma.user.findUnique({ where: { id: account.id } }),
+    ).resolves.toMatchObject({
+      playerId: savedKyle.id,
+      requestedPlayerId: null,
+    });
+    const savedStats = await prisma.playerSeasonStat.findMany({
+      where: { playerId: savedKyle.id },
+    });
+    const expectedKyleTotals = historicalSeasons.reduce(
+      (totals, importedSeason) => {
+        const stat = importedSeason.stats.find(
+          (candidate) => candidate.player === 'Kyle',
+        );
+        return {
+          assists: totals.assists + Math.floor(stat?.assists ?? 0),
+          cleanSheets: totals.cleanSheets + Math.floor(stat?.cleanSheets ?? 0),
+          goals: totals.goals + Math.floor(stat?.goals ?? 0),
+        };
+      },
+      { assists: 0, cleanSheets: 0, goals: 0 },
+    );
+    expect(
+      savedStats.reduce(
+        (totals, stat) => ({
+          assists: totals.assists + stat.assists,
+          cleanSheets: totals.cleanSheets + stat.cleanSheets,
+          goals: totals.goals + stat.goals,
+        }),
+        { assists: 0, cleanSheets: 0, goals: 0 },
+      ),
+    ).toEqual(expectedKyleTotals);
+    expect(
+      savedStats.find((stat) => stat.seasonId === season.id),
+    ).toMatchObject({
+      assists: 0,
+      cleanSheets: 0,
+      gamesPlayed: null,
+      goals: 3,
+    });
+    await expect(
+      prisma.player.findFirst({ where: { name: 'G' } }),
+    ).resolves.toMatchObject({ isActiveSquad: false, position: null });
+    const juneSeason = await prisma.season.findFirstOrThrow({
+      where: { name: 'June 2023' },
+    });
+    const danny = await prisma.player.findFirstOrThrow({
+      where: { name: 'Danny' },
+    });
+    await expect(
+      prisma.playerSeasonStat.findUnique({
+        where: {
+          playerId_seasonId: {
+            playerId: danny.id,
+            seasonId: juneSeason.id,
+          },
+        },
+      }),
+    ).resolves.toMatchObject({ cleanSheets: 4 });
+  }, 30_000);
 });

@@ -4,16 +4,26 @@ import { historicalSeasons } from '../src/statistics/historicalData.js';
 
 describe('historical season statistics data', () => {
   it('contains the approved seasons and excludes own goals', () => {
-    expect(historicalSeasons).toHaveLength(9);
+    expect(historicalSeasons).toHaveLength(24);
     expect(historicalSeasons.filter((season) => season.current)).toHaveLength(
       1,
     );
     expect(historicalSeasons[0]?.name).toBe('Summer 2026');
-    expect(
-      historicalSeasons
-        .flatMap((season) => season.stats)
-        .map((stat) => stat.player),
-    ).not.toContain('OG');
+    const playerNames = historicalSeasons
+      .flatMap((season) => season.stats)
+      .map((stat) => stat.player);
+    expect(playerNames).toEqual(
+      expect.arrayContaining(['Adriano', 'G', 'Isaac', 'Odi']),
+    );
+    expect(playerNames).not.toEqual(
+      expect.arrayContaining([
+        'Bart',
+        'Birch',
+        'OG',
+        'Own goal',
+        "Luke's Right Foot",
+      ]),
+    );
   });
 
   it('combines the supplied league and cup contributions', () => {
@@ -46,10 +56,20 @@ describe('historical season statistics data', () => {
       april?.stats.find((stat) => stat.player === 'Broomhead')?.goals,
     ).toBe(7);
     expect(april?.stats.find((stat) => stat.player === 'Javi')?.goals).toBe(5);
-    expect(april?.stats.find((stat) => stat.player === 'Birch')?.goals).toBe(4);
+    expect(april?.stats.find((stat) => stat.player === 'Kyle')?.goals).toBe(4);
     expect(
       april?.stats.find((stat) => stat.player === 'Twiggy')?.cleanSheets,
     ).toBe(5);
+  });
+
+  it('rounds supplied fractional clean sheets down to whole numbers', () => {
+    const june = historicalSeasons.find(
+      (season) => season.name === 'June 2023',
+    );
+    expect(june?.stats.find((stat) => stat.player === 'Danny')).toMatchObject({
+      cleanSheets: 4.5,
+      note: expect.stringContaining('rounded down'),
+    });
   });
 
   it('keeps every historical statistic free of games-played estimates', () => {

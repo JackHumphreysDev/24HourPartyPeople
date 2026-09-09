@@ -80,11 +80,6 @@ export function HomePage() {
     <section className="home-page" aria-labelledby="home-heading">
       <div className="home-hero">
         <div className="home-hero-copy">
-          <img
-            className="home-logo"
-            src="/assets/brand/logo-transparent-512.webp"
-            alt="24 Hour Party People club crest"
-          />
           <p className="eyebrow">Established 2016</p>
           <h2 id="home-heading">Football, friends, and the full story.</h2>
           <p>{data?.teamProfile.description ?? DEFAULT_DESCRIPTION}</p>

@@ -99,7 +99,7 @@ export function AuthScreen() {
         <p>
           {mode === 'login'
             ? 'Use your 24 Hour Party People account.'
-            : 'Select your Player profile. An administrator will approve the link.'}
+            : 'Select your current or historical Player profile. An administrator will approve the link.'}
         </p>
       </div>
 
@@ -159,7 +159,7 @@ export function AuthScreen() {
             >
               {players.map((player) => (
                 <option key={player.id} value={player.id}>
-                  {player.name} · {player.position}
+                  {player.name} · {player.position ?? 'Historical player'}
                 </option>
               ))}
             </select>
@@ -167,7 +167,7 @@ export function AuthScreen() {
               <span className="field-hint">Loading available players…</span>
             ) : players.length === 0 ? (
               <span className="field-hint">
-                No unclaimed active Player profiles are available.
+                No unclaimed Player profiles are available.
               </span>
             ) : (
               <span className="field-hint">
