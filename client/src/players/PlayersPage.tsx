@@ -93,6 +93,7 @@ export function PlayersPage() {
                         <div>
                           <p className="position-label">
                             Primary: {positionLabels[section.position]}
+                            {player.isOnBench ? ' · Bench' : ''}
                           </p>
                           <h3>{player.name}</h3>
                           {(player.additionalPositions?.length ?? 0) > 0 && (

@@ -6,6 +6,7 @@ export type PlayerSummary = {
   description: string;
   id: string;
   isActiveSquad: boolean;
+  isOnBench: boolean;
   name: string;
   position: PlayerPosition | null;
   profilePictureUrl: string | null;
@@ -36,6 +37,7 @@ export type PlayerInput = {
   description: string;
   image: File | null;
   isActiveSquad: boolean;
+  isOnBench: boolean;
   name: string;
   position: PlayerPosition | null;
   removeProfilePicture: boolean;

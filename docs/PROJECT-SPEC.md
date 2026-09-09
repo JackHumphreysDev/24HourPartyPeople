@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.13.1` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.14.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -74,19 +74,23 @@ profilePictureUrl (nullable), position (nullable primary enum: `GK` | `DEF` |
 `MID` | `FWD`, used for the formation display — null is allowed only for an
 inactive historical player), additionalPositions
 (unique array of any other `PlayerPosition` values), isActiveSquad (boolean),
-createdAt.
+isOnBench (boolean; valid only for an active player), createdAt.
 
 > Formation is 1 GK + 3 DEF + 1 MID + 1 FWD (six players total, confirmed
 > by product owner), so the `position` enum's `DEF` value should support
 > up to 3 concurrent players in the active-squad formation view, with
 > `MID` and `FWD` at exactly 1 each. Additional playable positions do not
 > affect formation placement or capacity; only the primary `position` does.
+> Active bench players retain a primary position but do not occupy one of the
+> six starting slots.
 
 **Season** — id, name (e.g. "Summer 2026"), startDate, endDate,
 isCurrent (boolean, exactly one season should be current at a time —
 enforce in application logic, not just convention), tracksGamesPlayed
 (boolean — false through Summer 2026 and explicitly enabled from the first
-later season in which per-game appearances are recorded).
+later season in which per-game appearances are recorded),
+isClubHistoryEligible (boolean — true from Summer 2026 onwards, independently
+of whether that season tracks games played).
 
 **PlayerSeasonStat** — id, playerId (FK), seasonId (FK), goals (integer),
 assists (integer), cleanSheets (integer), gamesPlayed (integer, nullable —
@@ -133,6 +137,12 @@ played, won, drawn, lost, gf, ga, gd, points, walkoverGames, finalisedAt
 (nullable at the schema level; implemented records are created only by the
 explicit end-of-season finalisation flow and always receive this timestamp).
 
+**SeasonSquadEntry** — id, seasonId (FK), playerId (FK), position (the
+season-specific `PlayerPosition` snapshot), isStarter (boolean), createdAt,
+updatedAt. A player can appear only once in a season snapshot. Each saved
+snapshot must contain exactly 1 GK + 3 DEF + 1 MID + 1 FWD starters; any other
+selected players are recorded as the bench.
+
 ## 3. User-facing flows / tabs
 
 ### Home page
@@ -151,6 +161,10 @@ explicit end-of-season finalisation flow and always receive this timestamp).
 - The implemented responsive pitch uses each active player's primary position,
   links players to their profiles, and shows explicit empty and vacant-place
   states when standings or squad data is incomplete.
+- Active players marked for the bench are displayed in a separate substitutes
+  row and do not fill a starting-six slot.
+- The supplied club crest is shown in the Home page hero, with favicon and
+  Apple touch icon variants used as the website and browser URL identity.
 
 ### Player profiles (tab)
 
@@ -218,17 +232,23 @@ explicit end-of-season finalisation flow and always receive this timestamp).
 
 ### Club history (tab)
 
-- One row per season, starting from the current season (no historic rows
-  before it, since this is the app's own record rather than backfilled
-  data): Position, Club (our club name), Played, Won, Drawn, Lost, GF, GA,
-  GD, Points, Walk-over games.
+- One record per season, starting with Summer 2026 (no earlier backfilled
+  records): final league position plus Played, Won, Drawn, Lost, GF, GA, GD,
+  Points, and Walk-over games.
+- Each record displays its saved representative 1–3–1–1 formation, other
+  selected players on the bench, and Golden Boot, Assist King, and Golden
+  Glove. Awards are derived from that season's statistics and shared by tied
+  leaders; zero totals are not awarded.
 - Populated from `ClubHistory`, finalised once a season ends (don't treat
   an in-progress `SeasonStanding` row as the final `ClubHistory` row until
   the season is actually over).
-- The implemented administrator flow lists ended, attendance-tracked seasons
-  and explicitly copies the saved 24 Hour Party People standing into club
-  history. A saved team standing is required, finalisation is transactional
-  and one-time, and finalised history is immutable through the website.
+- The administrator manually confirms Summer 2026's representative formation
+  because appearances were not recorded. For later games-tracked seasons, the
+  website suggests starters by appearance count and places the remaining
+  participants on the bench; the administrator can correct the suggestion.
+- The administrator must save a valid formation and the 24 Hour Party People
+  final standing before finalising. Finalisation is transactional and one-time,
+  and finalised history is immutable through the website.
 
 ### Admin / profile creation
 
@@ -247,8 +267,9 @@ explicit end-of-season finalisation flow and always receive this timestamp).
 - An approved player account can open its linked public profile but cannot edit
   football records.
 - Admin can create, edit, and deactivate Player profiles (name,
-  description, profile picture, position), and link a Player to their
-  historic `PlayerSeasonStat` rows (entered manually for past seasons,
+  description, profile picture, positions, active status, and bench status),
+  and link a Player to their historic `PlayerSeasonStat` rows (entered
+  manually for past seasons,
   since that data isn't on Powerleague in a per-player breakdown — the
   Powerleague scrape covers team-level standings/fixtures/results, not
   individual player stats).
@@ -292,11 +313,12 @@ don't merge them into one component that hides which is which:
   Automatic scrape ingestion remains part of the separate scraper feature.
 - `ClubHistory` is **our own club's row only**, persisted **once per
   season**, and only starts existing from the app's launch season forward.
-  Eligibility uses the established `Season.tracksGamesPlayed` launch boundary.
+  Eligibility uses `Season.isClubHistoryEligible`, which begins with Summer
+  2026 independently of games-played tracking.
   An administrator must explicitly copy/finalise the saved team standing after
   the season's Sheffield-local end date, so a mid-scrape glitch cannot corrupt
-  a season that's already finished. Finalised records are immutable through the
-  website.
+  a season that's already finished. A valid `SeasonSquadEntry` formation is
+  also required. Finalised records are immutable through the website.
 
 ## 6. Powerleague scraping module
 
@@ -472,6 +494,8 @@ POST   /api/admin/fixtures                 (admin) create a manual fixture
 PUT    /api/admin/fixtures/:id             (admin) correct a scheduled fixture
 GET    /api/club-history                   our club's season-by-season finishes
 GET    /api/admin/club-history             (admin) finalised history and eligible seasons
+PUT    /api/admin/club-history/:seasonId/squad
+                                            (admin) save representative formation and bench
 POST   /api/admin/club-history/:seasonId/finalise
                                             (admin) finalise an ended season
 POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
@@ -481,7 +505,8 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 
 - [x] Home page shows current league position, an administrator-editable team
       description, and the current squad in a responsive 1GK-3DEF-1MID-1FWD
-      formation based on each player's primary position
+      formation based on each player's primary position, with substitutes on a
+      separate bench and the supplied crest and browser icons in use
 - [x] Player profiles show current-season stats, per-season historic
       stats (goals/assists/clean sheets only), and an overall/history
       section that clearly separates career totals from
@@ -497,9 +522,10 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       opponent, optional Sheffield-local time, and venue; administrators have
       a manual create/correct fallback alongside automatic scraped ingestion
 - [x] Club history tab shows our club's own finalised season-end finishes,
-      starting from the launch season, with the required columns including
-      walkover games; administrators can explicitly finalise an ended season
-      from its saved team standing, after which it is immutable through the site
+      starting with Summer 2026, including the representative formation,
+      bench, season awards, and full league record; administrators confirm the
+      squad before finalising the saved standing, after which it is immutable
+      through the site
 - [x] Admin account can create/edit player profiles (description, picture,
       primary and additional playable positions), edit the Home page team
       description, and enter historic season stats
@@ -541,6 +567,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.14.0 | 2026-09-09 | Added active substitutes, club branding, and finalised season records with representative formations, benches, awards, and full league finishes from Summer 2026 onwards |
 | 0.13.1 | 2026-09-09 | Exposed inactive historical players and their statistics in a separate public archive while preserving active-only formation and account claims |
 | 0.13.0 | 2026-09-09 | Added validated historical-statistics import, inactive historical profiles, per-game player contributions with derived tracked-season totals, and position-grouped squad sections |
 | 0.12.0 | 2026-09-09 | Added public player accounts with administrator-approved profile claims, manual profile assignment, linked-profile access, and administrator account settings |

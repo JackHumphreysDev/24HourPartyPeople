@@ -159,6 +159,17 @@ select {
   padding-bottom: clamp(4rem, 10vw, 8rem);
 }
 
+.home-hero-copy {
+  position: relative;
+}
+
+.home-logo {
+  width: clamp(8rem, 18vw, 13rem);
+  height: auto;
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 1.25rem 2.5rem rgb(0 0 0 / 35%));
+}
+
 .formation-pitch {
   position: relative;
   display: grid;
@@ -256,6 +267,29 @@ select {
   border: 2px dashed rgb(246 238 219 / 38%);
   border-radius: 50%;
   font-size: 2rem;
+}
+
+.formation-bench {
+  max-width: 62rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  margin: 1.25rem auto 0;
+  border: 1px solid rgb(217 172 85 / 32%);
+  border-radius: 1.25rem;
+  background: rgb(9 27 18 / 78%);
+}
+
+.formation-bench .section-heading {
+  margin-bottom: 1.25rem;
+}
+
+.formation-bench-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.formation-bench-player {
+  width: min(8rem, 40%);
 }
 
 .team-description-form {
@@ -459,6 +493,171 @@ select {
 
 .history-finalised-section {
   padding-top: 3rem;
+}
+
+.history-season-select {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 32rem;
+  margin-bottom: 1.5rem;
+  font-weight: 750;
+}
+
+.history-season-select select,
+.season-squad-player select {
+  width: 100%;
+  padding: 0.7rem;
+  color: #f6eedb;
+  border: 1px solid rgb(217 172 85 / 38%);
+  border-radius: 0.65rem;
+  background: rgb(1 10 6 / 72%);
+}
+
+.season-squad-form {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 1rem;
+  background: rgb(9 27 18 / 78%);
+}
+
+.season-squad-player-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.season-squad-player {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(9rem, 0.4fr) minmax(
+      10rem,
+      0.5fr
+    );
+  align-items: end;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgb(217 172 85 / 20%);
+  border-radius: 0.8rem;
+}
+
+.season-squad-player > label:not(.checkbox-label) {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.season-squad-player-name {
+  align-self: center;
+}
+
+.season-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.season-history-records {
+  display: grid;
+  gap: clamp(2rem, 6vw, 4rem);
+}
+
+.season-history-record {
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  border: 1px solid rgb(217 172 85 / 30%);
+  border-radius: 1.5rem;
+  background: rgb(9 27 18 / 72%);
+}
+
+.season-history-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.season-history-header h3 {
+  margin: 0.5rem 0 0;
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+}
+
+.season-position {
+  display: grid;
+  justify-items: end;
+  color: #c9c4b8;
+}
+
+.season-position strong {
+  color: #d9ac55;
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  line-height: 1;
+}
+
+.season-awards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin: 2rem 0;
+}
+
+.season-award-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1.25rem;
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 1rem;
+  background: rgb(1 10 6 / 45%);
+}
+
+.season-award-card strong,
+.season-award-card strong a {
+  color: #f6eedb;
+}
+
+.season-award-card > span {
+  color: #c9c4b8;
+}
+
+.season-history-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(15rem, 0.7fr);
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.season-history-pitch {
+  margin-top: 0;
+}
+
+.season-history-bench {
+  padding: 1.25rem;
+  margin-top: 0.75rem;
+  border: 1px solid rgb(217 172 85 / 24%);
+  border-radius: 1rem;
+}
+
+.season-record-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.season-record-stats > div {
+  padding: 0.85rem;
+  border-radius: 0.75rem;
+  background: rgb(1 10 6 / 45%);
+}
+
+.season-record-stats dt {
+  color: #9e9a90;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.season-record-stats dd {
+  margin: 0.35rem 0 0;
+  color: #f6eedb;
+  font-size: 1.4rem;
+  font-weight: 850;
 }
 
 .statistics-admin-page .admin-layout {
@@ -1298,6 +1497,22 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .season-history-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .season-awards {
+    grid-template-columns: 1fr;
+  }
+
+  .season-squad-player {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .season-squad-player-name {
+    grid-column: 1 / -1;
+  }
+
   .account-card {
     grid-template-columns: 1fr;
   }
@@ -1339,5 +1554,22 @@ select {
   .game-card-result {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .season-history-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .season-position {
+    justify-items: start;
+  }
+
+  .season-squad-player {
+    grid-template-columns: 1fr;
+  }
+
+  .season-squad-player-name {
+    grid-column: auto;
   }
 }

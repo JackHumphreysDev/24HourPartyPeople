@@ -2,6 +2,27 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.14.0] - 2026-09-09
+
+### Added
+
+- Active substitutes who appear on the Home page bench without occupying a
+  starting formation position.
+- The supplied club crest on the Home page and matching browser and saved-site
+  icons.
+- Season-specific representative formations and benches, with manual
+  administrator selection for Summer 2026 and appearance-based suggestions for
+  later games-tracked seasons.
+- Golden Boot, Assist King, and Golden Glove displays, including shared awards
+  for tied leaders.
+
+### Changed
+
+- Expand each finalised club-history season to include its complete league
+  record, representative squad, bench, and derived awards.
+- Establish Summer 2026 as the explicit club-history starting point,
+  independently of whether games played was tracked for that season.
+
 ## [0.13.1] - 2026-09-09
 
 ### Fixed

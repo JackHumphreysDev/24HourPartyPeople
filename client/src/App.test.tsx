@@ -176,6 +176,7 @@ describe('App', () => {
                     description: 'Goalkeeper.',
                     id: 'goalkeeper',
                     isActiveSquad: true,
+                    isOnBench: false,
                     name: 'Gary Gloves',
                     position: 'GK',
                     profilePictureUrl: null,
@@ -185,6 +186,7 @@ describe('App', () => {
                     description: 'Defender.',
                     id: 'defender',
                     isActiveSquad: true,
+                    isOnBench: false,
                     name: 'Dan Defence',
                     position: 'DEF',
                     profilePictureUrl: null,
@@ -194,6 +196,7 @@ describe('App', () => {
                     description: 'Midfielder.',
                     id: 'midfielder',
                     isActiveSquad: true,
+                    isOnBench: false,
                     name: 'Mike Midfield',
                     position: 'MID',
                     profilePictureUrl: null,
@@ -203,8 +206,19 @@ describe('App', () => {
                     description: 'Forward.',
                     id: 'forward',
                     isActiveSquad: true,
+                    isOnBench: false,
                     name: 'Frank Forward',
                     position: 'FWD',
+                    profilePictureUrl: null,
+                  },
+                  {
+                    createdAt: '2026-09-02T12:00:00.000Z',
+                    description: 'Substitute.',
+                    id: 'substitute',
+                    isActiveSquad: true,
+                    isOnBench: true,
+                    name: 'Ben Bench',
+                    position: 'DEF',
                     profilePictureUrl: null,
                   },
                 ],
@@ -254,6 +268,14 @@ describe('App', () => {
     expect(
       screen.getByLabelText('Current squad formation'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: '24 Hour Party People club crest' }),
+    ).toHaveAttribute('src', '/assets/brand/logo-transparent-512.webp');
+    expect(screen.getByLabelText('Current substitutes')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Ben Bench/ })).toHaveAttribute(
+      'href',
+      '/players/substitute',
+    );
     expect(screen.getByRole('link', { name: /Gary Gloves/ })).toHaveAttribute(
       'href',
       '/players/goalkeeper',
@@ -1750,6 +1772,14 @@ describe('club history', () => {
             {
               history: [
                 {
+                  awards: {
+                    assistKing: { players: [], value: 0 },
+                    goldenBoot: {
+                      players: [{ id: 'boot-player', name: 'Frank Forward' }],
+                      value: 8,
+                    },
+                    goldenGlove: { players: [], value: 0 },
+                  },
                   clubName: '24 Hour Party People',
                   drawn: 2,
                   finalisedAt: '2026-09-01T10:00:00.000Z',
@@ -1767,6 +1797,7 @@ describe('club history', () => {
                     name: 'Summer 2026',
                     startDate: '2026-06-01T00:00:00.000Z',
                   },
+                  squad: [],
                   walkoverGames: 1,
                   won: 7,
                 },
@@ -1784,16 +1815,39 @@ describe('club history', () => {
       await screen.findByRole('heading', { name: 'Club history' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('rowheader', { name: 'Summer 2026' }),
+      screen.getByRole('heading', { name: 'Summer 2026' }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('cell', { name: '24 Hour Party People' }),
-    ).toBeInTheDocument();
+    expect(screen.getByText('2nd')).toBeInTheDocument();
+    expect(screen.getByText('Golden Boot')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Frank Forward' })).toHaveAttribute(
+      'href',
+      '/players/boot-player',
+    );
   });
 
   it('finalises an eligible season from the administrator route', async () => {
     const seasonId = '12c37c8a-6559-493b-9615-76ddab94dd66';
+    const positions = ['GK', 'DEF', 'DEF', 'DEF', 'MID', 'FWD'] as const;
+    const players = positions.map((position, index) => ({
+      id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      isActiveSquad: true,
+      isOnBench: false,
+      name: `History Player ${index + 1}`,
+      position,
+      profilePictureUrl: null,
+    }));
+    const squad = players.map((player) => ({
+      isStarter: true,
+      player: {
+        id: player.id,
+        name: player.name,
+        profilePictureUrl: null,
+      },
+      playerId: player.id,
+      position: player.position,
+    }));
     let finalised = false;
+    let saved = false;
     window.history.replaceState({}, '', '/admin/club-history');
     vi.stubGlobal(
       'fetch',
@@ -1821,11 +1875,16 @@ describe('club history', () => {
             return Promise.resolve(
               mockResponse(
                 {
-                  candidates: [
+                  history: [],
+                  players,
+                  seasons: [
                     {
+                      canFinalise: true,
                       endDate: '2026-08-31T00:00:00.000Z',
                       id: seasonId,
+                      isCurrent: false,
                       name: 'Summer 2026',
+                      squadEntries: [],
                       standing: {
                         drawn: 2,
                         ga: 18,
@@ -1839,13 +1898,22 @@ describe('club history', () => {
                         won: 7,
                       },
                       startDate: '2026-06-01T00:00:00.000Z',
+                      suggestedSquad: squad,
+                      tracksGamesPlayed: false,
                     },
                   ],
-                  history: [],
                 },
                 200,
               ),
             );
+          }
+
+          if (
+            path === `/api/admin/club-history/${seasonId}/squad` &&
+            init?.method === 'PUT'
+          ) {
+            saved = true;
+            return Promise.resolve(mockResponse({ entries: squad }, 200));
           }
 
           if (
@@ -1857,6 +1925,11 @@ describe('club history', () => {
               mockResponse(
                 {
                   history: {
+                    awards: {
+                      assistKing: { players: [], value: 0 },
+                      goldenBoot: { players: [], value: 0 },
+                      goldenGlove: { players: [], value: 0 },
+                    },
                     clubName: '24 Hour Party People',
                     drawn: 2,
                     finalisedAt: '2026-09-01T10:00:00.000Z',
@@ -1874,6 +1947,7 @@ describe('club history', () => {
                       name: 'Summer 2026',
                       startDate: '2026-06-01T00:00:00.000Z',
                     },
+                    squad,
                     walkoverGames: 1,
                     won: 7,
                   },
@@ -1890,19 +1964,28 @@ describe('club history', () => {
     render(<App />);
 
     expect(
-      await screen.findByRole('heading', { name: 'Finalise club history' }),
+      await screen.findByRole('heading', { name: 'Build season history' }),
     ).toBeInTheDocument();
-    fireEvent.click(await screen.findByRole('button', { name: 'Finalise' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Save season formation' }),
+    );
 
     expect(
-      await screen.findByText('Summer 2026 was added to club history.'),
+      await screen.findByText('Season formation saved.'),
+    ).toBeInTheDocument();
+    expect(saved).toBe(true);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Finalise season history' }),
+    );
+
+    expect(
+      await screen.findByText(
+        'No seasons are waiting for a formation or finalisation.',
+      ),
     ).toBeInTheDocument();
     expect(finalised).toBe(true);
     expect(
-      screen.getByText('No ended seasons are waiting to be finalised.'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('rowheader', { name: 'Summer 2026' }),
+      screen.getByRole('heading', { name: 'Summer 2026' }),
     ).toBeInTheDocument();
   });
 });

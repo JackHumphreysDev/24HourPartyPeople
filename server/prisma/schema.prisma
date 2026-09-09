@@ -69,8 +69,8 @@ model TeamProfile {
 
 model ScrapeStatus {
   id              Int       @id @default(1)
-  lastAttemptedAt DateTime?  @db.Timestamptz(3)
-  lastSucceededAt DateTime?  @db.Timestamptz(3)
+  lastAttemptedAt DateTime? @db.Timestamptz(3)
+  lastSucceededAt DateTime? @db.Timestamptz(3)
   lastError       String?
 }
 
@@ -83,27 +83,31 @@ model Player {
   position               PlayerPosition?
   additionalPositions    PlayerPosition[]   @default([])
   isActiveSquad          Boolean            @default(true)
+  isOnBench              Boolean            @default(false)
   createdAt              DateTime           @default(now()) @db.Timestamptz(3)
   user                   User?              @relation("PlayerAccount")
   requestedBy            User?              @relation("PlayerAccountRequest")
   seasonStats            PlayerSeasonStat[]
   gameStats              GamePlayerStat[]
+  seasonSquads           SeasonSquadEntry[]
 
   @@index([isActiveSquad, position])
 }
 
 model Season {
-  id                String             @id @default(uuid()) @db.Uuid
-  name              String
-  startDate         DateTime           @db.Date
-  endDate           DateTime           @db.Date
-  isCurrent         Boolean            @default(false)
-  tracksGamesPlayed Boolean            @default(false)
-  playerStats       PlayerSeasonStat[]
-  fixtures          Fixture[]
-  gameResults       GameResult[]
-  standings         SeasonStanding[]
-  clubHistory       ClubHistory?
+  id                    String             @id @default(uuid()) @db.Uuid
+  name                  String
+  startDate             DateTime           @db.Date
+  endDate               DateTime           @db.Date
+  isCurrent             Boolean            @default(false)
+  tracksGamesPlayed     Boolean            @default(false)
+  isClubHistoryEligible Boolean            @default(true)
+  playerStats           PlayerSeasonStat[]
+  fixtures              Fixture[]
+  gameResults           GameResult[]
+  standings             SeasonStanding[]
+  clubHistory           ClubHistory?
+  squadEntries          SeasonSquadEntry[]
 
   @@index([isCurrent])
 }
@@ -151,20 +155,20 @@ model Fixture {
 }
 
 model GameResult {
-  id             String       @id @default(uuid()) @db.Uuid
-  fixtureId      String?      @unique @db.Uuid
-  seasonId       String       @db.Uuid
+  id             String           @id @default(uuid()) @db.Uuid
+  fixtureId      String?          @unique @db.Uuid
+  seasonId       String           @db.Uuid
   competition    Competition
-  datePlayed     DateTime     @db.Date
-  opponentClubId String       @db.Uuid
+  datePlayed     DateTime         @db.Date
+  opponentClubId String           @db.Uuid
   ourScore       Int?
   opponentScore  Int?
-  isWalkover     Boolean      @default(false)
+  isWalkover     Boolean          @default(false)
   walkoverReason String?
-  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
-  fixture        Fixture?     @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
-  season         Season       @relation(fields: [seasonId], references: [id], onDelete: Restrict)
-  opponentClub   OpponentClub @relation(fields: [opponentClubId], references: [id], onDelete: Restrict)
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+  fixture        Fixture?         @relation(fields: [fixtureId], references: [id], onDelete: SetNull)
+  season         Season           @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  opponentClub   OpponentClub     @relation(fields: [opponentClubId], references: [id], onDelete: Restrict)
   playerStats    GamePlayerStat[]
 
   @@index([seasonId, datePlayed])
@@ -223,4 +227,20 @@ model ClubHistory {
   walkoverGames Int       @default(0)
   finalisedAt   DateTime? @db.Timestamptz(3)
   season        Season    @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+}
+
+model SeasonSquadEntry {
+  id        String         @id @default(uuid()) @db.Uuid
+  seasonId  String         @db.Uuid
+  playerId  String         @db.Uuid
+  position  PlayerPosition
+  isStarter Boolean
+  createdAt DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime       @updatedAt @db.Timestamptz(3)
+  season    Season         @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  player    Player         @relation(fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@unique([seasonId, playerId])
+  @@index([seasonId, isStarter, position])
+  @@index([playerId])
 }
