@@ -102,8 +102,8 @@ deployments at the canonical URL above.
 
 The Prisma schema defines users, the singleton team profile, scraper status,
 players, seasons, historical player season statistics, opponents, fixtures,
-game results, per-game player statistics, live standings, and finalised club
-history. Migrations are stored in
+game results, per-game player statistics, live standings, finalised club
+history, and season-specific formation snapshots. Migrations are stored in
 `server/prisma/migrations/`.
 
 Database relationships preserve historical football records. Players are
@@ -157,9 +157,12 @@ The authentication API provides:
 
 The public `/` route displays the administrator-editable team description, the
 current 24 Hour Party People league position, and active players arranged on a
-responsive pitch in the confirmed 1GK–3DEF–1MID–1FWD formation. Empty league
-tables and incomplete squads have explicit placeholder states rather than
-misleading values.
+responsive pitch in the confirmed 1GK–3DEF–1MID–1FWD formation. Active
+substitutes are displayed separately on the bench and do not occupy a starting
+position. The supplied club crest appears in the Home page hero and its icon
+variants identify the website in browser tabs and saved shortcuts. Empty
+league tables and incomplete squads have explicit placeholder states rather
+than misleading values.
 
 The `/admin/home-page` route allows an authenticated administrator to update
 the team description. It is stored in a dedicated singleton `TeamProfile`
@@ -183,13 +186,14 @@ career totals. Historic seasons with no attendance data show games played as
 
 The `/admin` route allows an authenticated administrator to create and edit
 profiles, replace or remove pictures, select playable positions, and move
-players in or out of the active squad. Every player has one primary formation
-position and may have up to three unique additional positions. The primary
-position alone controls placement and the transactional active-squad limits:
-one goalkeeper, three defenders, one midfielder, and one forward. Inactive
-historical players may retain an unknown primary position until an
-administrator completes their profile; a primary position is required before
-activation. Inactive players remain available to administrators but are not
+players in or out of the active squad or onto the bench. Every player has one
+primary formation position and may have up to three unique additional
+positions. The primary position alone controls placement. Transactional
+starting-six limits allow one goalkeeper, three defenders, one midfielder, and
+one forward; bench players bypass those limits. Inactive historical players
+cannot be placed on the bench and may retain an unknown primary position until
+an administrator completes their profile; a primary position is required
+before activation. Inactive players remain available to administrators but are not
 included in the Home formation or player account claims. Their public summary
 and profile statistics remain available through the historical archive.
 
@@ -278,20 +282,29 @@ The standings API provides:
 ## Club history
 
 The public `/club-history` route displays the club's finalised season records,
-newest first. Each row identifies 24 Hour Party People and includes Position,
-Played, Won, Drawn, Lost, GF, GA, GD, Points, and Walkovers.
+newest first, beginning with Summer 2026. Each season includes its final league
+position and complete Played, Won, Drawn, Lost, GF, GA, GD, Points, and
+Walkovers record. It also shows the saved representative 1–3–1–1 formation,
+other season players on the bench, and Golden Boot, Assist King, and Golden
+Glove awards. Joint leaders share an award; an award with no recorded total is
+shown as not awarded.
 
-The `/admin/club-history` route lets an authenticated administrator finalise an
-ended season by copying the saved 24 Hour Party People standings row into the
-permanent club history. Only seasons from the application's attendance-tracked
-launch period onward are eligible, and a complete saved team standing is
-required. Finalisation is transactional and can happen only once per season;
-finalised records cannot be edited through the website.
+The `/admin/club-history` route lets an authenticated administrator confirm and
+save each eligible season's representative formation before finalising it.
+Summer 2026 is selected manually because appearances were not tracked. Later
+tracked seasons receive a suggestion based on recorded appearances, which the
+administrator can correct before saving. A valid formation requires one
+goalkeeper, three defenders, one midfielder, and one attacker, with any number
+of selected bench players. Finalisation also requires the season to have ended
+and its saved 24 Hour Party People standings row to exist. It is transactional,
+can happen only once per season, and the finalised record cannot be edited
+through the website.
 
 The club history API provides:
 
 - `GET /api/club-history` — list finalised public club-history records
-- `GET /api/admin/club-history` — list finalised records and eligible ended seasons (administrator)
+- `GET /api/admin/club-history` — list finalised records, eligible seasons, players, and formation suggestions (administrator)
+- `PUT /api/admin/club-history/:seasonId/squad` — save a season formation and bench (administrator)
 - `POST /api/admin/club-history/:seasonId/finalise` — finalise an ended season from its saved standing (administrator)
 
 ## Game results and history
