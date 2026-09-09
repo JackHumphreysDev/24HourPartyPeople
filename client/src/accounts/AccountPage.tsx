@@ -104,7 +104,7 @@ export function AccountPage() {
           >
             {players.map((player) => (
               <option key={player.id} value={player.id}>
-                {player.name} · {player.position}
+                {player.name} · {player.position ?? 'Historical player'}
               </option>
             ))}
           </select>

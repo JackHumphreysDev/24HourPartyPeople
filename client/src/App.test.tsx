@@ -109,7 +109,7 @@ describe('App', () => {
                     description: 'Historical player.',
                     id: 'historic',
                     isActiveSquad: false,
-                    name: 'Birch',
+                    name: 'G',
                     position: null,
                     profilePictureUrl: null,
                   },
@@ -142,7 +142,9 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: 'Historical players' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Birch/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /^Historical player G/ }),
+    ).toBeInTheDocument();
   });
 
   it('renders the editable description, league position, and squad formation on the Home page', async () => {
@@ -393,7 +395,7 @@ describe('App', () => {
               mockResponse(
                 {
                   players: [
-                    { id: playerId, name: 'Alex Example', position: 'DEF' },
+                    { id: playerId, name: 'Alex Example', position: null },
                   ],
                 },
                 200,
@@ -426,6 +428,11 @@ describe('App', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'Create player account' }),
     );
+    expect(
+      await screen.findByRole('option', {
+        name: 'Alex Example · Historical player',
+      }),
+    ).toBeInTheDocument();
     fireEvent.change(await screen.findByLabelText('Name'), {
       target: { value: 'Alex' },
     });
@@ -1729,20 +1736,24 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: 'Per-game statistics' }),
     ).toBeInTheDocument();
-    fireEvent.click(await screen.findByRole('checkbox', { name: 'Luke' }));
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Goals' }), {
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'Luke appearance' }),
+    );
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Luke goals' }), {
       target: { value: '2' },
     });
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Assists' }), {
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Luke assists' }), {
       target: { value: '1' },
     });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Clean sheet' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Luke clean sheet' }));
     fireEvent.click(
       screen.getByRole('button', { name: 'Save player statistics' }),
     );
 
     expect(
-      await screen.findByText('Player contributions saved successfully.'),
+      await screen.findByText(
+        'Match statistics saved. Season totals have been recalculated.',
+      ),
     ).toBeInTheDocument();
     expect(submittedBody).toEqual({
       playerStats: [

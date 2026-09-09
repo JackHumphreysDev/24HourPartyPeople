@@ -20,7 +20,7 @@ export type RegisterPlayerInput = LoginInput & {
 export type RegistrationPlayer = {
   id: string;
   name: string;
-  position: 'GK' | 'DEF' | 'MID' | 'FWD';
+  position: 'GK' | 'DEF' | 'MID' | 'FWD' | null;
 };
 
 export type AdminAccountInput = {

@@ -195,8 +195,9 @@ describe('authentication API', () => {
     const player = await prisma.player.create({
       data: {
         description: 'Test goalkeeper.',
+        isActiveSquad: false,
         name: 'Gary Gloves',
-        position: 'GK',
+        position: null,
       },
     });
 
@@ -205,7 +206,7 @@ describe('authentication API', () => {
     );
     expect(options.status).toBe(200);
     expect(options.body.players).toEqual([
-      { id: player.id, name: 'Gary Gloves', position: 'GK' },
+      { id: player.id, name: 'Gary Gloves', position: null },
     ]);
 
     const response = await request(createApp())

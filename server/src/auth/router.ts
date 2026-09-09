@@ -149,7 +149,6 @@ async function createPlayerUser(data: {
             select: { id: true },
             where: {
               id: data.playerId,
-              isActiveSquad: true,
               requestedBy: null,
               user: null,
             },
@@ -196,7 +195,6 @@ authRouter.get('/player-registration-options', async (_request, response) => {
     orderBy: { name: 'asc' },
     select: { id: true, name: true, position: true },
     where: {
-      isActiveSquad: true,
       requestedBy: null,
       user: null,
     },
@@ -424,7 +422,6 @@ authRouter.put(
             select: { id: true },
             where: {
               id: parsed.data.playerId,
-              isActiveSquad: true,
               requestedBy: null,
               user: null,
             },
