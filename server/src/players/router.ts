@@ -224,6 +224,137 @@ publicPlayersRouter.get('/', async (_request, response) => {
   response.status(200).json({ historicalPlayers, players });
 });
 
+publicPlayersRouter.get('/statistics', async (_request, response) => {
+  const [seasons, players] = await Promise.all([
+    prisma.season.findMany({
+      orderBy: { startDate: 'desc' },
+      select: { id: true, isCurrent: true, name: true },
+    }),
+    prisma.player.findMany({
+      select: {
+        id: true,
+        isActiveSquad: true,
+        name: true,
+        seasonStats: {
+          select: {
+            assists: true,
+            cleanSheets: true,
+            goals: true,
+            seasonId: true,
+            season: { select: { tracksGamesPlayed: true } },
+          },
+        },
+        gameStats: {
+          select: {
+            assists: true,
+            cleanSheet: true,
+            goals: true,
+            gameResult: {
+              select: {
+                seasonId: true,
+                season: { select: { tracksGamesPlayed: true } },
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  type Total = {
+    assists: number;
+    cleanSheets: number;
+    goals: number;
+    isActiveSquad: boolean;
+    name: string;
+    playerId: string;
+  };
+  const totalsByScope = new Map<string, Map<string, Total>>();
+
+  function addContribution(
+    seasonId: string,
+    player: (typeof players)[number],
+    values: Pick<Total, 'assists' | 'cleanSheets' | 'goals'>,
+  ) {
+    for (const scope of ['all-time', seasonId]) {
+      const playerTotals = totalsByScope.get(scope) ?? new Map<string, Total>();
+      const total = playerTotals.get(player.id) ?? {
+        assists: 0,
+        cleanSheets: 0,
+        goals: 0,
+        isActiveSquad: player.isActiveSquad,
+        name: player.name,
+        playerId: player.id,
+      };
+      total.assists += values.assists;
+      total.cleanSheets += values.cleanSheets;
+      total.goals += values.goals;
+      playerTotals.set(player.id, total);
+      totalsByScope.set(scope, playerTotals);
+    }
+  }
+
+  for (const player of players) {
+    for (const stat of player.seasonStats) {
+      if (!stat.season.tracksGamesPlayed) {
+        addContribution(stat.seasonId, player, stat);
+      }
+    }
+    for (const stat of player.gameStats) {
+      if (stat.gameResult.season.tracksGamesPlayed) {
+        addContribution(stat.gameResult.seasonId, player, {
+          assists: stat.assists,
+          cleanSheets: stat.cleanSheet ? 1 : 0,
+          goals: stat.goals,
+        });
+      }
+    }
+  }
+
+  function ranking(
+    totals: Total[],
+    metric: 'goals' | 'assists' | 'cleanSheets',
+  ) {
+    const sorted = totals
+      .filter((total) => total[metric] > 0)
+      .sort(
+        (left, right) =>
+          right[metric] - left[metric] ||
+          left.name.localeCompare(right.name, 'en-GB') ||
+          left.playerId.localeCompare(right.playerId),
+      );
+    let rank = 0;
+    return sorted.map((total, index) => {
+      if (index === 0 || total[metric] !== sorted[index - 1]![metric]) {
+        rank = index + 1;
+      }
+      return {
+        isActiveSquad: total.isActiveSquad,
+        name: total.name,
+        playerId: total.playerId,
+        rank,
+        value: total[metric],
+      };
+    });
+  }
+
+  const leaderboards = [null, ...seasons.map((season) => season.id)].map(
+    (seasonId) => {
+      const totals = [
+        ...(totalsByScope.get(seasonId ?? 'all-time')?.values() ?? []),
+      ];
+      return {
+        assists: ranking(totals, 'assists'),
+        cleanSheets: ranking(totals, 'cleanSheets'),
+        goals: ranking(totals, 'goals'),
+        seasonId,
+      };
+    },
+  );
+
+  response.status(200).json({ leaderboards, seasons });
+});
+
 publicPlayersRouter.get('/:playerId', async (request, response) => {
   const playerId = playerIdSchema.safeParse(request.params.playerId);
   if (!playerId.success) {

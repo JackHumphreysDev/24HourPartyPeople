@@ -19,6 +19,7 @@ import { AdminPlayersPage } from './players/AdminPlayersPage';
 import { AdminStatisticsPage } from './players/AdminStatisticsPage';
 import { PlayerProfilePage } from './players/PlayerProfilePage';
 import { PlayersPage } from './players/PlayersPage';
+import { StatisticsHubPage } from './players/StatisticsHubPage';
 import { AdminStandingsPage } from './standings/AdminStandingsPage';
 import { StandingsPage } from './standings/StandingsPage';
 
@@ -54,6 +55,7 @@ function AppContent() {
               Home
             </NavLink>
             <NavLink to="/players">Players</NavLink>
+            <NavLink to="/statistics">Statistics</NavLink>
             <NavLink to="/standings">Standings</NavLink>
             <NavLink to="/fixtures">Fixtures</NavLink>
             <NavLink to="/games">Games</NavLink>
@@ -79,6 +81,7 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/:playerId" element={<PlayerProfilePage />} />
+          <Route path="/statistics" element={<StatisticsHubPage />} />
           <Route path="/standings" element={<StandingsPage />} />
           <Route path="/fixtures" element={<FixturesPage />} />
           <Route path="/games" element={<GameHistoryPage />} />

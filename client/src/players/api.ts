@@ -6,6 +6,7 @@ import type {
   SeasonInput,
   SeasonStatInput,
   SeasonSummary,
+  StatisticsSnapshot,
 } from './types';
 
 type ErrorResponse = {
@@ -99,6 +100,10 @@ export async function getPlayer(playerId: string): Promise<PlayerDetail> {
     `/api/players/${encodeURIComponent(playerId)}`,
   );
   return response.player;
+}
+
+export async function getStatisticsSnapshot(): Promise<StatisticsSnapshot> {
+  return playerRequest<StatisticsSnapshot>('/api/players/statistics');
 }
 
 export async function getAdminPlayers(): Promise<PlayerSummary[]> {

@@ -24,6 +24,8 @@ export function PlayersPage() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
   );
+  const [search, setSearch] = useState('');
+  const [group, setGroup] = useState<'all' | 'current' | 'historical'>('all');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,12 +45,28 @@ export function PlayersPage() {
     return () => controller.abort();
   }, []);
 
+  const query = search.trim().toLocaleLowerCase('en-GB');
+  const visiblePlayers =
+    group === 'historical'
+      ? []
+      : players.filter((player) =>
+          player.name.toLocaleLowerCase('en-GB').includes(query),
+        );
+  const visibleHistoricalPlayers =
+    group === 'current'
+      ? []
+      : historicalPlayers.filter((player) =>
+          player.name.toLocaleLowerCase('en-GB').includes(query),
+        );
+  const hasMatches =
+    visiblePlayers.length + visibleHistoricalPlayers.length > 0;
+
   return (
     <section className="content-section" aria-labelledby="players-heading">
       <div className="section-heading">
         <p className="eyebrow">Meet the team</p>
-        <h2 id="players-heading">Current squad</h2>
-        <p>The players representing 24 Hour Party People.</p>
+        <h2 id="players-heading">Players</h2>
+        <p>Find current and historical 24 Hour Party People players.</p>
       </div>
 
       {status === 'loading' && <p className="status-panel">Loading squad…</p>}
@@ -57,16 +75,53 @@ export function PlayersPage() {
           The squad could not be loaded. Please try again.
         </p>
       )}
-      {status === 'ready' && players.length === 0 && (
-        <p className="status-panel">The current squad will appear here.</p>
+      {status === 'ready' && (
+        <div className="player-directory-filters">
+          <label>
+            Search players
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by name"
+            />
+          </label>
+          <label>
+            Player group
+            <select
+              value={group}
+              onChange={(event) => setGroup(event.target.value as typeof group)}
+            >
+              <option value="all">All players</option>
+              <option value="current">Current squad</option>
+              <option value="historical">Historical players</option>
+            </select>
+          </label>
+          <p role="status">
+            {visiblePlayers.length + visibleHistoricalPlayers.length}{' '}
+            {visiblePlayers.length + visibleHistoricalPlayers.length === 1
+              ? 'player'
+              : 'players'}{' '}
+            found
+          </p>
+        </div>
       )}
 
-      {players.length > 0 && (
+      {status === 'ready' && !hasMatches && (
+        <p className="status-panel">
+          {query || group !== 'all'
+            ? 'No players match these filters.'
+            : 'Players will appear here when profiles are added.'}
+        </p>
+      )}
+
+      {status === 'ready' && visiblePlayers.length > 0 && (
         <div className="player-position-sections">
           {positionSections.map((section) => {
-            const sectionPlayers = players.filter(
+            const sectionPlayers = visiblePlayers.filter(
               (player) => player.position === section.position,
             );
+            if (query && sectionPlayers.length === 0) return null;
             return (
               <section
                 className="player-position-section"
@@ -118,7 +173,7 @@ export function PlayersPage() {
         </div>
       )}
 
-      {status === 'ready' && historicalPlayers.length > 0 && (
+      {status === 'ready' && visibleHistoricalPlayers.length > 0 && (
         <section
           className="player-position-section historical-player-section"
           aria-labelledby="historical-players-heading"
@@ -129,7 +184,7 @@ export function PlayersPage() {
             <p>Former players with statistics recorded in the club history.</p>
           </div>
           <div className="player-grid">
-            {historicalPlayers.map((player) => (
+            {visibleHistoricalPlayers.map((player) => (
               <Link
                 className="player-card"
                 key={player.id}
