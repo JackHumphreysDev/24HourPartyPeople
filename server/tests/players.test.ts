@@ -87,6 +87,167 @@ afterAll(async () => {
 });
 
 describe('public player API', () => {
+  it('returns empty leaderboards when no season statistics exist', async () => {
+    const response = await request(createApp()).get('/api/players/statistics');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      leaderboards: [
+        { assists: [], cleanSheets: [], goals: [], seasonId: null },
+      ],
+      seasons: [],
+    });
+  });
+
+  it('ranks current and historical players using saved and tracked game totals', async () => {
+    const [active, historical, withoutStats] = await Promise.all([
+      prisma.player.create({
+        data: { description: 'Active.', name: 'Alex', position: 'MID' },
+      }),
+      prisma.player.create({
+        data: {
+          description: 'Historical.',
+          isActiveSquad: false,
+          name: 'Ben',
+          position: null,
+        },
+      }),
+      prisma.player.create({
+        data: { description: 'No stats.', name: 'Charlie', position: 'DEF' },
+      }),
+    ]);
+    const previous = await prisma.season.create({
+      data: {
+        endDate: new Date('2026-05-31T00:00:00.000Z'),
+        name: 'Spring 2026',
+        startDate: new Date('2026-03-01T00:00:00.000Z'),
+      },
+    });
+    const current = await prisma.season.create({
+      data: {
+        endDate: new Date('2026-09-01T00:00:00.000Z'),
+        isCurrent: true,
+        name: 'Summer 2026',
+        startDate: new Date('2026-06-01T00:00:00.000Z'),
+        tracksGamesPlayed: true,
+      },
+    });
+    await prisma.playerSeasonStat.createMany({
+      data: [
+        {
+          assists: 1,
+          cleanSheets: 2,
+          goals: 3,
+          playerId: active.id,
+          seasonId: previous.id,
+        },
+        {
+          assists: 2,
+          cleanSheets: 0,
+          goals: 3,
+          playerId: historical.id,
+          seasonId: previous.id,
+        },
+        {
+          assists: 99,
+          cleanSheets: 99,
+          goals: 99,
+          playerId: active.id,
+          seasonId: current.id,
+        },
+        {
+          assists: 0,
+          cleanSheets: 0,
+          goals: 0,
+          playerId: withoutStats.id,
+          seasonId: previous.id,
+        },
+      ],
+    });
+    const opponent = await prisma.opponentClub.create({
+      data: { name: 'Rivals' },
+    });
+    await prisma.gameResult.create({
+      data: {
+        competition: 'LEAGUE',
+        datePlayed: new Date('2026-07-01T00:00:00.000Z'),
+        opponentClubId: opponent.id,
+        opponentScore: 0,
+        ourScore: 5,
+        playerStats: {
+          create: [
+            { assists: 1, cleanSheet: true, goals: 2, playerId: active.id },
+            {
+              assists: 1,
+              cleanSheet: true,
+              goals: 3,
+              playerId: historical.id,
+            },
+          ],
+        },
+        seasonId: current.id,
+      },
+    });
+    await prisma.gameResult.create({
+      data: {
+        competition: 'LEAGUE',
+        datePlayed: new Date('2026-07-08T00:00:00.000Z'),
+        opponentClubId: opponent.id,
+        opponentScore: 1,
+        ourScore: 1,
+        playerStats: {
+          create: {
+            assists: 0,
+            cleanSheet: false,
+            goals: 1,
+            playerId: active.id,
+          },
+        },
+        seasonId: current.id,
+      },
+    });
+
+    const response = await request(createApp()).get('/api/players/statistics');
+
+    expect(response.status).toBe(200);
+    expect(response.body.seasons).toMatchObject([
+      { id: current.id, isCurrent: true, name: 'Summer 2026' },
+      { id: previous.id, isCurrent: false, name: 'Spring 2026' },
+    ]);
+    const allTime = response.body.leaderboards[0];
+    expect(allTime.seasonId).toBeNull();
+    expect(allTime.goals).toMatchObject([
+      { name: 'Alex', playerId: active.id, rank: 1, value: 6 },
+      {
+        isActiveSquad: false,
+        name: 'Ben',
+        playerId: historical.id,
+        rank: 1,
+        value: 6,
+      },
+    ]);
+    expect(allTime.assists).toMatchObject([
+      { name: 'Ben', rank: 1, value: 3 },
+      { name: 'Alex', rank: 2, value: 2 },
+    ]);
+    expect(allTime.cleanSheets).toMatchObject([
+      { name: 'Alex', value: 3 },
+      { name: 'Ben', value: 1 },
+    ]);
+    expect(allTime.goals).toHaveLength(2);
+    expect(response.body.leaderboards[1]).toMatchObject({
+      goals: [
+        { name: 'Alex', rank: 1, value: 3 },
+        { name: 'Ben', rank: 1, value: 3 },
+      ],
+      seasonId: current.id,
+    });
+    expect(response.body.leaderboards[2]).toMatchObject({
+      cleanSheets: [{ name: 'Alex', value: 2 }],
+      seasonId: previous.id,
+    });
+  });
+
   it('lists active players without exposing image storage identifiers', async () => {
     await prisma.player.createMany({
       data: [

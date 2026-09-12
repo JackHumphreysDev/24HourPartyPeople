@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import App from './App';
@@ -144,6 +150,138 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: /^Historical player G/ }),
+    ).toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getByRole('searchbox', { name: 'Search players' }),
+      {
+        target: { value: 'douG' },
+      },
+    );
+    expect(screen.getByRole('link', { name: /Doug/ })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /Luke/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('1 player found');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Player group' }), {
+      target: { value: 'historical' },
+    });
+    expect(
+      screen.getByText('No players match these filters.'),
+    ).toBeInTheDocument();
+    fireEvent.change(
+      screen.getByRole('searchbox', { name: 'Search players' }),
+      {
+        target: { value: 'g' },
+      },
+    );
+    expect(
+      screen.getByRole('link', { name: /^Historical player G/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /Twiggy/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows season and all-time player leaderboards', async () => {
+    const seasonId = 'a12a4fb1-b4f8-474a-9c95-98df0217459a';
+    const historicalId = '49520c77-d3b4-4e35-ad59-b79fa34b2b2f';
+    window.history.replaceState({}, '', '/statistics');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        if (String(input) === '/api/auth/me') {
+          return Promise.resolve(mockResponse({}, 401));
+        }
+        if (String(input) === '/api/players/statistics') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                seasons: [
+                  { id: seasonId, isCurrent: true, name: 'Summer 2026' },
+                ],
+                leaderboards: [
+                  {
+                    assists: [
+                      {
+                        isActiveSquad: true,
+                        name: 'Luke',
+                        playerId: 'luke',
+                        rank: 1,
+                        value: 8,
+                      },
+                    ],
+                    cleanSheets: [
+                      {
+                        isActiveSquad: false,
+                        name: 'Danny',
+                        playerId: historicalId,
+                        rank: 1,
+                        value: 4,
+                      },
+                    ],
+                    goals: [
+                      {
+                        isActiveSquad: true,
+                        name: 'Luke',
+                        playerId: 'luke',
+                        rank: 1,
+                        value: 24,
+                      },
+                      {
+                        isActiveSquad: false,
+                        name: 'G',
+                        playerId: 'g',
+                        rank: 2,
+                        value: 5,
+                      },
+                    ],
+                    seasonId: null,
+                  },
+                  {
+                    assists: [],
+                    cleanSheets: [],
+                    goals: [
+                      {
+                        isActiveSquad: true,
+                        name: 'Luke',
+                        playerId: 'luke',
+                        rank: 1,
+                        value: 3,
+                      },
+                    ],
+                    seasonId,
+                  },
+                ],
+              },
+              200,
+            ),
+          );
+        }
+        return Promise.resolve(mockResponse({}, 404));
+      }),
+    );
+
+    render(<App />);
+
+    const goals = await screen.findByRole('region', { name: 'Top scorers' });
+    expect(within(goals).getByRole('link', { name: 'Luke' })).toHaveAttribute(
+      'href',
+      '/players/luke',
+    );
+    expect(within(goals).getByText('24')).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Clean-sheet leaders' }),
+    ).toHaveTextContent('Danny · Historical');
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'View statistics for' }),
+      { target: { value: seasonId } },
+    );
+    expect(within(goals).getByText('3')).toBeInTheDocument();
+    expect(within(goals).queryByText('24')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('No assists recorded for this view.'),
     ).toBeInTheDocument();
   });
 

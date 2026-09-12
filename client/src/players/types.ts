@@ -32,6 +32,28 @@ export type PlayerDetail = PlayerSummary & {
   seasonStats: PlayerSeasonStat[];
 };
 
+export type LeaderboardEntry = {
+  isActiveSquad: boolean;
+  name: string;
+  playerId: string;
+  rank: number;
+  value: number;
+};
+
+export type StatisticsSnapshot = {
+  leaderboards: Array<{
+    assists: LeaderboardEntry[];
+    cleanSheets: LeaderboardEntry[];
+    goals: LeaderboardEntry[];
+    seasonId: string | null;
+  }>;
+  seasons: Array<{
+    id: string;
+    isCurrent: boolean;
+    name: string;
+  }>;
+};
+
 export type PlayerInput = {
   additionalPositions: PlayerPosition[];
   description: string;
