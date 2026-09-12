@@ -123,13 +123,14 @@ they sign in with their email and password and can update their name, email,
 or password from `/admin/account`; the current password is required to save a
 change.
 
-Players can create an account from the website and select an active, unclaimed
-Player profile. The account is created immediately, but its profile link
-remains pending until an administrator approves it. Administrators review,
-approve, or reject claims and can assign or unassign profiles manually at
-`/admin/accounts`. Rejected or unlinked player accounts can request another
-available profile from `/account`. Player accounts can view their linked
-public profile but cannot edit football records.
+Players can create an account from the website and select an unclaimed current
+or historical Player profile. Each profile can be linked to only one account,
+including while a claim is awaiting approval. The account is created
+immediately, but its profile link remains pending until an administrator
+approves it. Administrators review, approve, or reject claims and can assign
+or unassign profiles manually at `/admin/accounts`. Rejected or unlinked player
+accounts can request another available profile from `/account`. Player accounts
+can view their linked public profile but cannot edit football records.
 
 Passwords are stored as salted scrypt hashes. Successful registration and
 login create a random, revocable seven-day session whose SHA-256 token hash is
@@ -141,7 +142,7 @@ whether an email address exists.
 The authentication API provides:
 
 - `POST /api/auth/register` — create the first administrator account
-- `GET /api/auth/player-registration-options` — list active, unclaimed Player profiles
+- `GET /api/auth/player-registration-options` — list unclaimed current and historical Player profiles
 - `POST /api/auth/player-register` — create a player account with a pending profile claim
 - `POST /api/auth/login` — sign in and start a session
 - `POST /api/auth/logout` — revoke the current session
@@ -159,10 +160,10 @@ The public `/` route displays the administrator-editable team description, the
 current 24 Hour Party People league position, and active players arranged on a
 responsive pitch in the confirmed 1GK–3DEF–1MID–1FWD formation. Active
 substitutes are displayed separately on the bench and do not occupy a starting
-position. The supplied club crest appears in the Home page hero and its icon
-variants identify the website in browser tabs and saved shortcuts. Empty
-league tables and incomplete squads have explicit placeholder states rather
-than misleading values.
+position. The supplied club crest appears beside the team name in the site
+header, and its icon variants identify the website in browser tabs and saved
+shortcuts. Empty league tables and incomplete squads have explicit placeholder
+states rather than misleading values.
 
 The `/admin/home-page` route allows an authenticated administrator to update
 the team description. It is stored in a dedicated singleton `TeamProfile`
@@ -193,9 +194,10 @@ starting-six limits allow one goalkeeper, three defenders, one midfielder, and
 one forward; bench players bypass those limits. Inactive historical players
 cannot be placed on the bench and may retain an unknown primary position until
 an administrator completes their profile; a primary position is required
-before activation. Inactive players remain available to administrators but are not
-included in the Home formation or player account claims. Their public summary
-and profile statistics remain available through the historical archive.
+before activation. Inactive players remain outside the Home formation but can
+be claimed by one player account, subject to administrator approval. Their
+public summary and profile statistics remain available through the historical
+archive.
 
 Profile pictures are uploaded through the API to Cloudinary. Uploads accept
 JPEG, PNG, or WebP files up to 5 MB and are cropped to an 800 × 800 square.
@@ -237,20 +239,23 @@ The administration API provides:
 
 ### Historical statistics import
 
-`npm run stats:import` reads the approved historical dataset and produces a
-preview without changing the database. It reports existing profile matches,
-including the Broomhead/Broom alias, and the inactive historical profiles it
-would create. After checking the preview against the intended database, apply
-the same import explicitly:
+`npm run stats:import` reads all 24 supplied seasons, from January 2019
+through Summer 2026, and produces a preview without changing the database.
+It reports existing profile matches, known identity aliases (including
+Birch/Kyle), and the inactive historical profiles it would create. After
+checking the preview against the intended database, apply the same import
+explicitly:
 
 ```bash
 npm run stats:import -- --apply
 ```
 
-The command uses `DATABASE_URL`, can be run repeatedly without duplicating
-records, and refuses ambiguous player or season matches. It also refuses to
-convert Summer 2026 if per-game statistics already exist. Games played is
-never estimated for imported seasons.
+The command uses `DATABASE_URL`, replaces imported season totals on each run
+without double-counting, and refuses ambiguous player or season matches. It
+merges known aliases into canonical player profiles and rounds fractional
+statistics down to whole numbers. It also refuses to convert Summer 2026 if
+per-game statistics already exist. Games played is never estimated for
+imported seasons.
 
 ## Current league standings
 
