@@ -7,6 +7,9 @@ import { prisma } from '../lib/prisma.js';
 import { getScrapeStatus } from '../scrape/status.js';
 
 const fixtureIdSchema = z.uuid();
+const availabilitySchema = z.object({
+  response: z.enum(['AVAILABLE', 'UNSURE', 'UNAVAILABLE']),
+});
 const timeSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
@@ -257,9 +260,132 @@ publicFixturesRouter.get('/upcoming', async (_request, response) => {
   });
 });
 
+publicFixturesRouter.get(
+  '/availability',
+  requireAuthentication,
+  async (request, response) => {
+    const user = request.authUser!;
+    if (user.role !== 'PLAYER' || !user.playerId) {
+      response.status(403).json({
+        error: {
+          code: 'APPROVED_PLAYER_REQUIRED',
+          message: 'An approved player profile is required.',
+        },
+      });
+      return;
+    }
+
+    const availability = await prisma.fixtureAvailability.findMany({
+      select: { fixtureId: true, response: true },
+      where: {
+        fixture: {
+          scheduledDate: { gte: sheffieldToday() },
+          status: 'SCHEDULED',
+        },
+        playerId: user.playerId,
+      },
+    });
+    response.status(200).json({ availability });
+  },
+);
+
+publicFixturesRouter.put(
+  '/:fixtureId/availability',
+  requireAuthentication,
+  async (request, response) => {
+    const user = request.authUser!;
+    if (user.role !== 'PLAYER' || !user.playerId) {
+      response.status(403).json({
+        error: {
+          code: 'APPROVED_PLAYER_REQUIRED',
+          message: 'An approved player profile is required.',
+        },
+      });
+      return;
+    }
+
+    const fixtureId = fixtureIdSchema.safeParse(request.params.fixtureId);
+    const parsed = availabilitySchema.safeParse(request.body);
+    if (!fixtureId.success || !parsed.success) {
+      response.status(400).json({
+        error: {
+          code: 'INVALID_AVAILABILITY',
+          message: 'Select a valid fixture and availability response.',
+        },
+      });
+      return;
+    }
+
+    const availability = await runSerializableTransaction(
+      async (transaction) => {
+        const fixture = await transaction.fixture.findUnique({
+          select: { scheduledDate: true, status: true },
+          where: { id: fixtureId.data },
+        });
+        if (
+          !fixture ||
+          fixture.status !== 'SCHEDULED' ||
+          fixture.scheduledDate < sheffieldToday()
+        ) {
+          return null;
+        }
+
+        return transaction.fixtureAvailability.upsert({
+          create: {
+            fixtureId: fixtureId.data,
+            playerId: user.playerId!,
+            response: parsed.data.response,
+          },
+          update: { response: parsed.data.response },
+          where: {
+            fixtureId_playerId: {
+              fixtureId: fixtureId.data,
+              playerId: user.playerId!,
+            },
+          },
+          select: { fixtureId: true, response: true },
+        });
+      },
+    );
+
+    if (!availability) {
+      response.status(409).json({
+        error: {
+          code: 'FIXTURE_NOT_OPEN',
+          message: 'Availability is only open for upcoming fixtures.',
+        },
+      });
+      return;
+    }
+    response.status(200).json({ availability });
+  },
+);
+
 export const adminFixturesRouter = Router();
 
 adminFixturesRouter.use(requireAuthentication, requireAdmin);
+
+adminFixturesRouter.get('/availability', async (_request, response) => {
+  const fixtures = await prisma.fixture.findMany({
+    orderBy: [{ scheduledDate: 'asc' }, { scheduledTime: 'asc' }],
+    select: {
+      availability: {
+        orderBy: { player: { name: 'asc' } },
+        select: {
+          player: { select: { id: true, name: true } },
+          response: true,
+          updatedAt: true,
+        },
+      },
+      id: true,
+    },
+    where: {
+      scheduledDate: { gte: sheffieldToday() },
+      status: 'SCHEDULED',
+    },
+  });
+  response.status(200).json({ fixtures });
+});
 
 adminFixturesRouter.get('/', async (_request, response) => {
   const fixtures = await prisma.fixture.findMany({

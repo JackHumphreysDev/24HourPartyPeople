@@ -81,16 +81,8 @@ async function ingestPayload(
     })),
   });
 
-  await transaction.fixture.deleteMany({
-    where: {
-      result: null,
-      seasonId: season.id,
-      source: 'SCRAPE',
-      status: 'SCHEDULED',
-    },
-  });
-
   let fixturesImported = 0;
+  const seenScrapedFixtureIds: string[] = [];
   for (const fixture of payload.fixtures) {
     const opponent = await findOrCreateOpponent(
       transaction,
@@ -98,19 +90,32 @@ async function ingestPayload(
     );
     const scheduledDate = dateFromInput(fixture.scheduledDate);
     const existing = await transaction.fixture.findFirst({
-      select: { id: true },
+      select: { id: true, source: true, status: true },
       where: {
         competition: fixture.competition,
         opponentClubId: opponent.id,
+        result: null,
         scheduledDate,
         seasonId: season.id,
+        status: { in: ['SCHEDULED', 'CANCELLED'] },
       },
     });
     if (existing) {
+      if (existing.source === 'SCRAPE') {
+        await transaction.fixture.update({
+          data: {
+            scheduledTime: timeFromInput(fixture.scheduledTime),
+            status: 'SCHEDULED',
+            venue: fixture.venue,
+          },
+          where: { id: existing.id },
+        });
+        seenScrapedFixtureIds.push(existing.id);
+      }
       continue;
     }
 
-    await transaction.fixture.create({
+    const created = await transaction.fixture.create({
       data: {
         competition: fixture.competition,
         opponentClubId: opponent.id,
@@ -120,9 +125,22 @@ async function ingestPayload(
         source: 'SCRAPE',
         venue: fixture.venue,
       },
+      select: { id: true },
     });
+    seenScrapedFixtureIds.push(created.id);
     fixturesImported += 1;
   }
+
+  await transaction.fixture.updateMany({
+    data: { status: 'CANCELLED' },
+    where: {
+      id: { notIn: seenScrapedFixtureIds },
+      result: null,
+      seasonId: season.id,
+      source: 'SCRAPE',
+      status: 'SCHEDULED',
+    },
+  });
 
   let resultsImported = 0;
   for (const result of payload.results) {

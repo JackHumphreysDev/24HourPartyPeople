@@ -28,6 +28,13 @@ enum FixtureStatus {
   SCHEDULED
   PLAYED
   WALKOVER
+  CANCELLED
+}
+
+enum AvailabilityResponse {
+  AVAILABLE
+  UNSURE
+  UNAVAILABLE
 }
 
 enum FixtureSource {
@@ -90,6 +97,7 @@ model Player {
   seasonStats            PlayerSeasonStat[]
   gameStats              GamePlayerStat[]
   seasonSquads           SeasonSquadEntry[]
+  fixtureAvailability    FixtureAvailability[]
 
   @@index([isActiveSquad, position])
 }
@@ -148,10 +156,25 @@ model Fixture {
   season         Season        @relation(fields: [seasonId], references: [id], onDelete: Restrict)
   opponentClub   OpponentClub  @relation(fields: [opponentClubId], references: [id], onDelete: Restrict)
   result         GameResult?
+  availability   FixtureAvailability[]
 
   @@index([seasonId, scheduledDate])
   @@index([status, scheduledDate])
   @@index([opponentClubId])
+}
+
+model FixtureAvailability {
+  id        String               @id @default(uuid()) @db.Uuid
+  fixtureId String               @db.Uuid
+  playerId  String               @db.Uuid
+  response  AvailabilityResponse
+  createdAt DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime             @updatedAt @db.Timestamptz(3)
+  fixture   Fixture              @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  player    Player               @relation(fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@unique([fixtureId, playerId])
+  @@index([playerId, fixtureId])
 }
 
 model GameResult {

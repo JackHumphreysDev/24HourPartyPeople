@@ -176,6 +176,84 @@ describe('Powerleague refresh API', () => {
     });
   });
 
+  it('keeps fixture responses through refreshes, cancellation and reappearance', async () => {
+    const adminCookie = await createAdminSession();
+    await createCurrentSeason();
+    const app = createApp();
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify(validPayload()), { status: 200 }),
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    expect(
+      (
+        await request(app)
+          .post('/api/admin/scrape/refresh')
+          .set('Cookie', adminCookie)
+      ).status,
+    ).toBe(200);
+    const fixture = await prisma.fixture.findFirstOrThrow({
+      where: { status: 'SCHEDULED' },
+    });
+    const player = await prisma.player.create({
+      data: { description: '', name: 'Twiggy' },
+    });
+    await prisma.fixtureAvailability.create({
+      data: {
+        fixtureId: fixture.id,
+        playerId: player.id,
+        response: 'AVAILABLE',
+      },
+    });
+
+    const repeated = await request(app)
+      .post('/api/admin/scrape/refresh')
+      .set('Cookie', adminCookie);
+    expect(repeated.body.imported.fixturesImported).toBe(0);
+    expect(
+      await prisma.fixtureAvailability.count({
+        where: { fixtureId: fixture.id },
+      }),
+    ).toBe(1);
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ...validPayload(), fixtures: [] }), {
+        status: 200,
+      }),
+    );
+    expect(
+      (
+        await request(app)
+          .post('/api/admin/scrape/refresh')
+          .set('Cookie', adminCookie)
+      ).status,
+    ).toBe(200);
+    expect(
+      await prisma.fixture.findUniqueOrThrow({ where: { id: fixture.id } }),
+    ).toMatchObject({ status: 'CANCELLED' });
+    expect(
+      (await request(app).get('/api/fixtures/upcoming')).body.fixtures,
+    ).toEqual([]);
+
+    expect(
+      (
+        await request(app)
+          .post('/api/admin/scrape/refresh')
+          .set('Cookie', adminCookie)
+      ).status,
+    ).toBe(200);
+    expect(
+      await prisma.fixture.findUniqueOrThrow({ where: { id: fixture.id } }),
+    ).toMatchObject({ status: 'SCHEDULED' });
+    expect(
+      await prisma.fixtureAvailability.count({
+        where: { fixtureId: fixture.id },
+      }),
+    ).toBe(1);
+  });
+
   it('preserves cached data and records a failed refresh', async () => {
     const adminCookie = await createAdminSession();
     const season = await createCurrentSeason();
