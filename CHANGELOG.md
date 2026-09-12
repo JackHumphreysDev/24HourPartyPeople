@@ -2,6 +2,15 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.15.1] - 2026-09-12
+
+### Documentation
+
+- Correct account-claim guidance to include unclaimed current and historical
+  Player profiles and the one-account-per-profile rule.
+- Align the crest placement and historical-import instructions with the
+  behaviour shipped in 0.15.0.
+
 ## [0.15.0] - 2026-09-09
 
 ### Added
