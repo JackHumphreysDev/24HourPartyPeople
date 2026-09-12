@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.15.1` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.16.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -41,6 +41,8 @@ Core capabilities:
   team, and the current squad displayed in a classic 6-a-side formation.
 - Player profiles with current-season stats, historic season stats, and a
   career/overall summary.
+- A public Statistics tab with season and all-time player leaderboards, plus
+  name search and current/historical filters in the player directory.
 - Current league standings (scraped).
 - Game submission, including the walkover → cup-game-instead flow.
 - Game history (league + cup results, with the possibility of two results
@@ -56,10 +58,10 @@ Core capabilities:
 **User** — id, name, email, passwordHash, role (`ADMIN` | `PLAYER`),
 playerId (nullable, unique approved Player FK), requestedPlayerId (nullable,
 unique pending Player FK), createdAt. Only `ADMIN` users can create or edit
-Player records. A player account selects an active, unclaimed Player profile
-when registering; the approved link is created only after administrator
-review. Both relationships use `SetNull` deletion behaviour so account data is
-retained if a profile is removed.
+Player records. A player account selects an unclaimed current or historical
+Player profile when registering; the approved link is created only after
+administrator review. Both relationships use `SetNull` deletion behaviour so
+account data is retained if a profile is removed.
 
 **TeamProfile** (one singleton row) — id, description (free text,
 admin-editable), updatedAt. The implemented public Home page reads this record,
@@ -163,15 +165,16 @@ selected players are recorded as the bench.
   states when standings or squad data is incomplete.
 - Active players marked for the bench are displayed in a separate substitutes
   row and do not fill a starting-six slot.
-- The supplied club crest is shown in the Home page hero, with favicon and
-  Apple touch icon variants used as the website and browser URL identity.
+- The supplied club crest is shown beside the global team name, with favicon
+  and Apple touch icon variants used as the website and browser URL identity.
 
 ### Player profiles (tab)
 
 - List active players in vertically ordered Keepers, Defenders, Midfielders,
   and Attackers sections, followed by a separate inactive Historical players
-  archive. Active and historical players link to individual profile views
-  showing:
+  archive. Provide name search and current/historical filters without another
+  server request. Active and historical players link to individual profile
+  views showing:
   - Description + profile picture (admin-set).
   - Current season stats: goals, assists, clean sheets, games played.
   - Previous season stats, per season: goals, assists, clean sheets.
@@ -179,9 +182,19 @@ selected players are recorded as the bench.
     current one** — show it as "not recorded" rather than 0, since 0 would
     misrepresent missing historic data.
   - An overall/history section aggregating career totals across all
-    seasons (goals, assists, clean sheets summed; games played summed only
-    from the current season onward, clearly labelled as such so it isn't
-    read as a full career total).
+    seasons (goals, assists and clean sheets summed; games played summed only
+    for seasons with recorded appearances, clearly labelled so it is not read
+    as a complete career appearance total).
+
+### Player statistics (tab)
+
+- Show season and all-time leaderboards for recorded goals, assists and clean
+  sheets, including inactive historical players.
+- Use aggregate season rows for untracked seasons and per-game contributions
+  for games-tracked seasons, matching player-profile totals without counting
+  stale aggregate rows twice.
+- Omit zero values, share ranks for ties, and link each entry to its player
+  profile. Do not estimate historical games played.
 
 ### Current league standings (tab)
 
@@ -257,10 +270,10 @@ selected players are recorded as the bench.
   every other account. The setup key is never shown in the normal website.
 - The administrator can update their own name, email, and password from
   `/admin/account`; the current password must be confirmed for every update.
-- Players can register publicly and select one active, unclaimed Player
-  profile. The requested link remains pending until an administrator approves
-  it. Rejected or manually unlinked accounts can request another available
-  profile.
+- Players can register publicly and select one unclaimed current or historical
+  Player profile. The requested link remains pending until an administrator
+  approves it. Rejected or manually unlinked accounts can request another
+  available profile.
 - `/admin/accounts` lets an administrator approve or reject pending claims and
   manually assign or unassign Player profiles. A Player profile cannot be
   approved, assigned, or requested by more than one account at a time.
@@ -456,13 +469,14 @@ Python/pytest. All required success and failure cases are implemented.
 ```
 POST   /api/auth/register                 recovery-only first administrator setup
 GET    /api/auth/player-registration-options
-                                            list active, unclaimed Player profiles
+                                            list unclaimed current/historical Player profiles
 POST   /api/auth/player-register          create player account and pending claim
 POST   /api/auth/login                    login
 POST   /api/auth/logout                   logout and revoke current session
 GET    /api/auth/me                       current authenticated user
 PUT    /api/auth/me/player-request        request a profile for an unlinked account
 GET    /api/players                        list players
+GET    /api/players/statistics             season and all-time player leaderboards
 GET    /api/players/:id                    player profile + current/historic stats
 PUT    /api/admin/account                 (admin) update own account details
 GET    /api/admin/accounts                (admin) list accounts, claims and assignments
@@ -548,7 +562,11 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       unrecorded through Summer 2026
 - [x] The public Players page groups the active squad into keeper, defender,
       midfielder, and attacker sections, followed by an inactive historical
-      player archive with public profile and statistic access
+      player archive with public profile and statistic access; name search and
+      current/historical filters help find profiles
+- [x] The public Statistics tab ranks recorded goals, assists and clean sheets
+      for each season and all-time, including historical players and tracked
+      per-game contributions without double-counting
 - [x] Scraping module (Python) implemented with both tiers, DB-backed
       caching, a visible staleness indicator, and the 3 required pytest
       unit tests passing
@@ -572,6 +590,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.16.0 | 2026-09-12 | Added public season and all-time player leaderboards, plus name search and current/historical filters in the player directory |
 | 0.15.1 | 2026-09-12 | Corrected README guidance for historical profile claims, one-account-per-profile protection, crest placement, and the 24-season statistics import |
 | 0.15.0 | 2026-09-09 | Completed the supplied 24-season player record, canonical player merges, authoritative total recalculation, historical profile claims, clearer per-game match-stat entry, and global header branding |
 | 0.14.0 | 2026-09-09 | Added active substitutes, club branding, and finalised season records with representative formations, benches, awards, and full league finishes from Summer 2026 onwards |

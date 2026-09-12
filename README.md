@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.14.0` release includes the project foundation, core football
+The current `0.16.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -25,10 +25,14 @@ Historical season totals can be imported with a validated preview, while new
 games-tracked seasons derive appearances, goals, assists, and clean sheets
 from the administrator's per-game records. The public squad is grouped by
 keepers, defenders, midfielders, and attackers, followed by a separate archive
-of inactive historical players and their recorded statistics.
+of inactive historical players and their recorded statistics. The player
+directory supports name search and current/historical filters, and the public
+Statistics tab compares recorded goals, assists and clean sheets by season or
+all-time.
+
 The website is deployed to Vercel with Neon PostgreSQL and Cloudinary image
-storage. See
-[the project specification](docs/PROJECT-SPEC.md) for full functionality.
+storage. See [the project specification](docs/PROJECT-SPEC.md) for full
+functionality.
 
 ## Technology stack
 
@@ -180,10 +184,11 @@ The Team Profile API provides:
 
 The public website provides a routed home page, a current-squad list grouped
 into keepers, defenders, midfielders, and attackers, and a separate historical
-player archive. Active and historical players have individual profile URLs
-showing their description, picture, available season records, and recorded
-career totals. Historic seasons with no attendance data show games played as
-**Not recorded** rather than `0`.
+player archive. The directory searches names locally and filters current and
+historical profiles without another request. Active and historical players have
+individual profile URLs showing their description, picture, available season
+records, and recorded career totals. Historic seasons with no attendance data
+show games played as **Not recorded** rather than `0`.
 
 The `/admin` route allows an authenticated administrator to create and edit
 profiles, replace or remove pictures, select playable positions, and move
@@ -207,10 +212,19 @@ database so replaced and removed images can be deleted safely.
 The player API provides:
 
 - `GET /api/players` — list the active squad and historical-player archive
+- `GET /api/players/statistics` — return season and all-time player leaderboards
 - `GET /api/players/:playerId` — return an active or historical player and season statistics
 - `GET /api/admin/players` — list active and inactive players (administrator)
 - `POST /api/admin/players` — create a player using multipart form data
 - `PUT /api/admin/players/:playerId` — update a player using multipart form data
+
+## Statistics hub
+
+The public `/statistics` route ranks players by recorded goals, assists and
+clean sheets. Select a season or view all-time totals. Current and historical
+players both appear, tied values share a rank, and zero values are omitted.
+For seasons that track appearances, the rankings use per-game contributions
+instead of editable aggregate rows. Historical games played are not estimated.
 
 ## Season and statistics management
 

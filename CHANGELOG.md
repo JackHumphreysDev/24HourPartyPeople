@@ -2,6 +2,22 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.16.0] - 2026-09-12
+
+### Added
+
+- A public Statistics tab with season and all-time rankings for recorded goals,
+  assists and clean sheets, including current and historical players.
+- Name search and current/historical filters for the public player directory.
+
+### Changed
+
+- Use tracked-game contributions in leaderboard totals when a season records
+  appearances; ignore stale aggregate rows, omit zero scores, and share ranks
+  for tied players.
+- Correct older project-spec descriptions of historical profile claims and
+  global crest placement.
+
 ## [0.15.1] - 2026-09-12
 
 ### Documentation
