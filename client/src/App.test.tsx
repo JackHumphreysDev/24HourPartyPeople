@@ -3,6 +3,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -1533,6 +1534,103 @@ describe('App', () => {
     expect(screen.getByText('Norton Playing Fields 3G')).toBeInTheDocument();
   });
 
+  it('lets an approved player change their own matchday response', async () => {
+    window.history.replaceState({}, '', '/fixtures');
+    let submittedBody: unknown;
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'twiggy@example.test',
+                    id: 'account',
+                    name: 'Twiggy',
+                    playerId: 'player',
+                    requestedPlayerId: null,
+                    role: 'PLAYER',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          if (path === '/api/fixtures/upcoming') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  fixtures: [
+                    {
+                      competition: 'LEAGUE',
+                      id: 'fixture',
+                      opponentClub: { id: 'opponent', name: 'Norton Rivals' },
+                      result: null,
+                      scheduledDate: '2026-09-15T00:00:00.000Z',
+                      scheduledTime: null,
+                      season: { id: 'season', name: 'Summer 2026' },
+                      source: 'SCRAPE',
+                      status: 'SCHEDULED',
+                      venue: null,
+                    },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
+          if (path === '/api/fixtures/availability') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  availability: [{ fixtureId: 'fixture', response: 'UNSURE' }],
+                },
+                200,
+              ),
+            );
+          }
+          if (
+            path === '/api/fixtures/fixture/availability' &&
+            init?.method === 'PUT'
+          ) {
+            submittedBody = JSON.parse(String(init.body)) as unknown;
+            return Promise.resolve(
+              mockResponse(
+                {
+                  availability: {
+                    fixtureId: 'fixture',
+                    response: 'AVAILABLE',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+
+    const unsure = await screen.findByRole('button', { name: 'Unsure' });
+    await waitFor(() => expect(unsure).toHaveAttribute('aria-pressed', 'true'));
+    fireEvent.click(screen.getByRole('button', { name: 'Available' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Available' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      ),
+    );
+    expect(submittedBody).toEqual({ response: 'AVAILABLE' });
+    expect(
+      screen.queryByText('Norton Rivals — Available'),
+    ).not.toBeInTheDocument();
+  });
+
   it('creates fixtures while keeping recorded fixtures read-only for administrators', async () => {
     const seasonId = '12c37c8a-6559-493b-9615-76ddab94dd66';
     let submittedBody: Record<string, unknown> | undefined;
@@ -1620,6 +1718,28 @@ describe('App', () => {
             return Promise.resolve(mockResponse({ fixtures }, 200));
           }
 
+          if (path === '/api/admin/fixtures/availability') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  fixtures: fixtures
+                    .filter((fixture) => fixture.status === 'SCHEDULED')
+                    .map((fixture) => ({
+                      id: fixture.id,
+                      availability: [
+                        {
+                          player: { id: 'player', name: 'Twiggy' },
+                          response: 'AVAILABLE',
+                          updatedAt: '2026-09-13T12:00:00.000Z',
+                        },
+                      ],
+                    })),
+                },
+                200,
+              ),
+            );
+          }
+
           return Promise.resolve(mockResponse({}, 404));
         }),
     );
@@ -1662,6 +1782,10 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: 'New Opponent' }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText('Available 1 · Unsure 0 · Unavailable 0'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Twiggy — Available')).toBeInTheDocument();
   });
 
   it('prefills a manual cup result after an administrator saves a league walkover', async () => {

@@ -81,36 +81,50 @@ async function ingestPayload(
     })),
   });
 
-  await transaction.fixture.deleteMany({
-    where: {
-      result: null,
-      seasonId: season.id,
-      source: 'SCRAPE',
-      status: 'SCHEDULED',
-    },
-  });
-
   let fixturesImported = 0;
+  const seenScrapedFixtureIds: string[] = [];
   for (const fixture of payload.fixtures) {
     const opponent = await findOrCreateOpponent(
       transaction,
       fixture.opponentClubName,
     );
     const scheduledDate = dateFromInput(fixture.scheduledDate);
+    const fixtureWhere: Prisma.FixtureWhereInput = {
+      competition: fixture.competition,
+      opponentClubId: opponent.id,
+      result: null,
+      scheduledDate,
+      seasonId: season.id,
+      status: { in: ['SCHEDULED', 'CANCELLED'] },
+    };
     const existing = await transaction.fixture.findFirst({
       select: { id: true },
       where: {
-        competition: fixture.competition,
-        opponentClubId: opponent.id,
-        scheduledDate,
-        seasonId: season.id,
+        ...fixtureWhere,
+        source: 'SCRAPE',
       },
     });
     if (existing) {
+      await transaction.fixture.update({
+        data: {
+          scheduledTime: timeFromInput(fixture.scheduledTime),
+          status: 'SCHEDULED',
+          venue: fixture.venue,
+        },
+        where: { id: existing.id },
+      });
+      seenScrapedFixtureIds.push(existing.id);
+      continue;
+    }
+    const manual = await transaction.fixture.findFirst({
+      select: { id: true },
+      where: { ...fixtureWhere, source: 'MANUAL' },
+    });
+    if (manual) {
       continue;
     }
 
-    await transaction.fixture.create({
+    const created = await transaction.fixture.create({
       data: {
         competition: fixture.competition,
         opponentClubId: opponent.id,
@@ -120,9 +134,22 @@ async function ingestPayload(
         source: 'SCRAPE',
         venue: fixture.venue,
       },
+      select: { id: true },
     });
+    seenScrapedFixtureIds.push(created.id);
     fixturesImported += 1;
   }
+
+  await transaction.fixture.updateMany({
+    data: { status: 'CANCELLED' },
+    where: {
+      id: { notIn: seenScrapedFixtureIds },
+      result: null,
+      seasonId: season.id,
+      source: 'SCRAPE',
+      status: 'SCHEDULED',
+    },
+  });
 
   let resultsImported = 0;
   for (const result of payload.results) {

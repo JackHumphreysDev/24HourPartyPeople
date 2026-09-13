@@ -1228,6 +1228,52 @@ select {
   color: #c9c4b8;
 }
 
+.fixture-availability {
+  padding-top: 1rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid rgb(217 172 85 / 18%);
+}
+
+.fixture-availability-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.fixture-availability-options .secondary-button {
+  padding: 0.55rem 0.75rem;
+}
+
+.fixture-availability-options .secondary-button[aria-pressed='true'] {
+  color: #07120d;
+  background: #d9ac55;
+}
+
+.fixture-availability-options .secondary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.fixture-availability-error {
+  color: #ffe3de;
+}
+
+.admin-fixture-availability {
+  padding-top: 0.8rem;
+  margin-top: 0.8rem;
+  border-top: 1px solid rgb(217 172 85 / 18%);
+}
+
+.admin-fixture-availability ul {
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 1.2rem;
+  margin: 0.65rem 0 0;
+  color: #c9c4b8;
+  font-size: 0.85rem;
+}
+
 .game-card {
   padding: clamp(1.25rem, 4vw, 2rem);
   border: 1px solid rgb(217 172 85 / 25%);

@@ -1,8 +1,25 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
-import { getUpcomingFixtures } from './api';
+import { useAuth } from '../auth/useAuth';
+import {
+  getOwnFixtureAvailability,
+  getUpcomingFixtures,
+  setFixtureAvailability,
+} from './api';
 import type { ScrapeStatus } from '../scrape/types';
-import type { FixtureSummary } from './types';
+import type {
+  AvailabilityResponse,
+  FixtureSummary,
+  OwnFixtureAvailability,
+} from './types';
+
+const availabilityOptions: { label: string; response: AvailabilityResponse }[] =
+  [
+    { label: 'Available', response: 'AVAILABLE' },
+    { label: 'Unsure', response: 'UNSURE' },
+    { label: 'Unavailable', response: 'UNAVAILABLE' },
+  ];
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('en-GB', {
@@ -27,11 +44,34 @@ function formatLastRefreshed(value: string): string {
 }
 
 export function FixturesPage() {
+  const { status: authStatus, user } = useAuth();
   const [fixtures, setFixtures] = useState<FixtureSummary[]>([]);
   const [scrapeStatus, setScrapeStatus] = useState<ScrapeStatus | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
   );
+  const [availabilitySnapshot, setAvailabilitySnapshot] = useState<{
+    profileKey: string;
+    entries: OwnFixtureAvailability[];
+    status: 'ready' | 'error';
+  } | null>(null);
+  const [savingFixtureId, setSavingFixtureId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<{
+    fixtureId: string;
+    message: string;
+  } | null>(null);
+  const approvedProfileKey =
+    authStatus === 'authenticated' && user?.role === 'PLAYER' && user.playerId
+      ? `${user.id}:${user.playerId}`
+      : null;
+  const currentSnapshot =
+    availabilitySnapshot?.profileKey === approvedProfileKey
+      ? availabilitySnapshot
+      : null;
+  const availabilityStatus = approvedProfileKey
+    ? (currentSnapshot?.status ?? 'loading')
+    : 'idle';
+  const availability = currentSnapshot?.entries ?? [];
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -54,6 +94,70 @@ export function FixturesPage() {
       isCurrentRequest = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!approvedProfileKey) {
+      return;
+    }
+
+    let isCurrentRequest = true;
+    void getOwnFixtureAvailability()
+      .then((responses) => {
+        if (isCurrentRequest) {
+          setAvailabilitySnapshot({
+            profileKey: approvedProfileKey,
+            entries: responses,
+            status: 'ready',
+          });
+        }
+      })
+      .catch(() => {
+        if (isCurrentRequest) {
+          setAvailabilitySnapshot({
+            profileKey: approvedProfileKey,
+            entries: [],
+            status: 'error',
+          });
+        }
+      });
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [approvedProfileKey]);
+
+  async function saveAvailability(
+    fixtureId: string,
+    response: AvailabilityResponse,
+  ) {
+    setSaveError(null);
+    setSavingFixtureId(fixtureId);
+    try {
+      const saved = await setFixtureAvailability(fixtureId, response);
+      setAvailabilitySnapshot((current) =>
+        current?.profileKey === approvedProfileKey
+          ? {
+              ...current,
+              entries: [
+                ...current.entries.filter(
+                  (entry) => entry.fixtureId !== fixtureId,
+                ),
+                saved,
+              ],
+            }
+          : current,
+      );
+    } catch (error) {
+      setSaveError({
+        fixtureId,
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Your response could not be saved.',
+      });
+    } finally {
+      setSavingFixtureId(null);
+    }
+  }
 
   return (
     <section className="content-section">
@@ -90,28 +194,97 @@ export function FixturesPage() {
         <p className="status-panel">No upcoming fixtures are scheduled.</p>
       )}
 
+      {status === 'ready' &&
+        fixtures.length > 0 &&
+        authStatus === 'anonymous' && (
+          <p className="status-panel">
+            <Link to="/account">Sign in</Link> with an approved player profile
+            to respond to a fixture.
+          </p>
+        )}
+      {status === 'ready' &&
+        fixtures.length > 0 &&
+        user?.role === 'PLAYER' &&
+        !user.playerId && (
+          <p className="status-panel">
+            Your player profile must be approved before you can respond to
+            fixtures.
+          </p>
+        )}
+      {availabilityStatus === 'error' && (
+        <p className="status-panel status-panel-error" role="alert">
+          Your saved availability could not be loaded. Please refresh before
+          responding.
+        </p>
+      )}
+
       <div className="fixture-grid">
-        {fixtures.map((fixture) => (
-          <article className="fixture-card" key={fixture.id}>
-            <div className="fixture-card-meta">
-              <span className="competition-label">
-                {fixture.competition === 'LEAGUE' ? 'League' : 'Cup'}
-              </span>
-              <span>{fixture.season.name}</span>
-            </div>
-            <p className="fixture-date">{formatDate(fixture.scheduledDate)}</p>
-            <div className="fixture-opponent">
-              <div>
-                <p className="eyebrow">Opponent</p>
-                <h3>{fixture.opponentClub.name}</h3>
+        {fixtures.map((fixture) => {
+          const ownResponse = availability.find(
+            (entry) => entry.fixtureId === fixture.id,
+          )?.response;
+          return (
+            <article className="fixture-card" key={fixture.id}>
+              <div className="fixture-card-meta">
+                <span className="competition-label">
+                  {fixture.competition === 'LEAGUE' ? 'League' : 'Cup'}
+                </span>
+                <span>{fixture.season.name}</span>
               </div>
-              <p className="fixture-time">
-                {formatTime(fixture.scheduledTime)}
+              <p className="fixture-date">
+                {formatDate(fixture.scheduledDate)}
               </p>
-            </div>
-            {fixture.venue && <p className="fixture-venue">{fixture.venue}</p>}
-          </article>
-        ))}
+              <div className="fixture-opponent">
+                <div>
+                  <p className="eyebrow">Opponent</p>
+                  <h3>{fixture.opponentClub.name}</h3>
+                </div>
+                <p className="fixture-time">
+                  {formatTime(fixture.scheduledTime)}
+                </p>
+              </div>
+              {fixture.venue && (
+                <p className="fixture-venue">{fixture.venue}</p>
+              )}
+              {user?.role === 'PLAYER' && user.playerId && (
+                <div className="fixture-availability">
+                  <p className="eyebrow">Your availability</p>
+                  <div
+                    className="fixture-availability-options"
+                    role="group"
+                    aria-label={`Your availability against ${fixture.opponentClub.name}`}
+                  >
+                    {availabilityOptions.map((option) => (
+                      <button
+                        key={option.response}
+                        type="button"
+                        aria-pressed={ownResponse === option.response}
+                        className="secondary-button"
+                        disabled={
+                          availabilityStatus !== 'ready' ||
+                          savingFixtureId !== null
+                        }
+                        onClick={() =>
+                          void saveAvailability(fixture.id, option.response)
+                        }
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  {savingFixtureId === fixture.id && (
+                    <p role="status">Saving your response…</p>
+                  )}
+                  {saveError?.fixtureId === fixture.id && (
+                    <p className="fixture-availability-error" role="alert">
+                      {saveError.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            </article>
+          );
+        })}
       </div>
     </section>
   );

@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.16.0` release includes the project foundation, core football
+The current `0.17.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -28,7 +28,9 @@ keepers, defenders, midfielders, and attackers, followed by a separate archive
 of inactive historical players and their recorded statistics. The player
 directory supports name search and current/historical filters, and the public
 Statistics tab compares recorded goals, assists and clean sheets by season or
-all-time.
+all-time. Approved players can also respond to upcoming fixtures with their
+matchday availability, while the administrator sees the named responses and
+headcount.
 
 The website is deployed to Vercel with Neon PostgreSQL and Cloudinary image
 storage. See [the project specification](docs/PROJECT-SPEC.md) for full
@@ -106,6 +108,7 @@ deployments at the canonical URL above.
 
 The Prisma schema defines users, the singleton team profile, scraper status,
 players, seasons, historical player season statistics, opponents, fixtures,
+per-player fixture availability,
 game results, per-game player statistics, live standings, finalised club
 history, and season-specific formation snapshots. Migrations are stored in
 `server/prisma/migrations/`.
@@ -365,17 +368,34 @@ times are treated as Sheffield local wall-clock values and are not shifted for
 the viewer's timezone. Each fixture shows its competition, opponent, season,
 and venue when available.
 
-Powerleague fixtures are cached automatically. The `/admin/fixtures` route
-remains the manual fallback: an authenticated administrator can add or correct
+An approved player account can mark each upcoming fixture as Available,
+Unsure, or Unavailable and change that response while the fixture remains
+scheduled. The public page shows only that player's own response; named
+responses and totals are visible to the administrator on `/admin/fixtures`.
+An account awaiting profile approval cannot respond.
+
+Powerleague fixtures are cached automatically. Matching scraped fixtures are
+updated in place so availability survives a refresh. A scraped fixture that
+disappears is marked cancelled, removed from the public upcoming list, and
+retained with its responses in the administrator's fixture list. If it returns
+with the same opponent, competition, and date, it is restored with those
+responses. A match moved to a different date is a new fixture, so players
+must respond again; the old responses remain on the cancelled fixture.
+
+The `/admin/fixtures` route remains the manual fallback: an authenticated
+administrator can add or correct
 a fixture before its result is recorded. Manual fixtures take precedence over
-matching scraped entries. Played and walkover fixtures remain visible but
-read-only so historical results cannot be silently changed; fixture deletion
-and cancellation are not included.
+matching scraped entries. Played, walkover, and cancelled fixtures remain
+read-only so historical results and responses cannot be silently changed;
+manual fixture cancellation and deletion are not included.
 
 The fixture API provides:
 
 - `GET /api/fixtures/upcoming` — list public upcoming scheduled fixtures
+- `GET /api/fixtures/availability` — list the approved player's own upcoming responses
+- `PUT /api/fixtures/:fixtureId/availability` — set or change the approved player's response
 - `GET /api/admin/fixtures` — list all fixtures (administrator)
+- `GET /api/admin/fixtures/availability` — list named responses for upcoming and cancelled fixtures (administrator; the website calculates totals)
 - `POST /api/admin/fixtures` — create a manual fixture (administrator)
 - `PUT /api/admin/fixtures/:fixtureId` — correct a scheduled fixture (administrator)
 

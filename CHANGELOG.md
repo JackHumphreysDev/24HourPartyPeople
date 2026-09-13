@@ -2,6 +2,23 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.17.0] - 2026-09-13
+
+### Added
+
+- Approved players can mark upcoming fixtures Available, Unsure, or
+  Unavailable and change their response while the fixture remains scheduled.
+- The administrator's fixture list shows named responses and headcounts;
+  other players' responses are not public.
+
+### Changed
+
+- Preserve responses when Powerleague refreshes matching fixtures. Missing
+  scraped fixtures become read-only cancelled records, and a returning match
+  with the same opponent, competition, and date regains its saved responses.
+- A match moved to a different date requires new responses; old responses stay
+  on the cancelled fixture for the administrator to inspect.
+
 ## [0.16.0] - 2026-09-12
 
 ### Added

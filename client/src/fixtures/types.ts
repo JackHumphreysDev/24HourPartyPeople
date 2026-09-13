@@ -1,8 +1,23 @@
 import type { Competition } from '../games/types';
 import type { ScrapeStatus } from '../scrape/types';
 
-export type FixtureStatus = 'SCHEDULED' | 'PLAYED' | 'WALKOVER';
+export type FixtureStatus = 'SCHEDULED' | 'PLAYED' | 'WALKOVER' | 'CANCELLED';
 export type FixtureSource = 'SCRAPE' | 'MANUAL';
+export type AvailabilityResponse = 'AVAILABLE' | 'UNSURE' | 'UNAVAILABLE';
+
+export type OwnFixtureAvailability = {
+  fixtureId: string;
+  response: AvailabilityResponse;
+};
+
+export type AdminFixtureAvailability = {
+  id: string;
+  availability: {
+    player: { id: string; name: string };
+    response: AvailabilityResponse;
+    updatedAt: string;
+  }[];
+};
 
 export type FixtureSummary = {
   competition: Competition;

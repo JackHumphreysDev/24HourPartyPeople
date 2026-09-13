@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.16.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.17.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -48,6 +48,8 @@ Core capabilities:
 - Game history (league + cup results, with the possibility of two results
   on one date when a walkover triggers a cup game).
 - Fixtures (scraped, upcoming).
+- Matchday availability for approved player accounts, with an administrator-only
+  named roster and headcount.
 - Club history — our own team's end-of-season finishes, starting from the
   current season.
 - Admin-managed player profiles (one admin account, initially the site
@@ -106,9 +108,17 @@ scraped standings/fixtures — not our own club).
 
 **Fixture** — id, seasonId (FK), opponentClubId (FK), competition (enum:
 `LEAGUE` | `CUP`), scheduledDate, scheduledTime (nullable), venue
-(nullable), status (enum: `SCHEDULED` | `PLAYED` | `WALKOVER`), source
+(nullable), status (enum: `SCHEDULED` | `PLAYED` | `WALKOVER` |
+`CANCELLED`), source
 (enum: `scrape` | `manual`, so admin-entered fixtures can coexist with
 scraped ones).
+
+**FixtureAvailability** — id, fixtureId (FK), playerId (FK), response
+(enum: `AVAILABLE` | `UNSURE` | `UNAVAILABLE`), createdAt, updatedAt. The
+fixture/player pair is unique. Only a signed-in Player account with an
+approved profile can set or change its own response for a scheduled fixture
+from the current Sheffield date onward. The public page reveals no other
+players' responses; an administrator can inspect the named roster and totals.
 
 **GameResult** — id, fixtureId (FK, nullable — a cup game slotted in
 after a walkover may not have a pre-existing scraped fixture row, so allow
@@ -240,8 +250,17 @@ selected players are recorded as the bench.
   available. League and Cup fixtures are distinguished.
 - The implemented manual fallback lets an administrator add fixtures and
   correct scheduled fixtures before results are recorded. Played and walkover
-  fixtures are retained as read-only history. Scraped fixture ingestion remains
-  part of the separate Powerleague scraper feature.
+  fixtures are retained as read-only history. Scraped fixture ingestion is
+  handled by the existing Powerleague scraper.
+- Approved player accounts can respond Available, Unsure, or Unavailable to an
+  upcoming fixture. They see only their own saved response; the administrator
+  sees named responses and counts on the fixture list. There is no
+  administrator override in this release.
+- Scraped fixtures are updated in place during refreshes to preserve responses.
+  Missing scraped fixtures become read-only cancelled records and disappear
+  from the public upcoming list; they are restored if the same opponent,
+  competition, and date return. A changed date creates a new fixture needing
+  fresh responses, while the cancelled fixture retains the old ones.
 
 ### Club history (tab)
 
@@ -503,7 +522,10 @@ GET    /api/standings/current              current league standings (scraped, ca
 GET    /api/admin/standings                (admin) current standings snapshot
 PUT    /api/admin/standings/current        (admin) replace current standings snapshot
 GET    /api/fixtures/upcoming              upcoming fixtures (scraped, cached)
+GET    /api/fixtures/availability          approved player's upcoming responses
+PUT    /api/fixtures/:id/availability      approved player sets/changes own response
 GET    /api/admin/fixtures                 (admin) list all fixtures
+GET    /api/admin/fixtures/availability    (admin) named upcoming/cancelled responses
 POST   /api/admin/fixtures                 (admin) create a manual fixture
 PUT    /api/admin/fixtures/:id             (admin) correct a scheduled fixture
 GET    /api/club-history                   our club's season-by-season finishes
@@ -535,6 +557,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 - [x] Fixtures tab shows upcoming scheduled games with date, competition,
       opponent, optional Sheffield-local time, and venue; administrators have
       a manual create/correct fallback alongside automatic scraped ingestion
+- [x] Approved players can set and change their own upcoming-fixture
+      availability; administrators see named responses and headcounts, and
+      refreshes retain responses on stable or cancelled scraped fixtures
 - [x] Club history tab shows our club's own finalised season-end finishes,
       starting with Summer 2026, including the representative formation,
       bench, season awards, and full league record; administrators confirm the
@@ -590,6 +615,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.17.0 | 2026-09-13 | Added approved-player matchday availability and administrator rosters, preserving responses across Powerleague refreshes and cancelled fixtures |
 | 0.16.0 | 2026-09-12 | Added public season and all-time player leaderboards, plus name search and current/historical filters in the player directory |
 | 0.15.1 | 2026-09-12 | Corrected README guidance for historical profile claims, one-account-per-profile protection, crest placement, and the 24-season statistics import |
 | 0.15.0 | 2026-09-09 | Completed the supplied 24-season player record, canonical player merges, authoritative total recalculation, historical profile claims, clearer per-game match-stat entry, and global header branding |
