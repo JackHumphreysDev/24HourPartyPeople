@@ -1351,9 +1351,117 @@ describe('App', () => {
       screen.getAllByRole('heading', { name: 'Norton Rivals' }),
     ).toHaveLength(2);
     expect(screen.getByText('Walkover')).toBeInTheDocument();
-    expect(screen.getByText('5–2')).toBeInTheDocument();
+    expect(screen.getAllByText('5–2')).toHaveLength(2);
     expect(
       screen.getByText('Opponent could not field a team.'),
+    ).toBeInTheDocument();
+    const formPanel = screen.getByRole('region', {
+      name: 'Season form & trends',
+    });
+    expect(
+      within(formPanel).getByText('Goal difference after 1 scored game: +3.'),
+    ).toBeInTheDocument();
+    expect(
+      within(formPanel).getByText(/Walkovers in this view: 1/),
+    ).toBeInTheDocument();
+    fireEvent.change(
+      within(formPanel).getByRole('combobox', { name: 'Competition' }),
+      {
+        target: { value: 'LEAGUE' },
+      },
+    );
+    expect(
+      within(formPanel).getByText(
+        'No scored games are recorded for this season and competition.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('filters season form and goal-difference trends by season and competition', async () => {
+    window.history.replaceState({}, '', '/games');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        if (String(input) === '/api/auth/me') {
+          return Promise.resolve(mockResponse({}, 401));
+        }
+        return Promise.resolve(
+          mockResponse(
+            {
+              games: [
+                {
+                  competition: 'LEAGUE',
+                  createdAt: '2026-09-10T21:00:00.000Z',
+                  datePlayed: '2026-09-10T00:00:00.000Z',
+                  id: 'current-league',
+                  isWalkover: false,
+                  opponentClub: { id: 'one', name: 'First Rivals' },
+                  opponentScore: 1,
+                  ourScore: 2,
+                  season: { id: 'current', name: 'Autumn 2026' },
+                  walkoverReason: null,
+                },
+                {
+                  competition: 'CUP',
+                  createdAt: '2026-09-03T21:00:00.000Z',
+                  datePlayed: '2026-09-03T00:00:00.000Z',
+                  id: 'current-cup',
+                  isWalkover: false,
+                  opponentClub: { id: 'two', name: 'Cup Rivals' },
+                  opponentScore: 1,
+                  ourScore: 0,
+                  season: { id: 'current', name: 'Autumn 2026' },
+                  walkoverReason: null,
+                },
+                {
+                  competition: 'LEAGUE',
+                  createdAt: '2025-09-03T21:00:00.000Z',
+                  datePlayed: '2025-09-03T00:00:00.000Z',
+                  id: 'historic-league',
+                  isWalkover: false,
+                  opponentClub: { id: 'three', name: 'Old Rivals' },
+                  opponentScore: 1,
+                  ourScore: 1,
+                  season: { id: 'historic', name: 'Autumn 2025' },
+                  walkoverReason: null,
+                },
+              ],
+            },
+            200,
+          ),
+        );
+      }),
+    );
+
+    render(<App />);
+
+    const panel = await screen.findByRole('region', {
+      name: 'Season form & trends',
+    });
+    expect(
+      within(panel).getByText('Goal difference after 2 scored games: 0.'),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).getByRole('list', {
+        name: 'Recent form, oldest to newest',
+      }),
+    ).toHaveTextContent('LW');
+
+    fireEvent.change(
+      within(panel).getByRole('combobox', { name: 'Competition' }),
+      {
+        target: { value: 'LEAGUE' },
+      },
+    );
+    expect(
+      within(panel).getByText('Goal difference after 1 scored game: +1.'),
+    ).toBeInTheDocument();
+
+    fireEvent.change(within(panel).getByRole('combobox', { name: 'Season' }), {
+      target: { value: 'historic' },
+    });
+    expect(
+      within(panel).getByText('Goal difference after 1 scored game: 0.'),
     ).toBeInTheDocument();
   });
 

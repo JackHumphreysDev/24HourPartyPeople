@@ -2,6 +2,22 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.20.0] - 2026-09-13
+
+### Added
+
+- The Games page now shows season form with a season selector and All,
+  League, and Cup filters, last-five scored-game W/D/L, and scored-game and
+  goal totals.
+- A running goal-difference chart and match-by-match figures show how each
+  selected season's recorded results developed.
+
+### Notes
+
+- Walkovers remain in game history and are counted separately, without a
+  guessed result or score. The season selector includes seasons with recorded
+  game results, not seasons represented only by historical player totals.
+
 ## [0.19.0] - 2026-09-13
 
 ### Added
