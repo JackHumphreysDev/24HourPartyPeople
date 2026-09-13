@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.19.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.20.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -246,6 +246,14 @@ selected players are recorded as the bench.
   Cup), opponent, score (or "Walkover" in place of a score), and season.
 - Explicitly support and display two entries on the same date (walkover +
   cup game) rather than assuming one game per date.
+- Show season form and goal-difference trends above game history, defaulting
+  to the latest season with a recorded result. Visitors can choose a season
+  and All, League, or Cup results. Show the last five scored games as W/D/L,
+  scored-game and goal totals, and a running goal-difference chart with
+  accessible match-by-match figures. Walkovers remain visible in game history
+  and are counted separately, but are excluded from form and score-derived
+  totals because their outcomes and scores are not recorded. Seasons with only
+  historical player-statistics totals do not appear in this selector.
 
 ### Fixtures (tab)
 
@@ -573,6 +581,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       allowing two results to exist for the same date
 - [x] Game history displays every result with date and competition type,
       correctly handling same-date walkover + cup pairs
+- [x] The Games page shows season and competition form filters, last-five
+      scored-game W/D/L, score totals, and running goal-difference trends;
+      walkovers are visible but not assigned a guessed score or outcome
 - [x] Fixtures tab shows upcoming scheduled games with date, competition,
       opponent, optional Sheffield-local time, and venue; administrators have
       a manual create/correct fallback alongside automatic scraped ingestion
@@ -641,6 +652,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.20.0 | 2026-09-13 | Added season and competition form filters, last-five scored-game results, and running goal-difference trends on the Games page without inferring walkover scores |
 | 0.19.0 | 2026-09-13 | Added per-fixture calendar downloads, Sheffield-local kick-off conversion, and a Home page timetable of the next five fixtures with links to the full schedule |
 | 0.18.0 | 2026-09-13 | Added self-service player account settings for name, email, and password, with current-password confirmation and other-session revocation on password change |
 | 0.17.0 | 2026-09-13 | Added approved-player matchday availability and administrator rosters, preserving responses across Powerleague refreshes and cancelled fixtures |
