@@ -163,6 +163,10 @@ selected players are recorded as the bench.
   `SeasonStanding` for the current season, filtered to our club name).
 - Short description of the team, stored in the singleton `TeamProfile` and
   editable by an administrator at `/admin/home-page`.
+- A timetable of the next five scheduled fixtures, including date,
+  Sheffield-local kick-off time, opponent, competition, and venue. Each row
+  offers an `.ics` download, and a link opens the full Fixtures page. Fixture
+  loading is independent of the team description, league position, and squad.
 - Current squad shown in a **1GK-3DEF-1MID-1FWD** formation (1 goalkeeper,
   3 defenders, 1 midfielder, 1 forward — confirmed by product owner).
   Layout the outfield players by their `position` field, with the
@@ -555,6 +559,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       description, and the current squad in a responsive 1GK-3DEF-1MID-1FWD
       formation based on each player's primary position, with substitutes on a
       separate bench and the supplied crest and browser icons in use
+- [x] Home page shows the next five upcoming fixtures with a link to the full
+      timetable and per-fixture calendar downloads, without hiding the rest
+      of the page if fixture loading fails
 - [x] Player profiles show current-season stats, per-season historic
       stats (goals/assists/clean sheets only), and an overall/history
       section that clearly separates career totals from
@@ -634,7 +641,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
-| 0.19.0 | 2026-09-13 | Added per-fixture calendar downloads with Sheffield-local kick-off conversion, all-day events for unconfirmed times, and clear snapshot-only guidance |
+| 0.19.0 | 2026-09-13 | Added per-fixture calendar downloads, Sheffield-local kick-off conversion, and a Home page timetable of the next five fixtures with links to the full schedule |
 | 0.18.0 | 2026-09-13 | Added self-service player account settings for name, email, and password, with current-password confirmation and other-session revocation on password change |
 | 0.17.0 | 2026-09-13 | Added approved-player matchday availability and administrator rosters, preserving responses across Powerleague refreshes and cancelled fixtures |
 | 0.16.0 | 2026-09-12 | Added public season and all-time player leaderboards, plus name search and current/historical filters in the player directory |

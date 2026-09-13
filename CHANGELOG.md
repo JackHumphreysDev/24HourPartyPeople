@@ -10,6 +10,9 @@ All notable changes to 24 Hour Party People are recorded here.
   opponent, competition, season, and venue when known.
 - Timed events use Sheffield's summer/winter clock changes and reserve one
   hour; an unconfirmed kick-off creates an all-day event.
+- The Home page shows the next five scheduled fixtures with dates, kick-off
+  times, opponents, competitions, venues, calendar downloads, and a link to
+  the full Fixtures page. Fixture errors do not hide the rest of Home.
 
 ### Notes
 

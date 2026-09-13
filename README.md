@@ -182,6 +182,13 @@ header, and its icon variants identify the website in browser tabs and saved
 shortcuts. Empty league tables and incomplete squads have explicit placeholder
 states rather than misleading values.
 
+The Home page also shows a timetable of the next five scheduled league and cup
+fixtures, with their dates, Sheffield-local kick-off times, opponents,
+competitions, and venues. Each row offers the same one-off calendar download
+as the full Fixtures page, which is linked from the timetable. Fixture loading
+is independent of the team description, standings, and squad, so a fixture
+error does not hide the rest of the Home page.
+
 The `/admin/home-page` route allows an authenticated administrator to update
 the team description. It is stored in a dedicated singleton `TeamProfile`
 record and seeded with the original site introduction when the migration is
