@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.18.0` release includes the project foundation, core football
+The current `0.19.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -30,7 +30,8 @@ directory supports name search and current/historical filters, and the public
 Statistics tab compares recorded goals, assists and clean sheets by season or
 all-time. Approved players can also respond to upcoming fixtures with their
 matchday availability, while the administrator sees the named responses and
-headcount.
+headcount. Each upcoming fixture can be downloaded as a calendar event.
+
 Players can manage their own account name, email, and password without changing
 their administrator-managed public Player profile.
 
@@ -376,6 +377,12 @@ date onward, ordered by fixture date and optional kick-off time. Dates and
 times are treated as Sheffield local wall-clock values and are not shifted for
 the viewer's timezone. Each fixture shows its competition, opponent, season,
 and venue when available.
+
+Anyone can download a fixture as an `.ics` calendar event. Timed fixtures use
+Sheffield local time and reserve a one-hour slot; fixtures without a confirmed
+kick-off become all-day events. Downloads are snapshots: an event already added
+to a personal calendar will not automatically follow later fixture changes or
+cancellations. Check the website for the latest details.
 
 An approved player account can mark each upcoming fixture as Available,
 Unsure, or Unavailable and change that response while the fixture remains

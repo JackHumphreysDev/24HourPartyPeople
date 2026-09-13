@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.18.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.19.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -248,6 +248,11 @@ selected players are recorded as the bench.
 - Upcoming scheduled games from the current Sheffield date onward, with date,
   optional Sheffield-local kick-off time, opponent, season, and venue if
   available. League and Cup fixtures are distinguished.
+- Anyone can download an upcoming fixture as an `.ics` calendar event. Timed
+  fixtures reserve one hour using the correct Sheffield summer/winter offset;
+  unknown kick-off times become all-day events. Downloads are one-off
+  snapshots, not a live subscription, so changes and cancellations on the
+  website do not update previously downloaded events.
 - The implemented manual fallback lets an administrator add fixtures and
   correct scheduled fixtures before results are recorded. Played and walkover
   fixtures are retained as read-only history. Scraped fixture ingestion is
@@ -564,6 +569,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 - [x] Fixtures tab shows upcoming scheduled games with date, competition,
       opponent, optional Sheffield-local time, and venue; administrators have
       a manual create/correct fallback alongside automatic scraped ingestion
+- [x] Each upcoming fixture offers an `.ics` calendar download with correct
+      Sheffield time or an all-day event when kick-off is unknown; the page
+      warns that downloaded events do not update automatically
 - [x] Approved players can set and change their own upcoming-fixture
       availability; administrators see named responses and headcounts, and
       refreshes retain responses on stable or cancelled scraped fixtures
@@ -626,6 +634,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.19.0 | 2026-09-13 | Added per-fixture calendar downloads with Sheffield-local kick-off conversion, all-day events for unconfirmed times, and clear snapshot-only guidance |
 | 0.18.0 | 2026-09-13 | Added self-service player account settings for name, email, and password, with current-password confirmation and other-session revocation on password change |
 | 0.17.0 | 2026-09-13 | Added approved-player matchday availability and administrator rosters, preserving responses across Powerleague refreshes and cancelled fixtures |
 | 0.16.0 | 2026-09-12 | Added public season and all-time player leaderboards, plus name search and current/historical filters in the player directory |
