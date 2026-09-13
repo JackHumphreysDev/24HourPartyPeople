@@ -172,6 +172,56 @@ select {
   font-weight: 750;
 }
 
+.home-fixtures-section {
+  padding-bottom: clamp(4rem, 10vw, 8rem);
+}
+
+.home-fixtures-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.home-fixtures-heading > a {
+  margin-bottom: 1.5rem;
+  color: #d9ac55;
+  font-weight: 750;
+}
+
+.home-fixtures-table {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: collapse;
+}
+
+.home-fixtures-table th,
+.home-fixtures-table td {
+  padding: 0.85rem;
+  border-bottom: 1px solid rgb(217 172 85 / 14%);
+  text-align: left;
+}
+
+.home-fixtures-table thead th {
+  color: #9e9a90;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.home-fixtures-table tbody th {
+  color: #f6eedb;
+}
+
+.home-fixtures-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.home-fixtures-table .secondary-button {
+  white-space: nowrap;
+}
+
 .home-formation-section {
   padding-bottom: clamp(4rem, 10vw, 8rem);
 }
@@ -1226,6 +1276,10 @@ select {
   margin: 1.5rem 0 0;
   border-top: 1px solid rgb(217 172 85 / 18%);
   color: #c9c4b8;
+}
+
+.fixture-calendar-button {
+  margin-top: 1.5rem;
 }
 
 .fixture-availability {

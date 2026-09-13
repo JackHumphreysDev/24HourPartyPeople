@@ -396,6 +396,31 @@ describe('App', () => {
             ),
           );
         }
+        if (path === '/api/fixtures/upcoming') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                fixtures: Array.from({ length: 6 }, (_, index) => ({
+                  competition: index === 1 ? 'CUP' : 'LEAGUE',
+                  id: `fixture-${index + 1}`,
+                  opponentClub: {
+                    id: `opponent-${index + 1}`,
+                    name: `Opponent ${index + 1}`,
+                  },
+                  result: null,
+                  scheduledDate: `2026-09-${15 + index}T00:00:00.000Z`,
+                  scheduledTime:
+                    index === 1 ? null : '1970-01-01T20:15:00.000Z',
+                  season: { id: 'season', name: 'Summer 2026' },
+                  source: 'MANUAL',
+                  status: 'SCHEDULED',
+                  venue: index === 1 ? null : 'Norton Playing Fields 3G',
+                })),
+              },
+              200,
+            ),
+          );
+        }
         return Promise.resolve(mockResponse({}, 404));
       }),
     );
@@ -422,6 +447,71 @@ describe('App', () => {
       '/players/goalkeeper',
     );
     expect(screen.getAllByText('Squad place')).toHaveLength(2);
+    const timetable = await screen.findByRole('region', {
+      name: 'Next fixtures',
+    });
+    expect(within(timetable).getAllByRole('row')).toHaveLength(6);
+    expect(within(timetable).getByText('Opponent 1')).toBeInTheDocument();
+    expect(
+      within(timetable).getByText('Tue, 15 Sept 2026'),
+    ).toBeInTheDocument();
+    expect(within(timetable).getAllByText('20:15')).toHaveLength(4);
+    expect(within(timetable).getAllByText('TBC')).toHaveLength(2);
+    expect(within(timetable).queryByText('Opponent 6')).not.toBeInTheDocument();
+    expect(
+      within(timetable).getByRole('button', {
+        name: 'Add Opponent 1 fixture to calendar',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'View all fixtures' }),
+    ).toHaveAttribute('href', '/fixtures');
+    expect(
+      screen.getByText(
+        'Calendar downloads will not update if a fixture changes.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps Home page team information visible when the fixture timetable fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === '/api/auth/me') {
+          return Promise.resolve(mockResponse({}, 401));
+        }
+        if (path === '/api/team-profile') {
+          return Promise.resolve(
+            mockResponse(
+              { teamProfile: { description: 'Team information still works.' } },
+              200,
+            ),
+          );
+        }
+        if (path === '/api/players') {
+          return Promise.resolve(mockResponse({ players: [] }, 200));
+        }
+        if (path === '/api/standings/current') {
+          return Promise.resolve(
+            mockResponse({ season: null, standings: [] }, 200),
+          );
+        }
+        return Promise.resolve(mockResponse({}, 503));
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByText('Team information still works.'),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText('The fixture timetable could not be loaded.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('The current squad will appear here.'),
+    ).toBeInTheDocument();
   });
 
   it('lets an administrator update the Home page description', async () => {
@@ -1628,6 +1718,9 @@ describe('App', () => {
     expect(screen.getByText('Tuesday, 15 September 2026')).toBeInTheDocument();
     expect(screen.getByText('20:15')).toBeInTheDocument();
     expect(screen.getByText('Norton Playing Fields 3G')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Add to calendar' }),
+    ).toBeInTheDocument();
   });
 
   it('lets an approved player change their own matchday response', async () => {
