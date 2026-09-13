@@ -89,29 +89,38 @@ async function ingestPayload(
       fixture.opponentClubName,
     );
     const scheduledDate = dateFromInput(fixture.scheduledDate);
+    const fixtureWhere: Prisma.FixtureWhereInput = {
+      competition: fixture.competition,
+      opponentClubId: opponent.id,
+      result: null,
+      scheduledDate,
+      seasonId: season.id,
+      status: { in: ['SCHEDULED', 'CANCELLED'] },
+    };
     const existing = await transaction.fixture.findFirst({
-      select: { id: true, source: true, status: true },
+      select: { id: true },
       where: {
-        competition: fixture.competition,
-        opponentClubId: opponent.id,
-        result: null,
-        scheduledDate,
-        seasonId: season.id,
-        status: { in: ['SCHEDULED', 'CANCELLED'] },
+        ...fixtureWhere,
+        source: 'SCRAPE',
       },
     });
     if (existing) {
-      if (existing.source === 'SCRAPE') {
-        await transaction.fixture.update({
-          data: {
-            scheduledTime: timeFromInput(fixture.scheduledTime),
-            status: 'SCHEDULED',
-            venue: fixture.venue,
-          },
-          where: { id: existing.id },
-        });
-        seenScrapedFixtureIds.push(existing.id);
-      }
+      await transaction.fixture.update({
+        data: {
+          scheduledTime: timeFromInput(fixture.scheduledTime),
+          status: 'SCHEDULED',
+          venue: fixture.venue,
+        },
+        where: { id: existing.id },
+      });
+      seenScrapedFixtureIds.push(existing.id);
+      continue;
+    }
+    const manual = await transaction.fixture.findFirst({
+      select: { id: true },
+      where: { ...fixtureWhere, source: 'MANUAL' },
+    });
+    if (manual) {
       continue;
     }
 

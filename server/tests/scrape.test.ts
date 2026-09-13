@@ -209,16 +209,41 @@ describe('Powerleague refresh API', () => {
         response: 'AVAILABLE',
       },
     });
+    const manual = await prisma.fixture.create({
+      data: {
+        competition: fixture.competition,
+        opponentClubId: fixture.opponentClubId,
+        scheduledDate: fixture.scheduledDate,
+        seasonId: fixture.seasonId,
+        source: 'MANUAL',
+      },
+    });
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          ...validPayload(),
+          fixtures: [{ ...validPayload().fixtures[0], scheduledTime: '20:20' }],
+        }),
+        { status: 200 },
+      ),
+    );
 
     const repeated = await request(app)
       .post('/api/admin/scrape/refresh')
       .set('Cookie', adminCookie);
     expect(repeated.body.imported.fixturesImported).toBe(0);
     expect(
+      await prisma.fixture.findUniqueOrThrow({ where: { id: fixture.id } }),
+    ).toMatchObject({
+      scheduledTime: new Date('1970-01-01T20:20:00.000Z'),
+      status: 'SCHEDULED',
+    });
+    expect(
       await prisma.fixtureAvailability.count({
         where: { fixtureId: fixture.id },
       }),
     ).toBe(1);
+    await prisma.fixture.delete({ where: { id: manual.id } });
 
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify({ ...validPayload(), fixtures: [] }), {
