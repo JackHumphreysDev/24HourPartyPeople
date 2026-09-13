@@ -1,4 +1,11 @@
-import type { FixtureInput, FixturesSnapshot, FixtureSummary } from './types';
+import type {
+  AdminFixtureAvailability,
+  AvailabilityResponse,
+  FixtureInput,
+  FixturesSnapshot,
+  FixtureSummary,
+  OwnFixtureAvailability,
+} from './types';
 
 type ErrorResponse = {
   error?: {
@@ -30,6 +37,38 @@ async function fixtureRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getUpcomingFixtures(): Promise<FixturesSnapshot> {
   return fixtureRequest<FixturesSnapshot>('/api/fixtures/upcoming');
+}
+
+export async function getOwnFixtureAvailability(): Promise<
+  OwnFixtureAvailability[]
+> {
+  const response = await fixtureRequest<{
+    availability: OwnFixtureAvailability[];
+  }>('/api/fixtures/availability');
+  return response.availability;
+}
+
+export async function setFixtureAvailability(
+  fixtureId: string,
+  availabilityResponse: AvailabilityResponse,
+): Promise<OwnFixtureAvailability> {
+  const response = await fixtureRequest<{
+    availability: OwnFixtureAvailability;
+  }>(`/api/fixtures/${encodeURIComponent(fixtureId)}/availability`, {
+    body: JSON.stringify({ response: availabilityResponse }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PUT',
+  });
+  return response.availability;
+}
+
+export async function getAdminFixtureAvailability(): Promise<
+  AdminFixtureAvailability[]
+> {
+  const response = await fixtureRequest<{
+    fixtures: AdminFixtureAvailability[];
+  }>('/api/admin/fixtures/availability');
+  return response.fixtures;
 }
 
 export async function getAdminFixtures(): Promise<FixtureSummary[]> {

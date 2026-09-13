@@ -380,8 +380,10 @@ adminFixturesRouter.get('/availability', async (_request, response) => {
       id: true,
     },
     where: {
-      scheduledDate: { gte: sheffieldToday() },
-      status: 'SCHEDULED',
+      OR: [
+        { scheduledDate: { gte: sheffieldToday() }, status: 'SCHEDULED' },
+        { status: 'CANCELLED' },
+      ],
     },
   });
   response.status(200).json({ fixtures });

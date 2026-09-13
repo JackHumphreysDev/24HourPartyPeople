@@ -180,11 +180,13 @@ describe('Powerleague refresh API', () => {
     const adminCookie = await createAdminSession();
     await createCurrentSeason();
     const app = createApp();
-    const fetchMock = vi.fn().mockImplementation(() =>
-      Promise.resolve(
-        new Response(JSON.stringify(validPayload()), { status: 200 }),
-      ),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(
+          new Response(JSON.stringify(validPayload()), { status: 200 }),
+        ),
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     expect(

@@ -175,6 +175,7 @@ describe('matchday availability', () => {
       data: { description: '', name: 'Twiggy' },
     });
     const cookie = await createAccount('player@test.example', player.id);
+    const admin = await createAccount('admin@test.example', null, 'ADMIN');
     const app = createApp();
 
     const invalid = await request(app)
@@ -182,6 +183,13 @@ describe('matchday availability', () => {
       .set('Cookie', cookie)
       .send({ response: 'YES' });
     expect(invalid.status).toBe(400);
+    await prisma.fixtureAvailability.create({
+      data: {
+        fixtureId: fixture.id,
+        playerId: player.id,
+        response: 'AVAILABLE',
+      },
+    });
     await prisma.fixture.update({
       data: { status: 'CANCELLED' },
       where: { id: fixture.id },
@@ -191,6 +199,20 @@ describe('matchday availability', () => {
       .set('Cookie', cookie)
       .send({ response: 'AVAILABLE' });
     expect(cancelled.status).toBe(409);
+    expect(
+      (
+        await request(app)
+          .get('/api/fixtures/availability')
+          .set('Cookie', cookie)
+      ).body.availability,
+    ).toEqual([]);
+    const cancelledRoster = await request(app)
+      .get('/api/admin/fixtures/availability')
+      .set('Cookie', admin);
+    expect(cancelledRoster.body.fixtures[0]).toMatchObject({
+      id: fixture.id,
+      availability: [{ player: { name: 'Twiggy' }, response: 'AVAILABLE' }],
+    });
     await prisma.fixture.update({
       data: {
         scheduledDate: new Date('2026-09-01T00:00:00.000Z'),
@@ -203,6 +225,6 @@ describe('matchday availability', () => {
       .set('Cookie', cookie)
       .send({ response: 'AVAILABLE' });
     expect(past.status).toBe(409);
-    expect(await prisma.fixtureAvailability.count()).toBe(0);
+    expect(await prisma.fixtureAvailability.count()).toBe(1);
   });
 });

@@ -6,8 +6,18 @@ import { useAuth } from '../auth/useAuth';
 import type { Competition } from '../games/types';
 import { getAdminSeasons } from '../players/api';
 import type { SeasonSummary } from '../players/types';
-import { createFixture, getAdminFixtures, updateFixture } from './api';
-import type { FixtureInput, FixtureSummary } from './types';
+import {
+  createFixture,
+  getAdminFixtureAvailability,
+  getAdminFixtures,
+  updateFixture,
+} from './api';
+import type {
+  AdminFixtureAvailability,
+  AvailabilityResponse,
+  FixtureInput,
+  FixtureSummary,
+} from './types';
 
 type FixtureDraft = {
   competition: Competition;
@@ -42,14 +52,26 @@ function errorMessage(error: unknown): string {
 }
 
 function statusLabel(fixture: FixtureSummary): string {
+  if (fixture.status === 'CANCELLED') {
+    return 'Cancelled';
+  }
   if (fixture.status === 'WALKOVER') {
     return 'Walkover';
   }
   return fixture.status === 'PLAYED' ? 'Played' : 'Scheduled';
 }
 
+function responseLabel(response: AvailabilityResponse): string {
+  if (response === 'AVAILABLE') return 'Available';
+  if (response === 'UNSURE') return 'Unsure';
+  return 'Unavailable';
+}
+
 function FixtureManager() {
   const [fixtures, setFixtures] = useState<FixtureSummary[]>([]);
+  const [fixtureAvailability, setFixtureAvailability] = useState<
+    AdminFixtureAvailability[]
+  >([]);
   const [seasons, setSeasons] = useState<SeasonSummary[]>([]);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
@@ -63,13 +85,18 @@ function FixtureManager() {
   useEffect(() => {
     let isCurrentRequest = true;
 
-    void Promise.all([getAdminFixtures(), getAdminSeasons()])
-      .then(([nextFixtures, nextSeasons]) => {
+    void Promise.all([
+      getAdminFixtures(),
+      getAdminSeasons(),
+      getAdminFixtureAvailability(),
+    ])
+      .then(([nextFixtures, nextSeasons, nextAvailability]) => {
         if (!isCurrentRequest) {
           return;
         }
 
         setFixtures(nextFixtures);
+        setFixtureAvailability(nextAvailability);
         setSeasons(nextSeasons);
         setDraft({
           ...emptyDraft,
@@ -145,8 +172,12 @@ function FixtureManager() {
       } else {
         await createFixture(input);
       }
-      const nextFixtures = await getAdminFixtures();
+      const [nextFixtures, nextAvailability] = await Promise.all([
+        getAdminFixtures(),
+        getAdminFixtureAvailability(),
+      ]);
       setFixtures(nextFixtures);
+      setFixtureAvailability(nextAvailability);
       setSuccessMessage(
         editingFixtureId
           ? 'Fixture updated successfully.'
@@ -177,7 +208,7 @@ function FixtureManager() {
         )}
         {loadStatus === 'error' && (
           <p className="status-panel status-panel-error" role="alert">
-            Fixtures and seasons could not be loaded.
+            Fixtures, seasons and availability could not be loaded.
           </p>
         )}
         {loadStatus === 'ready' && fixtures.length === 0 && (
@@ -188,6 +219,20 @@ function FixtureManager() {
           {fixtures.map((fixture) => {
             const canEdit =
               fixture.status === 'SCHEDULED' && fixture.result === null;
+            const roster = fixtureAvailability.find(
+              (entry) => entry.id === fixture.id,
+            );
+            const counts = roster && {
+              available: roster.availability.filter(
+                (entry) => entry.response === 'AVAILABLE',
+              ).length,
+              unsure: roster.availability.filter(
+                (entry) => entry.response === 'UNSURE',
+              ).length,
+              unavailable: roster.availability.filter(
+                (entry) => entry.response === 'UNAVAILABLE',
+              ).length,
+            };
             return (
               <article className="admin-player-item" key={fixture.id}>
                 <div>
@@ -205,6 +250,29 @@ function FixtureManager() {
                     · {fixture.season.name}
                     {fixture.venue ? ` · ${fixture.venue}` : ''}
                   </p>
+                  {roster && counts && (
+                    <div className="admin-fixture-availability">
+                      <p className="position-label">Matchday availability</p>
+                      <p className="admin-item-detail">
+                        Available {counts.available} · Unsure {counts.unsure} ·
+                        Unavailable {counts.unavailable}
+                      </p>
+                      {roster.availability.length === 0 ? (
+                        <p className="admin-item-detail">
+                          No player responses yet.
+                        </p>
+                      ) : (
+                        <ul>
+                          {roster.availability.map((entry) => (
+                            <li key={entry.player.id}>
+                              {entry.player.name} —{' '}
+                              {responseLabel(entry.response)}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {canEdit ? (
                   <button
@@ -215,7 +283,9 @@ function FixtureManager() {
                     Edit
                   </button>
                 ) : (
-                  <span className="fixture-read-only">Recorded</span>
+                  <span className="fixture-read-only">
+                    {fixture.status === 'CANCELLED' ? 'Cancelled' : 'Recorded'}
+                  </span>
                 )}
               </article>
             );
