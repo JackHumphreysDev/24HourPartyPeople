@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.17.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.18.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -289,6 +289,12 @@ selected players are recorded as the bench.
   every other account. The setup key is never shown in the normal website.
 - The administrator can update their own name, email, and password from
   `/admin/account`; the current password must be confirmed for every update.
+- Approved, pending, and unlinked player accounts can update their own account
+  name, email, and password from `/account`, also confirming their current
+  password. Email changes take effect immediately without verification;
+  changing a password revokes other sessions but keeps the current one active.
+  Account names do not alter administrator-managed public Player profiles.
+  Password recovery is outside this release.
 - Players can register publicly and select one unclaimed current or historical
   Player profile. The requested link remains pending until an administrator
   approves it. Rejected or manually unlinked accounts can request another
@@ -494,6 +500,7 @@ POST   /api/auth/login                    login
 POST   /api/auth/logout                   logout and revoke current session
 GET    /api/auth/me                       current authenticated user
 PUT    /api/auth/me/player-request        request a profile for an unlinked account
+PUT    /api/auth/me/account               update own account name, email, or password
 GET    /api/players                        list players
 GET    /api/players/statistics             season and all-time player leaderboards
 GET    /api/players/:id                    player profile + current/historic stats
@@ -574,6 +581,10 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       one account, including while approval is pending, and administrators can
       manage claims and their own account without using the setup key in the
       normal website
+- [x] Approved, pending, and unlinked players can update their own account
+      name, email, and password after confirming their current password;
+      password changes revoke their other sessions without editing their
+      public Player profile
 - [x] Admin can create/edit seasons, maintain exactly one current season, and
       preserve whether games played was recorded for each season
 - [x] Admin can record player appearances, goals, assists, and clean sheets
@@ -615,6 +626,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.18.0 | 2026-09-13 | Added self-service player account settings for name, email, and password, with current-password confirmation and other-session revocation on password change |
 | 0.17.0 | 2026-09-13 | Added approved-player matchday availability and administrator rosters, preserving responses across Powerleague refreshes and cancelled fixtures |
 | 0.16.0 | 2026-09-12 | Added public season and all-time player leaderboards, plus name search and current/historical filters in the player directory |
 | 0.15.1 | 2026-09-12 | Corrected README guidance for historical profile claims, one-account-per-profile protection, crest placement, and the 24-season statistics import |

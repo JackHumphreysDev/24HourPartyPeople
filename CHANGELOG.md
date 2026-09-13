@@ -2,6 +2,23 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.18.0] - 2026-09-13
+
+### Added
+
+- Approved, pending, and unlinked players can update their account name,
+  email, and password from Account settings after confirming their current
+  password. Account names remain separate from public Player profiles.
+- The authenticated account update API is available at
+  `PUT /api/auth/me/account`; the administrator's existing account route
+  remains available.
+
+### Changed
+
+- Email changes take effect immediately without verification. Password
+  changes revoke other sessions while keeping the current session active.
+  Password recovery remains outside this release.
+
 ## [0.17.0] - 2026-09-13
 
 ### Added
