@@ -1228,6 +1228,10 @@ select {
   color: #c9c4b8;
 }
 
+.fixture-calendar-button {
+  margin-top: 1.5rem;
+}
+
 .fixture-availability {
   padding-top: 1rem;
   margin-top: 1.5rem;

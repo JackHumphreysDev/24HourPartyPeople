@@ -1628,6 +1628,9 @@ describe('App', () => {
     expect(screen.getByText('Tuesday, 15 September 2026')).toBeInTheDocument();
     expect(screen.getByText('20:15')).toBeInTheDocument();
     expect(screen.getByText('Norton Playing Fields 3G')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Add to calendar' }),
+    ).toBeInTheDocument();
   });
 
   it('lets an approved player change their own matchday response', async () => {

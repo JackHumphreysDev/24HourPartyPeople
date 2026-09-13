@@ -7,6 +7,7 @@ import {
   getUpcomingFixtures,
   setFixtureAvailability,
 } from './api';
+import { downloadFixtureCalendarEvent } from './calendar';
 import type { ScrapeStatus } from '../scrape/types';
 import type {
   AvailabilityResponse,
@@ -168,6 +169,10 @@ export function FixturesPage() {
           The next league and cup games for 24 Hour Party People. All kick-off
           times are local to Sheffield.
         </p>
+        <p>
+          Calendar downloads are a snapshot. Check this page for fixture
+          changes.
+        </p>
       </div>
 
       {scrapeStatus?.latestRefreshFailed && (
@@ -246,6 +251,13 @@ export function FixturesPage() {
               {fixture.venue && (
                 <p className="fixture-venue">{fixture.venue}</p>
               )}
+              <button
+                className="secondary-button fixture-calendar-button"
+                type="button"
+                onClick={() => downloadFixtureCalendarEvent(fixture)}
+              >
+                Add to calendar
+              </button>
               {user?.role === 'PLAYER' && user.playerId && (
                 <div className="fixture-availability">
                   <p className="eyebrow">Your availability</p>
