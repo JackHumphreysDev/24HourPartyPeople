@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.21.0` release includes the project foundation, core football
+The current `0.21.1` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -173,14 +173,19 @@ The authentication API provides:
 
 ## Home page
 
-The public `/` route displays the administrator-editable team description, the
-current 24 Hour Party People league position, and active players arranged on a
-responsive pitch in the confirmed 1GK–3DEF–1MID–1FWD formation. Active
-substitutes are displayed separately on the bench and do not occupy a starting
-position. The supplied club crest appears beside the team name in the site
-header, and its icon variants identify the website in browser tabs and saved
-shortcuts. Empty league tables and incomplete squads have explicit placeholder
-states rather than misleading values.
+The public `/` route uses a responsive club dashboard: a featured next
+fixture, the current 24 Hour Party People league position and record, a
+five-fixture timetable, the starting six, and club notes containing the
+administrator-editable team description. Active players are arranged on a
+pitch in the confirmed 1GK–3DEF–1MID–1FWD formation. Substitutes are
+displayed separately on the bench and do not occupy a starting position.
+Empty league tables, missing fixtures, and incomplete squads have explicit
+placeholder states rather than misleading values.
+
+The full-width site header and footer share the club's updated colours and
+crest. Favicon and Apple touch icon variants identify the website in browser
+tabs and saved shortcuts; Open Graph and social-card metadata use a dedicated
+club preview image when the site is shared.
 
 The Home page also shows a timetable of the next five scheduled league and cup
 fixtures, with their dates, Sheffield-local kick-off times, opponents,
