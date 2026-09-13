@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { getUpcomingFixtures } from './fixtures/api';
+import { downloadFixtureCalendarEvent } from './fixtures/calendar';
+import type { FixtureSummary } from './fixtures/types';
 import { getTeamProfile } from './home/api';
 import type { TeamProfile } from './home/types';
 import { getPlayers } from './players/api';
@@ -40,11 +43,25 @@ function ordinal(value: number): string {
   return `${value}th`;
 }
 
+function formatFixtureDate(value: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+    weekday: 'short',
+    year: 'numeric',
+  }).format(new Date(value));
+}
+
 export function HomePage() {
   const [data, setData] = useState<HomeData | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
   );
+  const [fixtures, setFixtures] = useState<FixtureSummary[]>([]);
+  const [fixtureStatus, setFixtureStatus] = useState<
+    'loading' | 'ready' | 'error'
+  >('loading');
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -59,6 +76,27 @@ export function HomePage() {
       .catch(() => {
         if (isCurrentRequest) {
           setStatus('error');
+        }
+      });
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isCurrentRequest = true;
+
+    void getUpcomingFixtures()
+      .then((snapshot) => {
+        if (isCurrentRequest) {
+          setFixtures(snapshot.fixtures.slice(0, 5));
+          setFixtureStatus('ready');
+        }
+      })
+      .catch(() => {
+        if (isCurrentRequest) {
+          setFixtureStatus('error');
         }
       });
 
@@ -110,6 +148,83 @@ export function HomePage() {
           The latest team information could not be loaded. Please try again.
         </p>
       )}
+
+      <section
+        className="home-fixtures-section"
+        aria-labelledby="home-fixtures-heading"
+      >
+        <div className="home-fixtures-heading">
+          <div className="section-heading">
+            <p className="eyebrow">Match timetable</p>
+            <h2 id="home-fixtures-heading">Next fixtures</h2>
+            <p>
+              Our next five league and cup games. Times are local to Sheffield.
+            </p>
+            <p>Calendar downloads will not update if a fixture changes.</p>
+          </div>
+          <Link to="/fixtures">View all fixtures</Link>
+        </div>
+
+        {fixtureStatus === 'loading' && (
+          <p className="status-panel">Loading upcoming fixtures…</p>
+        )}
+        {fixtureStatus === 'error' && (
+          <p className="status-panel status-panel-error" role="alert">
+            The fixture timetable could not be loaded.
+          </p>
+        )}
+        {fixtureStatus === 'ready' && fixtures.length === 0 && (
+          <p className="status-panel">No upcoming fixtures are scheduled.</p>
+        )}
+        {fixtureStatus === 'ready' && fixtures.length > 0 && (
+          <div
+            className="table-scroll"
+            role="region"
+            aria-label="Fixture timetable table"
+            tabIndex={0}
+          >
+            <table className="home-fixtures-table">
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col">Kick-off</th>
+                  <th scope="col">Opponent</th>
+                  <th scope="col">Competition</th>
+                  <th scope="col">Venue</th>
+                  <th scope="col">Calendar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fixtures.map((fixture) => (
+                  <tr key={fixture.id}>
+                    <td>{formatFixtureDate(fixture.scheduledDate)}</td>
+                    <td>
+                      {fixture.scheduledTime
+                        ? fixture.scheduledTime.slice(11, 16)
+                        : 'TBC'}
+                    </td>
+                    <th scope="row">{fixture.opponentClub.name}</th>
+                    <td>
+                      {fixture.competition === 'LEAGUE' ? 'League' : 'Cup'}
+                    </td>
+                    <td>{fixture.venue ?? 'TBC'}</td>
+                    <td>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        aria-label={`Add ${fixture.opponentClub.name} fixture to calendar`}
+                        onClick={() => downloadFixtureCalendarEvent(fixture)}
+                      >
+                        Add to calendar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <div className="home-formation-section">
         <div className="section-heading">
