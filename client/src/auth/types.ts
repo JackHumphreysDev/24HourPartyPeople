@@ -23,7 +23,7 @@ export type RegistrationPlayer = {
   position: 'GK' | 'DEF' | 'MID' | 'FWD' | null;
 };
 
-export type AdminAccountInput = {
+export type AccountUpdateInput = {
   currentPassword: string;
   email: string;
   name: string;

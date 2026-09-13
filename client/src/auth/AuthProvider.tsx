@@ -7,6 +7,7 @@ import {
   registerPlayer as registerPlayerRequest,
   requestPlayerProfile as requestPlayerProfileRequest,
   updateAdminAccount as updateAdminAccountRequest,
+  updatePlayerAccount as updatePlayerAccountRequest,
 } from './api';
 import { AuthContext } from './context';
 import type {
@@ -14,7 +15,7 @@ import type {
   AuthUser,
   LoginInput,
   RegisterPlayerInput,
-  AdminAccountInput,
+  AccountUpdateInput,
 } from './types';
 
 type AuthProviderProps = {
@@ -57,8 +58,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setStatus('authenticated');
   }, []);
 
-  const updateAdminAccount = useCallback(async (input: AdminAccountInput) => {
+  const updateAdminAccount = useCallback(async (input: AccountUpdateInput) => {
     const authenticatedUser = await updateAdminAccountRequest(input);
+    setUser(authenticatedUser);
+  }, []);
+
+  const updatePlayerAccount = useCallback(async (input: AccountUpdateInput) => {
+    const authenticatedUser = await updatePlayerAccountRequest(input);
     setUser(authenticatedUser);
   }, []);
 
@@ -81,6 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       requestPlayerProfile,
       status,
       updateAdminAccount,
+      updatePlayerAccount,
       user,
     }),
     [
@@ -90,6 +97,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       requestPlayerProfile,
       status,
       updateAdminAccount,
+      updatePlayerAccount,
       user,
     ],
   );

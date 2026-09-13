@@ -1,5 +1,5 @@
 import type {
-  AdminAccountInput,
+  AccountUpdateInput,
   AuthUser,
   LoginInput,
   RegisterPlayerInput,
@@ -106,9 +106,19 @@ export async function registerPlayer(
 }
 
 export async function updateAdminAccount(
-  input: AdminAccountInput,
+  input: AccountUpdateInput,
 ): Promise<AuthUser> {
   const response = await authRequest<AuthResponse>('/api/admin/account', {
+    body: JSON.stringify(input),
+    method: 'PUT',
+  });
+  return response.user;
+}
+
+export async function updatePlayerAccount(
+  input: AccountUpdateInput,
+): Promise<AuthUser> {
+  const response = await authRequest<AuthResponse>('/api/auth/me/account', {
     body: JSON.stringify(input),
     method: 'PUT',
   });

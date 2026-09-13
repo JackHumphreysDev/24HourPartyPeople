@@ -8,7 +8,7 @@ import type { AuthenticatedUser } from './types.js';
 export const SESSION_COOKIE_NAME = 'party_people_session';
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
-function hashSessionToken(token: string): string {
+export function hashSessionToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
