@@ -1507,6 +1507,86 @@ select {
   border-bottom: 0;
 }
 
+.opponent-records-section {
+  margin-bottom: 3rem;
+}
+
+.opponent-records-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+}
+
+.opponent-record {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 1rem;
+  background: rgb(9 27 18 / 78%);
+}
+
+.opponent-record h4 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.opponent-record-summary {
+  margin: 0.5rem 0 1.25rem;
+  color: #c9c4b8;
+}
+
+.opponent-record-stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0 0 1.5rem;
+}
+
+.opponent-record-stats > div {
+  min-width: 0;
+  padding: 0.55rem 0.25rem;
+  border-radius: 0.4rem;
+  background: rgb(19 39 27 / 80%);
+  text-align: center;
+}
+
+.opponent-record-stats dt {
+  color: #c9c4b8;
+  font-size: 0.7rem;
+}
+
+.opponent-record-stats dd {
+  margin: 0.25rem 0 0;
+  font-weight: 800;
+}
+
+.opponent-record summary {
+  color: #d9ac55;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.opponent-record-matches {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem 0 0;
+  margin: 1rem 0 0;
+  border-top: 1px solid rgb(217 172 85 / 18%);
+  list-style: none;
+}
+
+.opponent-record-matches li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #c9c4b8;
+  font-size: 0.85rem;
+}
+
+.opponent-record-matches strong {
+  color: #f6eedb;
+  white-space: nowrap;
+}
+
 .game-card-meta {
   display: flex;
   gap: 0.65rem 1rem;

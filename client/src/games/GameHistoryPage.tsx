@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 import { getGames } from './api';
+import { OpponentRecordsPanel } from './OpponentRecordsPanel';
 import { SeasonFormPanel } from './SeasonFormPanel';
 import type { GameSummary } from './types';
 
@@ -65,7 +66,10 @@ export function GameHistoryPage() {
       )}
 
       {status === 'ready' && games.length > 0 && (
-        <SeasonFormPanel games={games} />
+        <>
+          <SeasonFormPanel games={games} />
+          <OpponentRecordsPanel games={games} />
+        </>
       )}
 
       <div className="game-history">
