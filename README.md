@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.20.0` release includes the project foundation, core football
+The current `0.21.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -360,6 +360,12 @@ match-by-match figures available in a table. Walkovers remain in game history
 and are counted separately, but receive no guessed outcome or score. The
 season selector includes seasons with recorded game results, not seasons
 represented only by historical player-statistics totals.
+
+The same page also groups every recorded league and cup game by opponent,
+across all seasons. Each opponent's head-to-head record shows scored games,
+wins, draws, losses, goals for and against, and goal difference, with an
+expandable list of individual matches. Walkovers appear in the match list and
+as a separate count, but do not change the scored-game record or goal totals.
 
 The `/admin/games` route lets an authenticated administrator record a result
 against an available scheduled fixture or enter a game manually. Manual games

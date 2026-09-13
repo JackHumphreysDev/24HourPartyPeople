@@ -2,6 +2,21 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.21.0] - 2026-09-13
+
+### Added
+
+- The Games page groups recorded league and cup results across all seasons by
+  opponent, showing each opponent's scored-game wins, draws, losses, goals for
+  and against, and goal difference.
+- Each opponent record has an expandable match list with dates, seasons,
+  competitions, and scores or walkovers.
+
+### Notes
+
+- Walkovers are counted separately and do not affect scored-game records or
+  goal totals because no score or outcome is recorded for them.
+
 ## [0.20.0] - 2026-09-13
 
 ### Added
