@@ -126,6 +126,7 @@ describe('player account administration', () => {
 describe('administrator account settings', () => {
   it('updates the administrator email and password after password confirmation', async () => {
     const admin = await createUser('ADMIN', 'old@example.test');
+    const otherCookie = `${SESSION_COOKIE_NAME}=${await createSession(admin.user.id)}`;
     const invalid = await request(createApp())
       .put('/api/admin/account')
       .set('Cookie', admin.cookie)
@@ -152,11 +153,138 @@ describe('administrator account settings', () => {
       name: 'Jack Humphreys',
       role: 'ADMIN',
     });
+    expect(
+      (
+        await request(createApp())
+          .get('/api/auth/me')
+          .set('Cookie', admin.cookie)
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await request(createApp())
+          .get('/api/auth/me')
+          .set('Cookie', otherCookie)
+      ).status,
+    ).toBe(401);
 
     const login = await request(createApp()).post('/api/auth/login').send({
       email: 'owner.new@example.test',
       password: 'a newly changed secure password',
     });
     expect(login.status).toBe(200);
+  });
+});
+
+describe('player account settings', () => {
+  it('requires authentication and the current password, and cannot take another account email', async () => {
+    const player = await createUser('PLAYER', 'player@example.test');
+    await createUser('ADMIN', 'owner@example.test');
+    const app = createApp();
+    const input = {
+      currentPassword: password,
+      email: 'new@example.test',
+      name: 'Player Name',
+      newPassword: null,
+    };
+
+    expect(
+      (await request(app).put('/api/auth/me/account').send(input)).status,
+    ).toBe(401);
+    const invalid = await request(app)
+      .put('/api/auth/me/account')
+      .set('Cookie', player.cookie)
+      .send({ ...input, email: 'not-an-email' });
+    expect(invalid.status).toBe(400);
+    const wrongPassword = await request(app)
+      .put('/api/auth/me/account')
+      .set('Cookie', player.cookie)
+      .send({ ...input, currentPassword: 'incorrect password' });
+    expect(wrongPassword.status).toBe(403);
+    expect(wrongPassword.body.error.code).toBe('INVALID_CURRENT_PASSWORD');
+    const duplicate = await request(app)
+      .put('/api/auth/me/account')
+      .set('Cookie', player.cookie)
+      .send({ ...input, email: 'owner@example.test' });
+    expect(duplicate.status).toBe(409);
+    expect(duplicate.body.error.code).toBe('EMAIL_UNAVAILABLE');
+    expect(
+      (await prisma.user.findUniqueOrThrow({ where: { id: player.user.id } }))
+        .email,
+    ).toBe('player@example.test');
+  });
+
+  it('updates player account details without changing the linked public profile', async () => {
+    const profile = await createPlayer('Twiggy', 'GK');
+    const player = await createUser('PLAYER', 'old@example.test', {
+      playerId: profile.id,
+    });
+    const otherCookie = `${SESSION_COOKIE_NAME}=${await createSession(player.user.id)}`;
+    const app = createApp();
+
+    const updated = await request(app)
+      .put('/api/auth/me/account')
+      .set('Cookie', player.cookie)
+      .send({
+        currentPassword: password,
+        email: 'new@example.test',
+        name: 'Account Name',
+        newPassword: null,
+      });
+    expect(updated.status).toBe(200);
+    expect(updated.body.user).toMatchObject({
+      email: 'new@example.test',
+      name: 'Account Name',
+      playerId: profile.id,
+      role: 'PLAYER',
+    });
+    expect(
+      (await request(app).get('/api/auth/me').set('Cookie', otherCookie))
+        .status,
+    ).toBe(200);
+    expect(
+      (await prisma.player.findUniqueOrThrow({ where: { id: profile.id } }))
+        .name,
+    ).toBe('Twiggy');
+  });
+
+  it('revokes other sessions after a password change while keeping the current session', async () => {
+    const player = await createUser('PLAYER', 'player@example.test');
+    const otherCookie = `${SESSION_COOKIE_NAME}=${await createSession(player.user.id)}`;
+    const app = createApp();
+
+    const updated = await request(app)
+      .put('/api/auth/me/account')
+      .set('Cookie', player.cookie)
+      .send({
+        currentPassword: password,
+        email: 'player@example.test',
+        name: player.user.name,
+        newPassword: 'a newly changed secure password',
+      });
+    expect(updated.status).toBe(200);
+    expect(
+      (await request(app).get('/api/auth/me').set('Cookie', player.cookie))
+        .status,
+    ).toBe(200);
+    expect(
+      (await request(app).get('/api/auth/me').set('Cookie', otherCookie))
+        .status,
+    ).toBe(401);
+    expect(
+      (
+        await request(app)
+          .post('/api/auth/login')
+          .send({ email: 'player@example.test', password })
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await request(app).post('/api/auth/login').send({
+          email: 'player@example.test',
+          password: 'a newly changed secure password',
+        })
+      ).status,
+    ).toBe(200);
   });
 });

@@ -62,12 +62,15 @@ function AppContent() {
             <NavLink to="/club-history">History</NavLink>
             {user?.role === 'ADMIN' ? (
               <NavLink to="/admin">Admin</NavLink>
-            ) : user?.playerId ? (
-              <NavLink to={`/players/${user.playerId}`}>My profile</NavLink>
             ) : (
-              <NavLink to="/account">
-                {status === 'authenticated' ? 'Account' : 'Sign in'}
-              </NavLink>
+              <>
+                {user?.playerId && (
+                  <NavLink to={`/players/${user.playerId}`}>My profile</NavLink>
+                )}
+                <NavLink to="/account">
+                  {status === 'authenticated' ? 'Account' : 'Sign in'}
+                </NavLink>
+              </>
             )}
             {status === 'authenticated' && user && (
               <button type="button" onClick={() => void logout()}>

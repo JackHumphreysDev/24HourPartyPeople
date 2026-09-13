@@ -5,7 +5,7 @@ import type {
   AuthUser,
   LoginInput,
   RegisterPlayerInput,
-  AdminAccountInput,
+  AccountUpdateInput,
 } from './types';
 
 export type AuthContextValue = {
@@ -13,7 +13,8 @@ export type AuthContextValue = {
   logout: () => Promise<void>;
   registerPlayer: (input: RegisterPlayerInput) => Promise<void>;
   requestPlayerProfile: (playerId: string) => Promise<void>;
-  updateAdminAccount: (input: AdminAccountInput) => Promise<void>;
+  updateAdminAccount: (input: AccountUpdateInput) => Promise<void>;
+  updatePlayerAccount: (input: AccountUpdateInput) => Promise<void>;
   status: AuthStatus;
   user: AuthUser | null;
 };

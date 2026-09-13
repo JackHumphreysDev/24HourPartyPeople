@@ -588,6 +588,9 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: 'Profile request pending' }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'My account' }),
+    ).toBeInTheDocument();
     expect(registration).toEqual({
       email: 'alex@example.test',
       name: 'Alex',
@@ -671,6 +674,99 @@ describe('App', () => {
       await screen.findByText("Alex's profile request was approved."),
     ).toBeInTheDocument();
     expect(screen.getByText('Linked to Alex Example')).toBeInTheDocument();
+  });
+
+  it('lets a linked player update account details without renaming their public profile', async () => {
+    const playerId = '12c37c8a-6559-493b-9615-76ddab94dd66';
+    let accountUpdate: Record<string, string | null> | null = null;
+    window.history.replaceState({}, '', '/account');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === '/api/auth/me') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'old@example.test',
+                    id: 'account-id',
+                    name: 'Alex',
+                    playerId,
+                    requestedPlayerId: null,
+                    role: 'PLAYER',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          if (path === '/api/auth/me/account' && init?.method === 'PUT') {
+            accountUpdate = JSON.parse(String(init.body)) as Record<
+              string,
+              string | null
+            >;
+            return Promise.resolve(
+              mockResponse(
+                {
+                  user: {
+                    email: 'new@example.test',
+                    id: 'account-id',
+                    name: 'Alex Updated',
+                    playerId,
+                    requestedPlayerId: null,
+                    role: 'PLAYER',
+                  },
+                },
+                200,
+              ),
+            );
+          }
+          return Promise.resolve(mockResponse({}, 404));
+        }),
+    );
+
+    render(<App />);
+    expect(
+      await screen.findByRole('heading', { name: 'My account' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Account' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'My profile' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Your account name does not change your public player profile.',
+      ),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'Alex Updated' },
+    });
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'new@example.test' },
+    });
+    fireEvent.change(screen.getByLabelText('Current password'), {
+      target: { value: 'current secure password' },
+    });
+    fireEvent.change(screen.getByLabelText(/New password/), {
+      target: { value: 'a newly changed secure password' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+
+    expect(
+      await screen.findByText('Player account updated successfully.'),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Sign out Alex Updated' }),
+    ).toBeInTheDocument();
+    expect(accountUpdate).toEqual({
+      currentPassword: 'current secure password',
+      email: 'new@example.test',
+      name: 'Alex Updated',
+      newPassword: 'a newly changed secure password',
+    });
   });
 
   it('lets the administrator update their normal login details', async () => {

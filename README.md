@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.17.0` release includes the project foundation, core football
+The current `0.18.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -31,6 +31,8 @@ Statistics tab compares recorded goals, assists and clean sheets by season or
 all-time. Approved players can also respond to upcoming fixtures with their
 matchday availability, while the administrator sees the named responses and
 headcount.
+Players can manage their own account name, email, and password without changing
+their administrator-managed public Player profile.
 
 The website is deployed to Vercel with Neon PostgreSQL and Cloudinary image
 storage. See [the project specification](docs/PROJECT-SPEC.md) for full
@@ -137,7 +139,13 @@ immediately, but its profile link remains pending until an administrator
 approves it. Administrators review, approve, or reject claims and can assign
 or unassign profiles manually at `/admin/accounts`. Rejected or unlinked player
 accounts can request another available profile from `/account`. Player accounts
-can view their linked public profile but cannot edit football records.
+can view their linked public profile but cannot edit football records. Approved,
+pending, and unlinked player accounts can change their account name, email, or
+password from `/account`. The current password is required for every change;
+email changes take effect immediately without verification. Changing a password
+signs out other sessions while keeping the current session active. The account
+name is separate from the public Player profile, and password recovery is not
+available in this release.
 
 Passwords are stored as salted scrypt hashes. Successful registration and
 login create a random, revocable seven-day session whose SHA-256 token hash is
@@ -155,6 +163,7 @@ The authentication API provides:
 - `POST /api/auth/logout` — revoke the current session
 - `GET /api/auth/me` — return the currently authenticated user
 - `PUT /api/auth/me/player-request` — request a profile for an unlinked player account
+- `PUT /api/auth/me/account` — update the signed-in account's name, email, or password
 - `PUT /api/admin/account` — update the signed-in administrator account
 - `GET /api/admin/accounts` — list player accounts, claims, and profile assignments
 - `POST /api/admin/accounts/:userId/approve` — approve a pending profile claim

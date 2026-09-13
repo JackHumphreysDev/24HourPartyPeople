@@ -1,9 +1,10 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 
 import type { Prisma } from '../generated/prisma/client.js';
 import { requireAdmin, requireAuthentication } from '../auth/middleware.js';
 import { hashPassword, verifyPassword } from '../auth/password.js';
+import { getSessionToken, hashSessionToken } from '../auth/session.js';
 import { prisma } from '../lib/prisma.js';
 
 const emailSchema = z.string().trim().toLowerCase().email().max(254);
@@ -61,7 +62,7 @@ async function runSerializableTransaction<T>(
 export const adminAccountRouter = Router();
 adminAccountRouter.use(requireAuthentication, requireAdmin);
 
-adminAccountRouter.put('/', async (request, response) => {
+async function updateOwnAccount(request: Request, response: Response) {
   const parsed = accountUpdateSchema.safeParse(request.body);
   if (!parsed.success) {
     response.status(400).json({
@@ -95,24 +96,56 @@ adminAccountRouter.put('/', async (request, response) => {
   }
 
   try {
-    const user = await prisma.user.update({
-      data: {
-        email: parsed.data.email,
-        name: parsed.data.name,
-        ...(parsed.data.newPassword
-          ? { passwordHash: await hashPassword(parsed.data.newPassword) }
-          : {}),
-      },
-      select: {
-        email: true,
-        id: true,
-        name: true,
-        playerId: true,
-        requestedPlayerId: true,
-        role: true,
-      },
-      where: { id: request.authUser!.id },
+    const passwordHash = parsed.data.newPassword
+      ? await hashPassword(parsed.data.newPassword)
+      : undefined;
+    const currentToken = getSessionToken(request)!;
+    const user = await runSerializableTransaction(async (transaction) => {
+      const updated = await transaction.user.updateMany({
+        data: {
+          email: parsed.data.email,
+          name: parsed.data.name,
+          ...(passwordHash ? { passwordHash } : {}),
+        },
+        where: {
+          id: request.authUser!.id,
+          passwordHash: currentUser.passwordHash,
+        },
+      });
+      if (updated.count !== 1) {
+        return null;
+      }
+
+      if (passwordHash) {
+        await transaction.session.deleteMany({
+          where: {
+            userId: request.authUser!.id,
+            tokenHash: { not: hashSessionToken(currentToken) },
+          },
+        });
+      }
+
+      return transaction.user.findUniqueOrThrow({
+        select: {
+          email: true,
+          id: true,
+          name: true,
+          playerId: true,
+          requestedPlayerId: true,
+          role: true,
+        },
+        where: { id: request.authUser!.id },
+      });
     });
+    if (!user) {
+      response.status(409).json({
+        error: {
+          code: 'ACCOUNT_CHANGED',
+          message: 'Your account changed. Reload the page and try again.',
+        },
+      });
+      return;
+    }
     response.status(200).json({ user });
   } catch (error) {
     if (hasErrorCode(error, 'P2002')) {
@@ -126,7 +159,13 @@ adminAccountRouter.put('/', async (request, response) => {
     }
     throw error;
   }
-});
+}
+
+adminAccountRouter.put('/', updateOwnAccount);
+
+export const currentAccountRouter = Router();
+currentAccountRouter.use(requireAuthentication);
+currentAccountRouter.put('/', updateOwnAccount);
 
 export const adminAccountsRouter = Router();
 adminAccountsRouter.use(requireAuthentication, requireAdmin);

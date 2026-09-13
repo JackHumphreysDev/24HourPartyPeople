@@ -5,6 +5,7 @@ import { AuthScreen } from '../AuthScreen';
 import { getRegistrationPlayers } from '../auth/api';
 import type { RegistrationPlayer } from '../auth/types';
 import { useAuth } from '../auth/useAuth';
+import { AccountSettingsForm } from './AccountSettingsForm';
 
 function errorMessage(error: unknown): string {
   return error instanceof Error
@@ -13,7 +14,7 @@ function errorMessage(error: unknown): string {
 }
 
 export function AccountPage() {
-  const { requestPlayerProfile, status, user } = useAuth();
+  const { requestPlayerProfile, status, updatePlayerAccount, user } = useAuth();
   const [players, setPlayers] = useState<RegistrationPlayer[]>([]);
   const [playerId, setPlayerId] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -50,25 +51,34 @@ export function AccountPage() {
       </section>
     );
   }
+  const settings = (
+    <AccountSettingsForm kind="Player" updateAccount={updatePlayerAccount} />
+  );
   if (user.playerId) {
     return (
-      <section className="content-section account-status">
-        <p className="eyebrow">Player account</p>
-        <h2>Welcome, {user.name}</h2>
-        <p>Your account is linked to your Player profile.</p>
-        <NavLink className="primary-link" to={`/players/${user.playerId}`}>
-          View my profile
-        </NavLink>
-      </section>
+      <>
+        <section className="content-section account-status">
+          <p className="eyebrow">Player account</p>
+          <h2>Welcome, {user.name}</h2>
+          <p>Your account is linked to your Player profile.</p>
+          <NavLink className="primary-link" to={`/players/${user.playerId}`}>
+            View my profile
+          </NavLink>
+        </section>
+        {settings}
+      </>
     );
   }
   if (user.requestedPlayerId) {
     return (
-      <section className="content-section account-status">
-        <p className="eyebrow">Player account</p>
-        <h2>Profile request pending</h2>
-        <p>An administrator needs to approve your selected Player profile.</p>
-      </section>
+      <>
+        <section className="content-section account-status">
+          <p className="eyebrow">Player account</p>
+          <h2>Profile request pending</h2>
+          <p>An administrator needs to approve your selected Player profile.</p>
+        </section>
+        {settings}
+      </>
     );
   }
 
@@ -86,45 +96,48 @@ export function AccountPage() {
   }
 
   return (
-    <section className="content-section account-status">
-      <p className="eyebrow">Player account</p>
-      <h2>Request a Player profile</h2>
-      <p>
-        Your previous request was not approved. You can choose another available
-        profile.
-      </p>
-      <form className="auth-form" onSubmit={handleRequest}>
-        <label>
-          Player profile
-          <select
-            disabled={players.length === 0}
-            required
-            value={playerId}
-            onChange={(event) => setPlayerId(event.target.value)}
+    <>
+      <section className="content-section account-status">
+        <p className="eyebrow">Player account</p>
+        <h2>Request a Player profile</h2>
+        <p>
+          Your previous request was not approved. You can choose another
+          available profile.
+        </p>
+        <form className="auth-form" onSubmit={handleRequest}>
+          <label>
+            Player profile
+            <select
+              disabled={players.length === 0}
+              required
+              value={playerId}
+              onChange={(event) => setPlayerId(event.target.value)}
+            >
+              {players.map((player) => (
+                <option key={player.id} value={player.id}>
+                  {player.name} · {player.position ?? 'Historical player'}
+                </option>
+              ))}
+            </select>
+          </label>
+          {players.length === 0 && (
+            <p className="status-panel">No profiles are currently available.</p>
+          )}
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            className="primary-button"
+            disabled={isSubmitting || !playerId}
+            type="submit"
           >
-            {players.map((player) => (
-              <option key={player.id} value={player.id}>
-                {player.name} · {player.position ?? 'Historical player'}
-              </option>
-            ))}
-          </select>
-        </label>
-        {players.length === 0 && (
-          <p className="status-panel">No profiles are currently available.</p>
-        )}
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        <button
-          className="primary-button"
-          disabled={isSubmitting || !playerId}
-          type="submit"
-        >
-          {isSubmitting ? 'Sending…' : 'Request profile'}
-        </button>
-      </form>
-    </section>
+            {isSubmitting ? 'Sending…' : 'Request profile'}
+          </button>
+        </form>
+      </section>
+      {settings}
+    </>
   );
 }
