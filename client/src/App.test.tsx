@@ -1349,9 +1349,9 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole('heading', { name: 'Norton Rivals' }),
-    ).toHaveLength(2);
-    expect(screen.getByText('Walkover')).toBeInTheDocument();
-    expect(screen.getAllByText('5–2')).toHaveLength(2);
+    ).toHaveLength(3);
+    expect(screen.getAllByText('Walkover')).toHaveLength(2);
+    expect(screen.getAllByText('5–2')).toHaveLength(3);
     expect(
       screen.getByText('Opponent could not field a team.'),
     ).toBeInTheDocument();
@@ -1364,6 +1364,20 @@ describe('App', () => {
     expect(
       within(formPanel).getByText(/Walkovers in this view: 1/),
     ).toBeInTheDocument();
+    const opponentPanel = screen.getByRole('region', {
+      name: 'Opponent records',
+    });
+    expect(
+      within(opponentPanel).getByRole('heading', { name: 'Norton Rivals' }),
+    ).toBeInTheDocument();
+    expect(
+      within(opponentPanel).getByText('1 scored game · 1 walkover'),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(opponentPanel).getByText('View matches against Norton Rivals'),
+    );
+    expect(within(opponentPanel).getByText('Walkover')).toBeInTheDocument();
+    expect(within(opponentPanel).getByText('5–2')).toBeInTheDocument();
     fireEvent.change(
       within(formPanel).getByRole('combobox', { name: 'Competition' }),
       {

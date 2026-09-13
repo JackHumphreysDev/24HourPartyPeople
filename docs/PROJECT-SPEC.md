@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.20.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.21.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -254,6 +254,10 @@ selected players are recorded as the bench.
   and are counted separately, but are excluded from form and score-derived
   totals because their outcomes and scores are not recorded. Seasons with only
   historical player-statistics totals do not appear in this selector.
+- Show all-time head-to-head records for each opponent from recorded league and
+  cup games. Include scored-game W/D/L, goals for and against, goal difference,
+  and an expandable match list. Display walkovers separately without adding a
+  guessed result or score to the record.
 
 ### Fixtures (tab)
 
@@ -584,6 +588,9 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 - [x] The Games page shows season and competition form filters, last-five
       scored-game W/D/L, score totals, and running goal-difference trends;
       walkovers are visible but not assigned a guessed score or outcome
+- [x] The Games page groups recorded league and cup games by opponent across
+      seasons, showing scored-game head-to-head records and individual matches
+      while keeping walkovers out of W/D/L and goal totals
 - [x] Fixtures tab shows upcoming scheduled games with date, competition,
       opponent, optional Sheffield-local time, and venue; administrators have
       a manual create/correct fallback alongside automatic scraped ingestion
@@ -652,6 +659,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.21.0 | 2026-09-13 | Added all-time opponent head-to-head records and expandable match lists on the Games page, with walkovers shown separately from scored results |
 | 0.20.0 | 2026-09-13 | Added season and competition form filters, last-five scored-game results, and running goal-difference trends on the Games page without inferring walkover scores |
 | 0.19.0 | 2026-09-13 | Added per-fixture calendar downloads, Sheffield-local kick-off conversion, and a Home page timetable of the next five fixtures with links to the full schedule |
 | 0.18.0 | 2026-09-13 | Added self-service player account settings for name, email, and password, with current-password confirmation and other-session revocation on password change |
