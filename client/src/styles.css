@@ -2070,3 +2070,913 @@ select {
     grid-column: auto;
   }
 }
+
+/* Contemporary club dashboard visual system */
+:root {
+  color: #082c22;
+  background: #f3f1eb;
+  color-scheme: light;
+  font-feature-settings:
+    'ss01' 1,
+    'cv11' 1;
+}
+
+body {
+  background: #f3f1eb;
+}
+
+::selection {
+  color: #082c22;
+  background: #d9ac55;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 0;
+  color: #082c22;
+  background: #f3f1eb;
+}
+
+.page-frame,
+.team-header-inner,
+.site-footer-inner {
+  width: min(88rem, calc(100% - 4rem));
+  margin-inline: auto;
+}
+
+.page-frame {
+  flex: 1;
+}
+
+.team-header {
+  display: block;
+  padding: 0;
+  color: #f8f4e8;
+  border-bottom: 1px solid rgb(217 172 85 / 34%);
+  background: #073c2f;
+}
+
+.team-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(2rem, 5vw, 5rem);
+  min-height: 7.25rem;
+  padding-block: 1rem;
+}
+
+.team-brand {
+  gap: 1rem;
+  min-width: fit-content;
+}
+
+.team-header h1 {
+  max-width: none;
+  margin: 0;
+  color: #f8f4e8;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.team-brand-copy .eyebrow {
+  margin-top: 0.55rem;
+  color: rgb(248 244 232 / 78%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.65rem;
+  font-weight: 550;
+  letter-spacing: 0.27em;
+}
+
+.team-brand-logo {
+  width: clamp(4.75rem, 7vw, 5.8rem);
+  filter: none;
+}
+
+.site-nav {
+  flex-wrap: nowrap;
+  gap: clamp(0.65rem, 1.5vw, 1.65rem);
+}
+
+.site-nav a,
+.site-nav button {
+  position: relative;
+  padding: 0.7rem 0;
+  color: rgb(248 244 232 / 84%);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.66rem;
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.site-nav a:hover,
+.site-nav button:hover,
+.site-nav a.active {
+  color: #e8bb60;
+  background: transparent;
+}
+
+.site-nav a.active::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: #e8bb60;
+  content: '';
+}
+
+.site-footer {
+  border-top: 1px solid #d4d1c8;
+  background: #efede7;
+}
+
+.site-footer-inner {
+  display: grid;
+  grid-template-columns: auto minmax(2rem, 1fr) auto minmax(2rem, 1fr) auto;
+  align-items: center;
+  gap: 1.75rem;
+  min-height: 4.4rem;
+  color: #183b31;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: 0.21em;
+  text-transform: uppercase;
+}
+
+.site-footer-rule {
+  height: 1px;
+  background: #71847d;
+}
+
+.content-section,
+.profile-page,
+.admin-layout,
+.statistics-admin-page,
+.game-admin-page,
+.standings-admin-page,
+.club-history-admin-page {
+  padding: clamp(2.75rem, 6vw, 5rem) 0 clamp(4rem, 8vw, 7rem);
+}
+
+.section-heading h2,
+.section-heading h3,
+.profile-header h2,
+.season-history-header h3 {
+  color: #082c22;
+  font-weight: 900;
+  letter-spacing: -0.055em;
+}
+
+.section-heading h2,
+.section-heading h3 {
+  font-size: clamp(2rem, 5vw, 3.8rem);
+}
+
+.eyebrow,
+.position-label,
+.competition-label {
+  color: #a8741e;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+}
+
+.section-heading > p:last-child,
+.profile-header p,
+.season-note,
+.player-description,
+.fixture-date,
+.fixture-venue,
+.game-note,
+.fixture-detail,
+.opponent-record-summary,
+.opponent-record-matches li,
+.season-form-filters label,
+.season-trend figcaption,
+.season-form-walkovers,
+.account-card span,
+.field-hint,
+.admin-item-detail,
+.fixture-card-meta,
+.game-card-meta,
+.standings-meta p,
+.standings-last-updated,
+.stat-leaderboard > p,
+.stat-leaderboard-rank,
+.stat-leaderboard-historical,
+.calculated-cell {
+  color: #607069;
+}
+
+.auth-card,
+.history-finalisation-card,
+.season-squad-form,
+.season-history-record,
+.account-card,
+.status-panel,
+.player-directory-filters,
+.stat-leaderboard,
+.player-card,
+.admin-player-list,
+.admin-player-form,
+.statistics-editor,
+.fixture-card,
+.game-card,
+.season-form-section,
+.opponent-record,
+.game-result-form,
+.team-description-form {
+  color: #082c22;
+  border-color: #d4d1c8;
+  border-radius: 0.25rem;
+  background: #faf9f5;
+  box-shadow: none;
+}
+
+.season-award-card,
+.season-record-stats > div,
+.stat-grid > div,
+.admin-player-item,
+.game-player-stat-row,
+.walkover-control,
+.season-form-stats > div,
+.opponent-record-stats > div,
+.entry-mode-tabs,
+.auth-tabs {
+  color: #082c22;
+  border-color: #d4d1c8;
+  border-radius: 0.2rem;
+  background: #efede7;
+}
+
+.player-card {
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.player-card:hover {
+  border-color: #a8741e;
+  background: #fff;
+  transform: translateY(-0.14rem);
+}
+
+.player-card h3,
+.admin-player-item h3,
+.stat-leaderboard h3,
+.fixture-opponent h3,
+.game-card-result h3,
+.opponent-record h4,
+.season-award-card strong,
+.season-award-card strong a,
+.season-record-stats dd,
+.stat-grid dd,
+.stat-leaderboard-list a,
+.opponent-record-matches strong,
+.score {
+  color: #082c22;
+}
+
+.player-avatar {
+  border-radius: 0.2rem;
+  background: #e7e9e4;
+}
+
+.player-avatar-placeholder {
+  color: #a8741e;
+  background: #e3e8e1;
+}
+
+.page-frame input:not([type='checkbox']):not([type='radio']),
+.page-frame textarea,
+.page-frame select {
+  color: #082c22;
+  border-color: #bbc2bd;
+  border-radius: 0.2rem;
+  background: #fff;
+}
+
+.page-frame label,
+.page-frame fieldset legend,
+.auth-form label,
+.admin-player-form label,
+.statistics-form label,
+.game-result-form label,
+.manual-result-fields label,
+.score-entry-fields label,
+.player-directory-filters label,
+.statistics-season-filter {
+  color: #28493f;
+}
+
+.page-frame input:focus,
+.page-frame textarea:focus,
+.page-frame select:focus {
+  border-color: #a8741e;
+  box-shadow: 0 0 0 3px rgb(197 149 57 / 18%);
+}
+
+.primary-link,
+.primary-button,
+.auth-tab-active,
+.entry-mode-tabs .entry-mode-active,
+.fixture-availability-options .secondary-button[aria-pressed='true'] {
+  color: #082c22;
+  border-radius: 0.2rem;
+  background: #d9ac55;
+}
+
+.primary-button,
+.secondary-button,
+.secondary-link {
+  border-radius: 0.2rem;
+}
+
+.secondary-button,
+.secondary-link,
+.text-button,
+.back-link,
+.league-position-card a,
+.home-fixtures-heading > a,
+.season-trend summary,
+.opponent-record summary {
+  color: #986819;
+}
+
+.form-error,
+.status-panel-error,
+.fixture-availability-error {
+  color: #8c2f27;
+  border-color: #d6a29c;
+  background: #f8e6e3;
+}
+
+.form-success {
+  color: #27643d;
+  border-color: #9bc7aa;
+  background: #e6f3e9;
+}
+
+.form-warning {
+  color: #745314;
+  border-color: #d6bf89;
+  background: #f7f0dd;
+}
+
+.table-scroll {
+  color: #082c22;
+  border-color: #d4d1c8;
+  border-radius: 0.2rem;
+  background: #faf9f5;
+}
+
+.home-fixtures-table th,
+.home-fixtures-table td,
+.standings-table th,
+.standings-table td,
+.season-trend-table th,
+.season-trend-table td {
+  border-bottom-color: #dedbd3;
+}
+
+.home-fixtures-table thead th,
+.standings-table thead th,
+.season-trend-table thead th {
+  color: #66746f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
+.home-fixtures-table tbody th,
+.standings-table tbody th {
+  color: #082c22;
+}
+
+.standings-table .team-standing-row > * {
+  color: #082c22;
+  background: #eee6d2;
+}
+
+.admin-nav {
+  width: 100%;
+  gap: 0;
+  padding: 0;
+  overflow-x: auto;
+  border-color: #d4d1c8;
+  border-radius: 0;
+  background: transparent;
+}
+
+.admin-nav a {
+  padding: 0.8rem 1rem;
+  color: #53645e;
+  border-right: 1px solid #d4d1c8;
+  border-radius: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin-nav a:hover,
+.admin-nav a.active {
+  color: #082c22;
+  background: #e7d5aa;
+}
+
+.season-trend svg {
+  border: 1px solid #d4d1c8;
+  border-radius: 0.2rem;
+  background: #eff2ed;
+}
+
+.season-trend text {
+  fill: #607069;
+}
+
+.season-form-outcome {
+  border-radius: 0.2rem;
+}
+
+.game-result-form input,
+.game-result-form textarea,
+.game-result-form select,
+.auth-form input,
+.auth-form select,
+.admin-player-form input,
+.admin-player-form textarea,
+.admin-player-form select,
+.statistics-form input,
+.statistics-form textarea,
+.statistics-form select {
+  color: #082c22;
+  background: #fff;
+}
+
+.home-dashboard {
+  padding: 1.75rem 0 clamp(4rem, 8vw, 6rem);
+}
+
+.home-dashboard-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.home-dashboard-meta-copy {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #4d6059;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.64rem;
+  font-weight: 550;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.home-dashboard-meta-copy > span[aria-hidden='true'] {
+  width: 1px;
+  height: 1rem;
+  background: #9da7a3;
+}
+
+.home-dashboard-lead,
+.home-dashboard-lower {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(19rem, 1fr);
+  gap: 0.75rem;
+}
+
+.dashboard-panel {
+  min-width: 0;
+  color: #082c22;
+  border: 1px solid #d4d1c8;
+  border-radius: 0.2rem;
+  background: #faf9f5;
+}
+
+.dashboard-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-height: 3rem;
+  padding: 0.85rem 1.35rem;
+  border-bottom: 1px solid #d4d1c8;
+}
+
+.dashboard-panel-heading h2 {
+  margin: 0;
+  color: #082c22;
+  font-size: 0.95rem;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.dashboard-panel-heading > span,
+.dashboard-panel-heading-link > a {
+  color: #a8741e;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.64rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.dashboard-panel-heading p {
+  margin: 0.35rem 0 0;
+  color: #607069;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.dashboard-empty-state {
+  display: grid;
+  min-height: 19rem;
+  margin: 0;
+  place-items: center;
+  color: #607069;
+}
+
+.dashboard-empty-state-error {
+  color: #8c2f27;
+}
+
+.next-fixture-teams {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  min-height: 14rem;
+  padding: 1.5rem clamp(1rem, 4vw, 3rem);
+}
+
+.next-fixture-team {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.next-fixture-team img,
+.opponent-mark {
+  width: clamp(5rem, 9vw, 6.5rem);
+  aspect-ratio: 1;
+}
+
+.next-fixture-team img {
+  object-fit: contain;
+}
+
+.opponent-mark {
+  display: grid;
+  place-items: center;
+  color: #53615c;
+  border: 1px solid #929b97;
+  background: #ecece8;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: 900;
+}
+
+.next-fixture-team strong {
+  max-width: 14rem;
+  margin-top: 0.65rem;
+  color: #082c22;
+  font-size: clamp(1.25rem, 2.5vw, 2rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+}
+
+.next-fixture-versus {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  color: #4f5e59;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.next-fixture-versus span {
+  width: 1px;
+  height: 1.5rem;
+  background: #b8bdb9;
+}
+
+.next-fixture-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 1.35rem;
+  border-top: 1px solid #d4d1c8;
+}
+
+.next-fixture-details > div {
+  padding: 1rem;
+  text-align: center;
+}
+
+.next-fixture-details > div + div {
+  border-left: 1px solid #d4d1c8;
+}
+
+.next-fixture-details dt,
+.league-position-stats dt {
+  color: #66746f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.next-fixture-details dd,
+.league-position-stats dd {
+  margin: 0.35rem 0 0;
+  color: #082c22;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.league-position-card {
+  display: block;
+  padding: 0;
+  border-color: #d4d1c8;
+  border-radius: 0.2rem;
+  background: #faf9f5;
+  box-shadow: none;
+}
+
+.league-position-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100% - 3rem);
+  padding: clamp(1.5rem, 4vw, 2.4rem) 1.25rem 1.35rem;
+  text-align: center;
+}
+
+.league-position-body > strong {
+  color: #073c2f;
+  font-size: clamp(5rem, 10vw, 7rem);
+  font-weight: 950;
+  line-height: 0.9;
+  letter-spacing: -0.09em;
+  text-transform: uppercase;
+}
+
+.league-position-body > span {
+  margin-top: 1.25rem;
+  color: #264a3f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.league-position-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: 100%;
+  margin: 1.5rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid #d4d1c8;
+}
+
+.league-position-stats > div + div {
+  border-left: 1px solid #d4d1c8;
+}
+
+.league-position-body > a {
+  margin-top: auto;
+  padding-top: 1rem;
+  color: #986819;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.home-fixtures-section {
+  margin-top: 0.75rem;
+  padding-bottom: 0;
+}
+
+.home-fixtures-table .is-next-fixture {
+  background: #f0ecdf;
+}
+
+.home-fixtures-table th,
+.home-fixtures-table td {
+  padding: 0.78rem 1.1rem;
+}
+
+.home-fixtures-table .secondary-button {
+  padding: 0.45rem 0.65rem;
+  color: #986819;
+  border-color: #b98731;
+  background: transparent;
+  font-size: 0.72rem;
+}
+
+.home-dashboard-lower {
+  margin-top: 0.75rem;
+}
+
+.home-dashboard .home-formation-section {
+  padding-bottom: 0;
+}
+
+.home-dashboard .formation-pitch {
+  max-width: none;
+  margin: 1.35rem;
+  border-width: 1px;
+  border-radius: 0.2rem;
+  box-shadow: none;
+}
+
+.home-dashboard .formation-bench {
+  max-width: none;
+  margin: 0 1.35rem 1.35rem;
+  border-color: #d4d1c8;
+  border-radius: 0.2rem;
+  background: #efede7;
+}
+
+.home-dashboard .formation-bench .formation-player {
+  color: #082c22;
+}
+
+.home-dashboard .formation-bench .formation-player > span:last-child {
+  color: #607069;
+}
+
+.club-notes-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 23rem;
+  padding: clamp(1.35rem, 3vw, 2rem);
+}
+
+.club-notes-lead {
+  margin: 0;
+  color: #082c22;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.club-notes-body > p:not(.club-notes-lead) {
+  color: #3c554c;
+  line-height: 1.7;
+}
+
+.club-notes-body > span {
+  height: 1px;
+  margin-top: auto;
+  background: #d4d1c8;
+}
+
+.club-notes-body > a {
+  align-self: flex-start;
+  margin-top: 1rem;
+  padding: 0.7rem 0.9rem;
+  color: #986819;
+  border: 1px solid #b98731;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+@media (max-width: 72rem) {
+  .team-header-inner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .site-nav {
+    justify-content: flex-start;
+    width: 100%;
+    padding-bottom: 0.45rem;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 54rem) {
+  .page-frame,
+  .team-header-inner,
+  .site-footer-inner {
+    width: min(100% - 2rem, 88rem);
+  }
+
+  .home-dashboard-lead,
+  .home-dashboard-lower {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer-inner {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+    padding-block: 1.25rem;
+    text-align: center;
+  }
+
+  .site-footer-rule {
+    display: none;
+  }
+}
+
+@media (max-width: 38rem) {
+  .team-brand {
+    align-items: center;
+  }
+
+  .team-brand-logo {
+    width: 4rem;
+  }
+
+  .team-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .team-brand-copy .eyebrow {
+    font-size: 0.55rem;
+    letter-spacing: 0.16em;
+  }
+
+  .home-dashboard-meta-copy > span:last-child,
+  .home-dashboard-meta-copy > span:nth-last-child(2) {
+    display: none;
+  }
+
+  .next-fixture-teams {
+    grid-template-columns: 1fr;
+    padding-block: 1.5rem;
+  }
+
+  .next-fixture-versus {
+    grid-template-columns: 1.5rem auto 1.5rem;
+    align-items: center;
+  }
+
+  .next-fixture-versus span {
+    width: 1.5rem;
+    height: 1px;
+  }
+
+  .next-fixture-details {
+    grid-template-columns: 1fr;
+  }
+
+  .next-fixture-details > div + div {
+    border-top: 1px solid #d4d1c8;
+    border-left: 0;
+  }
+
+  .dashboard-panel-heading-link {
+    flex-direction: column;
+  }
+
+  .league-position-stats {
+    gap: 0.55rem 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .league-position-stats > div + div {
+    border-left: 0;
+  }
+
+  .league-position-stats > div:nth-child(2),
+  .league-position-stats > div:nth-child(3),
+  .league-position-stats > div:nth-child(5) {
+    border-left: 1px solid #d4d1c8;
+  }
+}
