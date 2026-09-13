@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 import { getGames } from './api';
+import { SeasonFormPanel } from './SeasonFormPanel';
 import type { GameSummary } from './types';
 
 function formatDate(value: string): string {
@@ -61,6 +62,10 @@ export function GameHistoryPage() {
       )}
       {status === 'ready' && games.length === 0 && (
         <p className="status-panel">No game results have been recorded.</p>
+      )}
+
+      {status === 'ready' && games.length > 0 && (
+        <SeasonFormPanel games={games} />
       )}
 
       <div className="game-history">

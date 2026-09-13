@@ -1335,6 +1335,178 @@ select {
   background: rgb(9 27 18 / 78%);
 }
 
+.season-form-section {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  margin-bottom: 3rem;
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 1rem;
+  background: rgb(9 27 18 / 78%);
+}
+
+.season-form-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.season-form-filters label {
+  display: grid;
+  gap: 0.5rem;
+  min-width: min(100%, 14rem);
+  color: #c9c4b8;
+  font-weight: 700;
+}
+
+.season-form-filters select {
+  padding: 0.7rem;
+  border: 1px solid rgb(217 172 85 / 35%);
+  border-radius: 0.6rem;
+  color: #f6eedb;
+  background: #07120d;
+}
+
+.season-form-summary {
+  display: grid;
+  gap: 2rem;
+}
+
+.season-form-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  list-style: none;
+}
+
+.season-form-outcome {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  aspect-ratio: 1;
+  border-radius: 0.6rem;
+  color: #07120d;
+  font-weight: 900;
+}
+
+.season-form-outcome-w {
+  background: #80cfa0;
+}
+
+.season-form-outcome-d {
+  background: #d9ac55;
+}
+
+.season-form-outcome-l {
+  background: #e59a88;
+}
+
+.season-form-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.season-form-stats > div {
+  padding: 0.9rem;
+  border-radius: 0.6rem;
+  background: rgb(19 39 27 / 80%);
+}
+
+.season-form-stats dt {
+  color: #c9c4b8;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.season-form-stats dd {
+  margin: 0.4rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 850;
+}
+
+.season-trend {
+  margin-top: 2.5rem;
+}
+
+.season-trend h4 {
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+.season-trend figure {
+  margin: 1rem 0;
+}
+
+.season-trend svg {
+  width: 100%;
+  height: 10rem;
+  border-radius: 0.6rem;
+  background: rgb(19 39 27 / 80%);
+}
+
+.season-trend line {
+  stroke: rgb(217 172 85 / 40%);
+  stroke-width: 1;
+}
+
+.season-trend text {
+  fill: #c9c4b8;
+  font-size: 12px;
+}
+
+.season-trend polyline {
+  fill: none;
+  stroke: #d9ac55;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.season-trend circle {
+  fill: #d9ac55;
+}
+
+.season-trend figcaption,
+.season-form-walkovers {
+  color: #c9c4b8;
+  font-size: 0.9rem;
+}
+
+.season-trend summary {
+  color: #d9ac55;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.season-trend details .table-scroll {
+  margin-top: 1rem;
+}
+
+.season-trend-table {
+  width: 100%;
+  min-width: 40rem;
+  border-collapse: collapse;
+}
+
+.season-trend-table th,
+.season-trend-table td {
+  padding: 0.8rem;
+  border-bottom: 1px solid rgb(217 172 85 / 14%);
+  text-align: left;
+}
+
+.season-trend-table thead th {
+  color: #9e9a90;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.season-trend-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
 .game-card-meta {
   display: flex;
   gap: 0.65rem 1rem;
