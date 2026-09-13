@@ -37,17 +37,17 @@ function AppContent() {
 
   return (
     <main className="app-shell">
-      <div className="page-frame">
-        <header className="team-header">
+      <header className="team-header">
+        <div className="team-header-inner">
           <div className="team-brand">
             <img
               className="team-brand-logo"
-              src="/assets/brand/logo-transparent-512.webp"
+              src="/assets/brand/logo-transparent-512.png"
               alt="24 Hour Party People club crest"
             />
             <div className="team-brand-copy">
-              <p className="eyebrow">6-a-side football · Sheffield</p>
               <h1 id="team-name">24 Hour Party People</h1>
+              <p className="eyebrow">6-a-side football · Sheffield</p>
             </div>
           </div>
           <nav className="site-nav" aria-label="Main navigation">
@@ -78,8 +78,10 @@ function AppContent() {
               </button>
             )}
           </nav>
-        </header>
+        </div>
+      </header>
 
+      <div className="page-frame">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/players" element={<PlayersPage />} />
@@ -105,6 +107,16 @@ function AppContent() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
+
+      <footer className="site-footer">
+        <div className="site-footer-inner">
+          <span>Local football. Proper mates.</span>
+          <span className="site-footer-rule" aria-hidden="true" />
+          <span>24 Hour Party People</span>
+          <span className="site-footer-rule" aria-hidden="true" />
+          <span>Sheffield. Always</span>
+        </div>
+      </footer>
     </main>
   );
 }

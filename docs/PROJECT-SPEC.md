@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.21.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.21.1` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -159,6 +159,10 @@ selected players are recorded as the bench.
 
 ### Home page
 
+- The implemented responsive dashboard gives the next fixture a featured
+  panel, with the current league position and record beside it. The five-game
+  timetable, starting-six formation, and administrator-editable club notes
+  follow below. Missing data has explicit loading, error, and empty states.
 - Current league position for **24 Hour Party People** (pulled from
   `SeasonStanding` for the current season, filtered to our club name).
 - Short description of the team, stored in the singleton `TeamProfile` and
@@ -181,6 +185,8 @@ selected players are recorded as the bench.
   row and do not fill a starting-six slot.
 - The supplied club crest is shown beside the global team name, with favicon
   and Apple touch icon variants used as the website and browser URL identity.
+- A full-width header and footer carry the club's contemporary colour scheme;
+  Open Graph and social-card metadata use the supplied club preview image.
 
 ### Player profiles (tab)
 
@@ -571,6 +577,10 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
       description, and the current squad in a responsive 1GK-3DEF-1MID-1FWD
       formation based on each player's primary position, with substitutes on a
       separate bench and the supplied crest and browser icons in use
+- [x] A responsive club dashboard features the next fixture and league record,
+      followed by the five-fixture timetable, starting six, and club notes;
+      the site-wide header, footer, and social-sharing metadata use the updated
+      club branding
 - [x] Home page shows the next five upcoming fixtures with a link to the full
       timetable and per-fixture calendar downloads, without hiding the rest
       of the page if fixture loading fails
@@ -659,6 +669,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.21.1 | 2026-09-13 | Refreshed the site-wide header, footer, branding, social-sharing metadata, and responsive Home dashboard layout without changing the underlying football data |
 | 0.21.0 | 2026-09-13 | Added all-time opponent head-to-head records and expandable match lists on the Games page, with walkovers shown separately from scored results |
 | 0.20.0 | 2026-09-13 | Added season and competition form filters, last-five scored-game results, and running goal-difference trends on the Games page without inferring walkover scores |
 | 0.19.0 | 2026-09-13 | Added per-fixture calendar downloads, Sheffield-local kick-off conversion, and a Home page timetable of the next five fixtures with links to the full schedule |

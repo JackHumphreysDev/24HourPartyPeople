@@ -48,9 +48,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: '24 Hour Party People' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', {
-        name: 'Football, friends, and the full story.',
-      }),
+      screen.getByRole('heading', { name: 'Next fixture' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Players' })).toBeInTheDocument();
   });
@@ -436,7 +434,14 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: '24 Hour Party People club crest' }),
-    ).toHaveAttribute('src', '/assets/brand/logo-transparent-512.webp');
+    ).toHaveAttribute('src', '/assets/brand/logo-transparent-512.png');
+    expect(
+      screen.getByRole('heading', { name: 'Next fixture' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Local football. Proper mates.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Sheffield. Always')).toBeInTheDocument();
     expect(screen.getByLabelText('Current substitutes')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Ben Bench/ })).toHaveAttribute(
       'href',

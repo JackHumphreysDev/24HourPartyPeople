@@ -2,6 +2,17 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.21.1] - 2026-09-13
+
+### Changed
+
+- Refreshed the site-wide header, footer, colour scheme, and club branding.
+- Reorganised the responsive Home page into a dashboard featuring the next
+  fixture, league position, five-fixture timetable, starting six, and club
+  notes while retaining their existing data sources.
+- Added Open Graph and social-card metadata with a dedicated club preview
+  image for shared links.
+
 ## [0.21.0] - 2026-09-13
 
 ### Added
