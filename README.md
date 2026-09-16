@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.21.1` release includes the project foundation, core football
+The current `0.22.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -148,6 +148,14 @@ signs out other sessions while keeping the current session active. The account
 name is separate from the public Player profile, and password recovery is not
 available in this release.
 
+The existing account for `doug_daly@hotmail.co.uk` is promoted by migration
+to `SUB_ADMIN`. This role retains its linked Player profile, account settings,
+and fixture availability while gaining access to player management, the Home
+page description, and seasons and historic statistics. Accounts, fixtures,
+results, standings, scraping, and club-history administration remain available
+only to the site owner’s `ADMIN` account. Runtime authorisation uses the role,
+not the email address.
+
 Passwords are stored as salted scrypt hashes. Successful registration and
 login create a random, revocable seven-day session whose SHA-256 token hash is
 stored in PostgreSQL. The browser receives only the opaque token in an
@@ -202,8 +210,8 @@ applied.
 The Team Profile API provides:
 
 - `GET /api/team-profile` — return the public team description
-- `GET /api/admin/team-profile` — return the editable team description (administrator)
-- `PUT /api/admin/team-profile` — update the team description (administrator)
+- `GET /api/admin/team-profile` — return the editable team description (owner or sub-administrator)
+- `PUT /api/admin/team-profile` — update the team description (owner or sub-administrator)
 
 ## Player profiles and squad management
 
@@ -239,9 +247,9 @@ The player API provides:
 - `GET /api/players` — list the active squad and historical-player archive
 - `GET /api/players/statistics` — return season and all-time player leaderboards
 - `GET /api/players/:playerId` — return an active or historical player and season statistics
-- `GET /api/admin/players` — list active and inactive players (administrator)
-- `POST /api/admin/players` — create a player using multipart form data
-- `PUT /api/admin/players/:playerId` — update a player using multipart form data
+- `GET /api/admin/players` — list active and inactive players (owner or sub-administrator)
+- `POST /api/admin/players` — create a player using multipart form data (owner or sub-administrator)
+- `PUT /api/admin/players/:playerId` — update a player using multipart form data (owner or sub-administrator)
 
 ## Statistics hub
 
@@ -253,7 +261,7 @@ instead of editable aggregate rows. Historical games played are not estimated.
 
 ## Season and statistics management
 
-The `/admin/statistics` route allows an authenticated administrator to create
+The `/admin/statistics` route allows the owner or sub-administrator to create
 and edit seasons and to add or update each player's totals for an untracked
 historical season.
 Making a season current replaces the previous current season atomically, and
@@ -268,7 +276,7 @@ one appearance, and season goals, assists, and clean sheets are calculated
 from those records instead of editable aggregate rows. Walkovers do not accept
 per-game player statistics.
 
-The administration API provides:
+The following endpoints are available to the owner and sub-administrator:
 
 - `GET /api/admin/seasons` — list seasons
 - `POST /api/admin/seasons` — create a season

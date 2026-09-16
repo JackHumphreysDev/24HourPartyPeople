@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 
 import { AuthScreen } from '../AuthScreen';
 import { getRegistrationPlayers } from '../auth/api';
+import { canUsePlayerProfile } from '../auth/permissions';
 import type { RegistrationPlayer } from '../auth/types';
 import { useAuth } from '../auth/useAuth';
 import { AccountSettingsForm } from './AccountSettingsForm';
@@ -23,9 +24,9 @@ export function AccountPage() {
   useEffect(() => {
     if (
       status !== 'authenticated' ||
-      user?.role !== 'PLAYER' ||
-      user.playerId ||
-      user.requestedPlayerId
+      !canUsePlayerProfile(user) ||
+      user?.playerId ||
+      user?.requestedPlayerId
     ) {
       return;
     }

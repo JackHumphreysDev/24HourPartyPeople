@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { AuthScreen } from '../AuthScreen';
 import { AdminNavigation } from '../admin/AdminNavigation';
+import { canManageContent } from '../auth/permissions';
 import { useAuth } from '../auth/useAuth';
 import { getAdminTeamProfile, updateTeamProfile } from './api';
 
@@ -116,7 +117,7 @@ export function AdminHomePage() {
     return <p className="auth-loading">Checking your session…</p>;
   }
 
-  if (status !== 'authenticated' || user?.role !== 'ADMIN') {
+  if (status !== 'authenticated' || !canManageContent(user)) {
     return <AuthScreen />;
   }
 

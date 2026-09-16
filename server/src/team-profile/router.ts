@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { requireAdmin, requireAuthentication } from '../auth/middleware.js';
+import {
+  requireAuthentication,
+  requireContentAdmin,
+} from '../auth/middleware.js';
 import { prisma } from '../lib/prisma.js';
 
 const TEAM_PROFILE_ID = 1;
@@ -29,7 +32,7 @@ publicTeamProfileRouter.get('/', async (_request, response) => {
 
 export const adminTeamProfileRouter = Router();
 
-adminTeamProfileRouter.use(requireAuthentication, requireAdmin);
+adminTeamProfileRouter.use(requireAuthentication, requireContentAdmin);
 
 adminTeamProfileRouter.get('/', async (_request, response) => {
   response.status(200).json({ teamProfile: await getTeamProfile() });

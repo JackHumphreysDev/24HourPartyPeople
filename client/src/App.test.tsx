@@ -588,6 +588,76 @@ describe('App', () => {
     expect(submittedDescription).toBe('Updated Home page description.');
   });
 
+  it('shows a sub-administrator only the permitted content sections', async () => {
+    window.history.replaceState({}, '', '/admin');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === '/api/auth/me') {
+          return Promise.resolve(
+            mockResponse(
+              {
+                user: {
+                  email: 'doug_daly@hotmail.co.uk',
+                  id: 'e1184878-0619-4e95-8a75-9d2ae1f75faa',
+                  name: 'Doug',
+                  playerId: '8e06d02a-2b03-44d4-97af-b0c13b500ef7',
+                  requestedPlayerId: null,
+                  role: 'SUB_ADMIN',
+                },
+              },
+              200,
+            ),
+          );
+        }
+        if (path === '/api/admin/players') {
+          return Promise.resolve(mockResponse({ players: [] }, 200));
+        }
+        return Promise.resolve(mockResponse({}, 404));
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Manage players' }),
+    ).toBeInTheDocument();
+    const adminNavigation = screen.getByRole('navigation', {
+      name: 'Administrator sections',
+    });
+    expect(
+      within(adminNavigation).getByRole('link', { name: 'Home page' }),
+    ).toHaveAttribute('href', '/admin/home-page');
+    expect(
+      within(adminNavigation).getByRole('link', {
+        name: 'Seasons & statistics',
+      }),
+    ).toHaveAttribute('href', '/admin/statistics');
+    expect(
+      within(adminNavigation).getByRole('link', { name: 'My account' }),
+    ).toHaveAttribute('href', '/account');
+    expect(screen.getByRole('link', { name: 'My profile' })).toHaveAttribute(
+      'href',
+      '/players/8e06d02a-2b03-44d4-97af-b0c13b500ef7',
+    );
+    expect(
+      within(adminNavigation).queryByRole('link', { name: 'Accounts' }),
+    ).toBeNull();
+    expect(
+      within(adminNavigation).queryByRole('link', { name: 'Fixtures' }),
+    ).toBeNull();
+    expect(
+      within(adminNavigation).queryByRole('link', { name: 'Results' }),
+    ).toBeNull();
+    expect(
+      within(adminNavigation).queryByRole('link', { name: 'Standings' }),
+    ).toBeNull();
+    expect(
+      within(adminNavigation).queryByRole('link', { name: 'Club history' }),
+    ).toBeNull();
+  });
+
   it('shows the sign-in screen on the admin route for an anonymous visitor', async () => {
     window.history.replaceState({}, '', '/admin');
     vi.stubGlobal(

@@ -41,7 +41,7 @@ async function clearDatabase() {
   await prisma.season.deleteMany();
 }
 
-async function createUserSession(role: 'ADMIN' | 'PLAYER') {
+async function createUserSession(role: 'ADMIN' | 'SUB_ADMIN' | 'PLAYER') {
   const user = await prisma.user.create({
     data: {
       email: `${role.toLowerCase()}@example.test`,
@@ -405,6 +405,12 @@ describe('administrator player API', () => {
       .set('Cookie', playerCookie)
       .field(validPlayerFields());
     expect(forbidden.status).toBe(403);
+
+    const subAdminCookie = await createUserSession('SUB_ADMIN');
+    const allowed = await request(app)
+      .get('/api/admin/players')
+      .set('Cookie', subAdminCookie);
+    expect(allowed.status).toBe(200);
   });
 
   it('creates a player and stores a validated uploaded image', async () => {

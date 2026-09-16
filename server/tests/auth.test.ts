@@ -11,7 +11,11 @@ import {
 } from 'vitest';
 
 import { createApp } from '../src/app.js';
-import { requireAdmin, requireAuthentication } from '../src/auth/middleware.js';
+import {
+  requireAdmin,
+  requireAuthentication,
+  requireContentAdmin,
+} from '../src/auth/middleware.js';
 import { hashPassword } from '../src/auth/password.js';
 import { createSession, SESSION_COOKIE_NAME } from '../src/auth/session.js';
 import { prisma } from '../src/lib/prisma.js';
@@ -313,5 +317,43 @@ describe('authorisation middleware', () => {
       .set('Cookie', `${SESSION_COOKIE_NAME}=${adminToken}`);
     expect(allowed.status).toBe(200);
     expect(allowed.body).toEqual({ allowed: true });
+  });
+
+  it('allows owner and sub-administrators through the content guard only', async () => {
+    const app = express();
+    app.get(
+      '/content',
+      requireAuthentication,
+      requireContentAdmin,
+      (_request, response) => response.status(200).json({ allowed: true }),
+    );
+    app.get(
+      '/owner',
+      requireAuthentication,
+      requireAdmin,
+      (_request, response) => response.status(200).json({ allowed: true }),
+    );
+
+    const passwordHash = await hashPassword('correct horse battery staple');
+    const subAdmin = await prisma.user.create({
+      data: {
+        email: 'doug_daly@hotmail.co.uk',
+        name: 'Doug',
+        passwordHash,
+        role: 'SUB_ADMIN',
+      },
+    });
+    const subAdminCookie = `${SESSION_COOKIE_NAME}=${await createSession(subAdmin.id)}`;
+
+    const contentResponse = await request(app)
+      .get('/content')
+      .set('Cookie', subAdminCookie);
+    expect(contentResponse.status).toBe(200);
+
+    const ownerResponse = await request(app)
+      .get('/owner')
+      .set('Cookie', subAdminCookie);
+    expect(ownerResponse.status).toBe(403);
+    expect(ownerResponse.body.error.code).toBe('ADMIN_REQUIRED');
   });
 });

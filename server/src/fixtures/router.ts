@@ -265,7 +265,10 @@ publicFixturesRouter.get(
   requireAuthentication,
   async (request, response) => {
     const user = request.authUser!;
-    if (user.role !== 'PLAYER' || !user.playerId) {
+    if (
+      (user.role !== 'PLAYER' && user.role !== 'SUB_ADMIN') ||
+      !user.playerId
+    ) {
       response.status(403).json({
         error: {
           code: 'APPROVED_PLAYER_REQUIRED',
@@ -294,7 +297,10 @@ publicFixturesRouter.put(
   requireAuthentication,
   async (request, response) => {
     const user = request.authUser!;
-    if (user.role !== 'PLAYER' || !user.playerId) {
+    if (
+      (user.role !== 'PLAYER' && user.role !== 'SUB_ADMIN') ||
+      !user.playerId
+    ) {
       response.status(403).json({
         error: {
           code: 'APPROVED_PLAYER_REQUIRED',

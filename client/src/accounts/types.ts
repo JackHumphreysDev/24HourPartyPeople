@@ -5,7 +5,7 @@ export type PlayerAccount = {
   name: string;
   player: { id: string; name: string } | null;
   requestedPlayer: { id: string; name: string } | null;
-  role: 'PLAYER';
+  role: 'PLAYER' | 'SUB_ADMIN';
 };
 
 export type AccountPlayer = {

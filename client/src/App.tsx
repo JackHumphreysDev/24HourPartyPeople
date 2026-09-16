@@ -7,6 +7,7 @@ import { AccountPage } from './accounts/AccountPage';
 import { AdminAccountPage } from './accounts/AdminAccountPage';
 import { AdminAccountsPage } from './accounts/AdminAccountsPage';
 import { AuthProvider } from './auth/AuthProvider';
+import { canManageContent, canUsePlayerProfile } from './auth/permissions';
 import { useAuth } from './auth/useAuth';
 import { AdminClubHistoryPage } from './club-history/AdminClubHistoryPage';
 import { ClubHistoryPage } from './club-history/ClubHistoryPage';
@@ -60,11 +61,10 @@ function AppContent() {
             <NavLink to="/fixtures">Fixtures</NavLink>
             <NavLink to="/games">Games</NavLink>
             <NavLink to="/club-history">History</NavLink>
-            {user?.role === 'ADMIN' ? (
-              <NavLink to="/admin">Admin</NavLink>
-            ) : (
+            {canManageContent(user) && <NavLink to="/admin">Admin</NavLink>}
+            {user?.role !== 'ADMIN' && (
               <>
-                {user?.playerId && (
+                {canUsePlayerProfile(user) && user?.playerId && (
                   <NavLink to={`/players/${user.playerId}`}>My profile</NavLink>
                 )}
                 <NavLink to="/account">

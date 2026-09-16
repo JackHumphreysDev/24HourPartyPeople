@@ -28,7 +28,7 @@ async function clearDatabase() {
 async function createAccount(
   email: string,
   playerId: string | null,
-  role: 'ADMIN' | 'PLAYER' = 'PLAYER',
+  role: 'ADMIN' | 'SUB_ADMIN' | 'PLAYER' = 'PLAYER',
 ) {
   const user = await prisma.user.create({
     data: { email, name: email, passwordHash: 'not-used', playerId, role },
@@ -122,7 +122,11 @@ describe('matchday availability', () => {
     const secondPlayer = await prisma.player.create({
       data: { description: '', name: 'Kyle' },
     });
-    const first = await createAccount('first@test.example', firstPlayer.id);
+    const first = await createAccount(
+      'doug_daly@hotmail.co.uk',
+      firstPlayer.id,
+      'SUB_ADMIN',
+    );
     const second = await createAccount('second@test.example', secondPlayer.id);
     const admin = await createAccount('admin@test.example', null, 'ADMIN');
     const app = createApp();

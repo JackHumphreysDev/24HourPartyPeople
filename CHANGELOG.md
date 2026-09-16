@@ -2,6 +2,22 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.22.0] - 2026-09-16
+
+### Added
+
+- A scoped `SUB_ADMIN` role with access to player management, the Home page
+  description, and seasons and historic statistics.
+- A migration promotes the existing `doug_daly@hotmail.co.uk` account while
+  preserving its linked player profile and matchday availability.
+
+### Security
+
+- Accounts, fixtures, results, standings, scraping, and club-history
+  administration remain restricted to the owner’s `ADMIN` account.
+- Authorisation uses the stored role after migration rather than matching an
+  email address during requests.
+
 ## [0.21.1] - 2026-09-13
 
 ### Changed

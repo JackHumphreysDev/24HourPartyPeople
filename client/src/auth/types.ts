@@ -4,7 +4,7 @@ export type AuthUser = {
   email: string;
   playerId: string | null;
   requestedPlayerId: string | null;
-  role: 'ADMIN' | 'PLAYER';
+  role: 'ADMIN' | 'SUB_ADMIN' | 'PLAYER';
 };
 
 export type LoginInput = {
