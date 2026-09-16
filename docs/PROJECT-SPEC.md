@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.21.1` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.22.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -57,10 +57,11 @@ Core capabilities:
 
 ## 2. Data model
 
-**User** — id, name, email, passwordHash, role (`ADMIN` | `PLAYER`),
+**User** — id, name, email, passwordHash, role (`ADMIN` | `SUB_ADMIN` |
+`PLAYER`),
 playerId (nullable, unique approved Player FK), requestedPlayerId (nullable,
-unique pending Player FK), createdAt. Only `ADMIN` users can create or edit
-Player records. A player account selects an unclaimed current or historical
+unique pending Player FK), createdAt. `ADMIN` and `SUB_ADMIN` users can create
+or edit Player records. A player account selects an unclaimed current or historical
 Player profile when registering; the approved link is created only after
 administrator review. Both relationships use `SetNull` deletion behaviour so
 account data is retained if a profile is removed.
@@ -316,6 +317,13 @@ selected players are recorded as the bench.
   every other account. The setup key is never shown in the normal website.
 - The administrator can update their own name, email, and password from
   `/admin/account`; the current password must be confirmed for every update.
+- The existing `doug_daly@hotmail.co.uk` account is promoted by migration to
+  `SUB_ADMIN`. It can manage players, the Home page description, seasons, and
+  historic player statistics. It retains its linked player profile, account
+  settings, and fixture availability. Accounts, fixtures, results, standings,
+  scraping, and club-history administration remain owner-only. Permission
+  checks use the role after migration rather than matching the email at
+  runtime.
 - Approved, pending, and unlinked player accounts can update their own account
   name, email, and password from `/account`, also confirming their current
   password. Email changes take effect immediately without verification;
@@ -536,17 +544,17 @@ GET    /api/admin/accounts                (admin) list accounts, claims and assi
 POST   /api/admin/accounts/:id/approve    (admin) approve a pending profile claim
 POST   /api/admin/accounts/:id/reject     (admin) reject a pending profile claim
 PUT    /api/admin/accounts/:id/player     (admin) assign/unassign a Player profile
-GET    /api/admin/players                  (admin) list active/inactive players
-POST   /api/admin/players                  (admin) create player profile
-PUT    /api/admin/players/:id              (admin) edit player profile
-GET    /api/admin/players/:id/season-stats (admin) list a player's stats
-POST   /api/admin/players/:id/season-stats (admin) add/edit a season's stats
-GET    /api/admin/seasons                  (admin) list seasons
-POST   /api/admin/seasons                  (admin) create a season
-PUT    /api/admin/seasons/:id              (admin) edit/make a season current
+GET    /api/admin/players                  (admin/sub-admin) list active/inactive players
+POST   /api/admin/players                  (admin/sub-admin) create player profile
+PUT    /api/admin/players/:id              (admin/sub-admin) edit player profile
+GET    /api/admin/players/:id/season-stats (admin/sub-admin) list a player's stats
+POST   /api/admin/players/:id/season-stats (admin/sub-admin) add/edit a season's stats
+GET    /api/admin/seasons                  (admin/sub-admin) list seasons
+POST   /api/admin/seasons                  (admin/sub-admin) create a season
+PUT    /api/admin/seasons/:id              (admin/sub-admin) edit/make a season current
 GET    /api/team-profile                   public team description
-GET    /api/admin/team-profile             (admin) editable team description
-PUT    /api/admin/team-profile             (admin) update team description
+GET    /api/admin/team-profile             (admin/sub-admin) editable team description
+PUT    /api/admin/team-profile             (admin/sub-admin) update team description
 GET    /api/games                          game history
 GET    /api/admin/games/fixtures           (admin) scheduled result options
 POST   /api/admin/games                    (admin) submit a result (incl. walkover flow)
@@ -618,6 +626,10 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 - [x] Admin account can create/edit player profiles (description, picture,
       primary and additional playable positions), edit the Home page team
       description, and enter historic season stats
+- [x] The designated sub-administrator can manage players, the Home page
+      description, seasons, and historic statistics while retaining player
+      profile and availability access; all other administration remains
+      restricted to the owner account
 - [x] Players can create email/password accounts, request an unclaimed Player
       profile from the current or historical player list, receive administrator
       approval, and open their linked profile; each profile can belong to only
@@ -669,6 +681,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.22.0 | 2026-09-16 | Added scoped sub-administrator access for Doug covering players, the Home page description, seasons, and historic statistics while preserving owner-only controls elsewhere |
 | 0.21.1 | 2026-09-13 | Refreshed the site-wide header, footer, branding, social-sharing metadata, and responsive Home dashboard layout without changing the underlying football data |
 | 0.21.0 | 2026-09-13 | Added all-time opponent head-to-head records and expandable match lists on the Games page, with walkovers shown separately from scored results |
 | 0.20.0 | 2026-09-13 | Added season and competition form filters, last-five scored-game results, and running goal-difference trends on the Games page without inferring walkover scores |
