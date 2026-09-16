@@ -3,7 +3,10 @@ import { z } from 'zod';
 
 import type { PlayerPosition, Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
-import { requireAdmin, requireAuthentication } from '../auth/middleware.js';
+import {
+  requireAuthentication,
+  requireContentAdmin,
+} from '../auth/middleware.js';
 import {
   deletePlayerImage,
   ImageStorageConfigurationError,
@@ -475,7 +478,7 @@ publicPlayersRouter.get('/:playerId', async (request, response) => {
 
 export const adminPlayersRouter = Router();
 
-adminPlayersRouter.use(requireAuthentication, requireAdmin);
+adminPlayersRouter.use(requireAuthentication, requireContentAdmin);
 
 adminPlayersRouter.get('/', async (_request, response) => {
   const players = await prisma.player.findMany({

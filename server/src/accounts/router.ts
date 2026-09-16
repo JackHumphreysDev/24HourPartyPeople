@@ -175,7 +175,7 @@ adminAccountsRouter.get('/', async (_request, response) => {
     prisma.user.findMany({
       orderBy: { createdAt: 'asc' },
       select: accountSelect,
-      where: { role: 'PLAYER' },
+      where: { role: { in: ['PLAYER', 'SUB_ADMIN'] } },
     }),
     prisma.player.findMany({
       orderBy: [{ isActiveSquad: 'desc' }, { name: 'asc' }],
@@ -204,7 +204,10 @@ adminAccountsRouter.post('/:userId/approve', async (request, response) => {
     const account = await runSerializableTransaction(async (transaction) => {
       const user = await transaction.user.findFirst({
         select: { requestedPlayerId: true },
-        where: { id: userId.data, role: 'PLAYER' },
+        where: {
+          id: userId.data,
+          role: { in: ['PLAYER', 'SUB_ADMIN'] },
+        },
       });
       if (!user?.requestedPlayerId) {
         return null;
@@ -262,7 +265,7 @@ adminAccountsRouter.post('/:userId/reject', async (request, response) => {
     where: {
       id: userId.data,
       requestedPlayerId: { not: null },
-      role: 'PLAYER',
+      role: { in: ['PLAYER', 'SUB_ADMIN'] },
     },
   });
   if (result.count === 0) {
@@ -291,7 +294,10 @@ adminAccountsRouter.put('/:userId/player', async (request, response) => {
     const account = await runSerializableTransaction(async (transaction) => {
       const user = await transaction.user.findFirst({
         select: { id: true },
-        where: { id: userId.data, role: 'PLAYER' },
+        where: {
+          id: userId.data,
+          role: { in: ['PLAYER', 'SUB_ADMIN'] },
+        },
       });
       if (!user) {
         return null;

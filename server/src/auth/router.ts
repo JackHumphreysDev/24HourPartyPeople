@@ -396,7 +396,11 @@ authRouter.put(
   requireAuthentication,
   async (request, response) => {
     const parsed = playerRequestSchema.safeParse(request.body);
-    if (!parsed.success || request.authUser!.role !== 'PLAYER') {
+    if (
+      !parsed.success ||
+      (request.authUser!.role !== 'PLAYER' &&
+        request.authUser!.role !== 'SUB_ADMIN')
+    ) {
       response.status(400).json({
         error: {
           code: 'INVALID_PLAYER_REQUEST',

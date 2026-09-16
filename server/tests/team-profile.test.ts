@@ -18,7 +18,7 @@ async function resetTeamProfile() {
   });
 }
 
-async function createUserSession(role: 'ADMIN' | 'PLAYER') {
+async function createUserSession(role: 'ADMIN' | 'SUB_ADMIN' | 'PLAYER') {
   const user = await prisma.user.create({
     data: {
       email: `${role.toLowerCase()}@team-profile.test`,
@@ -68,7 +68,7 @@ describe('administrator team profile API', () => {
   });
 
   it('updates and trims the public team description', async () => {
-    const adminCookie = await createUserSession('ADMIN');
+    const adminCookie = await createUserSession('SUB_ADMIN');
     const app = createApp();
 
     const updated = await request(app)

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '../auth/useAuth';
+import { canUsePlayerProfile } from '../auth/permissions';
 import {
   getOwnFixtureAvailability,
   getUpcomingFixtures,
@@ -62,7 +63,9 @@ export function FixturesPage() {
     message: string;
   } | null>(null);
   const approvedProfileKey =
-    authStatus === 'authenticated' && user?.role === 'PLAYER' && user.playerId
+    authStatus === 'authenticated' &&
+    canUsePlayerProfile(user) &&
+    user?.playerId
       ? `${user.id}:${user.playerId}`
       : null;
   const currentSnapshot =
@@ -209,8 +212,8 @@ export function FixturesPage() {
         )}
       {status === 'ready' &&
         fixtures.length > 0 &&
-        user?.role === 'PLAYER' &&
-        !user.playerId && (
+        canUsePlayerProfile(user) &&
+        !user?.playerId && (
           <p className="status-panel">
             Your player profile must be approved before you can respond to
             fixtures.
@@ -258,7 +261,7 @@ export function FixturesPage() {
               >
                 Add to calendar
               </button>
-              {user?.role === 'PLAYER' && user.playerId && (
+              {canUsePlayerProfile(user) && user?.playerId && (
                 <div className="fixture-availability">
                   <p className="eyebrow">Your availability</p>
                   <div

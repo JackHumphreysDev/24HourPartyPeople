@@ -2,7 +2,10 @@ import { Router, type Response } from 'express';
 import { z } from 'zod';
 
 import type { Prisma } from '../generated/prisma/client.js';
-import { requireAdmin, requireAuthentication } from '../auth/middleware.js';
+import {
+  requireAuthentication,
+  requireContentAdmin,
+} from '../auth/middleware.js';
 import { prisma } from '../lib/prisma.js';
 
 const seasonIdSchema = z.uuid();
@@ -91,7 +94,7 @@ function seasonNotFoundResponse(response: Response): void {
 
 export const adminSeasonsRouter = Router();
 
-adminSeasonsRouter.use(requireAuthentication, requireAdmin);
+adminSeasonsRouter.use(requireAuthentication, requireContentAdmin);
 
 adminSeasonsRouter.get('/', async (_request, response) => {
   const seasons = await prisma.season.findMany({

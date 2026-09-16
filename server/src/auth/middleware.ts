@@ -44,3 +44,24 @@ export function requireAdmin(
 
   next();
 }
+
+export function requireContentAdmin(
+  request: Request,
+  response: Response,
+  next: NextFunction,
+): void {
+  if (
+    request.authUser?.role !== 'ADMIN' &&
+    request.authUser?.role !== 'SUB_ADMIN'
+  ) {
+    response.status(403).json({
+      error: {
+        code: 'CONTENT_ADMIN_REQUIRED',
+        message: 'Content administrator access is required.',
+      },
+    });
+    return;
+  }
+
+  next();
+}

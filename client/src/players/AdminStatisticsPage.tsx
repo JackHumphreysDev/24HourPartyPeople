@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { AuthScreen } from '../AuthScreen';
 import { AdminNavigation } from '../admin/AdminNavigation';
+import { canManageContent } from '../auth/permissions';
 import { useAuth } from '../auth/useAuth';
 import {
   createSeason,
@@ -613,7 +614,7 @@ export function AdminStatisticsPage() {
     return <AuthScreen />;
   }
 
-  if (user?.role !== 'ADMIN') {
+  if (!canManageContent(user)) {
     return (
       <p className="status-panel status-panel-error">
         Administrator access is required.

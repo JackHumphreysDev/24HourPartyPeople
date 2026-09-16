@@ -16,7 +16,7 @@ async function clearDatabase() {
 }
 
 async function createUser(
-  role: 'ADMIN' | 'PLAYER',
+  role: 'ADMIN' | 'SUB_ADMIN' | 'PLAYER',
   email: string,
   data: { playerId?: string; requestedPlayerId?: string } = {},
 ) {
@@ -120,6 +120,13 @@ describe('player account administration', () => {
       .set('Cookie', playerAccount.cookie);
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe('ADMIN_REQUIRED');
+
+    const subAdmin = await createUser('SUB_ADMIN', 'doug_daly@hotmail.co.uk');
+    const subAdminResponse = await request(createApp())
+      .get('/api/admin/accounts')
+      .set('Cookie', subAdmin.cookie);
+    expect(subAdminResponse.status).toBe(403);
+    expect(subAdminResponse.body.error.code).toBe('ADMIN_REQUIRED');
   });
 });
 
