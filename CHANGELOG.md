@@ -2,6 +2,16 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.23.2] - 2026-09-24
+
+### Fixed
+
+- Create the missing finalised Summer 2026 club-history record from its
+  verified final league standing, so the History tab shows the second-place
+  finish and complete 18-match record.
+- Keep the corrective backfill safe to rerun without duplicating the season or
+  replacing an existing finalisation timestamp.
+
 ## [0.23.1] - 2026-09-24
 
 ### Fixed

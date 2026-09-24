@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.23.1` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.23.2` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -716,6 +716,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.23.2 | 2026-09-24 | Backfilled the missing finalised Summer 2026 club-history record so its second-place finish and complete league record appear on the History tab |
 | 0.23.1 | 2026-09-24 | Preserved the final Summer 2026 standings and JamJars result, established the games-tracked Autumn 2026 season with its live table, fixtures and opening result, and moved scraping to the new Powerleague page |
 | 0.23.0 | 2026-09-24 | Added owner-managed fixture-specific starting-six and bench selection with availability guidance and private linked-player viewing |
 | 0.22.0 | 2026-09-16 | Added scoped sub-administrator access for Doug covering players, the Home page description, seasons, and historic statistics while preserving owner-only controls elsewhere |
