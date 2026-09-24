@@ -3,11 +3,12 @@
 ## Project purpose
 
 24 Hour Party People is a website for a 6-a-side football team competing in
-the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
+the Old Spice Autumn League at Norton Playing Fields 3G in Sheffield on Tuesday
+nights. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.23.0` release includes the project foundation, core football
+The current `0.23.1` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -308,6 +309,19 @@ imported seasons.
 
 ## Current league standings
 
+Automated refreshes currently use the Old Spice Autumn League Sheffield
+(Norton Playing Fields 3G CS) — Tue 6-a-side NEW Autumn 2026 page:
+
+`https://www.powerleague.com/league?league_id=d67f0f7a-9b43-e289-f714-e69f08676788&division_id=`
+
+The completed Summer 2026 league is preserved from:
+
+`https://www.powerleague.com/league?league_id=c2eba5a8-76a3-e390-ef14-d1c4c8244ceb&division_id=`
+
+Powerleague lists completed seasons at:
+
+`https://www.powerleague.com/location/sheffield-norton-playing-fields-#completed-leagues`
+
 The public `/standings` route displays the current season’s complete league
 table in position order, including Played, Won, Drawn, Lost, GF, GA, GD,
 Points, and Walkovers. The 24 Hour Party People row is highlighted, and the
@@ -319,6 +333,10 @@ fallback. A successful automated refresh replaces only the current season’s
 snapshot and synchronises team fixtures and previously unseen results in one
 transaction. A failed refresh records its reason, preserves all cached data,
 and displays a warning rather than disrupting the public pages.
+
+Completed league pages can omit their upcoming-fixtures section. The parser
+treats that as an empty schedule while still importing the final standings and
+results, preventing the last game of a season from being discarded.
 
 Every standings snapshot requires unique positions and club names, includes
 24 Hour Party People, and validates that played games match the combined
