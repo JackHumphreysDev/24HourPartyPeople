@@ -2,6 +2,30 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.23.0] - 2026-09-24
+
+### Added
+
+- An administrator matchday squad planner for each upcoming scheduled fixture,
+  with a required 1–3–1–1 starting six and an optional bench.
+- Availability guidance beside every selectable active player.
+- A responsive fixture formation and bench visible only to signed-in accounts
+  with an approved linked Player profile.
+
+### Security
+
+- Matchday squad selection remains restricted to the owner administrator;
+  sub-administrators retain player-facing squad visibility through their linked
+  profile.
+
+### Data integrity
+
+- Squad saves validate the complete formation, unique active players, fixture
+  status, and fixture date before replacing the previous selection atomically.
+- Saved selections remain attached to fixtures across matching Powerleague
+  refreshes, while completed, cancelled, walkover, and past fixtures are
+  read-only.
+
 ## [0.22.0] - 2026-09-16
 
 ### Added
