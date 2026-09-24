@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.23.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.23.1` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -27,11 +27,18 @@ version line up to date as work lands.
 
 A team hub for **24 Hour Party People**, a 6-a-side team playing in:
 
-> BOOHOOMAN SHEFFIELD (NORTON PLAYING FIELDS 3G CS) — TUE 6-A-SIDE NEW
-> SUMMER 2026 (Powerleague)
+> OLD SPICE AUTUMN LEAGUE SHEFFIELD (NORTON PLAYING FIELDS 3G CS) — TUE
+> 6-A-SIDE NEW AUTUMN 2026 (Powerleague)
 
-All league/fixture/results data currently lives on the Powerleague site:
+Current league, fixture, and result data lives at:
+https://www.powerleague.com/league?league_id=d67f0f7a-9b43-e289-f714-e69f08676788&division_id=
+
+The completed Summer 2026 source remains at:
 https://www.powerleague.com/league?league_id=c2eba5a8-76a3-e390-ef14-d1c4c8244ceb&division_id=
+
+Powerleague's completed Sheffield seasons are listed at:
+https://www.powerleague.com/location/sheffield-norton-playing-fields-#completed-leagues
+
 Going forward this data should be **scraped** into the app rather than
 looked up manually (see Section 6).
 
@@ -417,8 +424,13 @@ be entered manually each week. This is the one part of the stack that
 isn't Node — everything else (API, DB access, frontend) stays
 Node/Express/React as in Section "Stack" above.
 
-**Source URL (confirmed):**
-`https://www.powerleague.com/league?league_id=c2eba5a8-76a3-e390-ef14-d1c4c8244ceb&division_id=`
+**Current source URL (confirmed 24 September 2026):**
+`https://www.powerleague.com/league?league_id=d67f0f7a-9b43-e289-f714-e69f08676788&division_id=`
+
+The previous Summer 2026 URL is retained above as a completed historical
+source. Completed pages may remove their fixtures section; the parser treats
+that as an empty schedule while continuing to parse the final standings and
+results.
 
 ### How it fits with the Node backend
 
@@ -704,6 +716,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.23.1 | 2026-09-24 | Preserved the final Summer 2026 standings and JamJars result, established the games-tracked Autumn 2026 season with its live table, fixtures and opening result, and moved scraping to the new Powerleague page |
 | 0.23.0 | 2026-09-24 | Added owner-managed fixture-specific starting-six and bench selection with availability guidance and private linked-player viewing |
 | 0.22.0 | 2026-09-16 | Added scoped sub-administrator access for Doug covering players, the Home page description, seasons, and historic statistics while preserving owner-only controls elsewhere |
 | 0.21.1 | 2026-09-13 | Refreshed the site-wide header, footer, branding, social-sharing metadata, and responsive Home dashboard layout without changing the underlying football data |

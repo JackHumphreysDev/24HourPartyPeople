@@ -1,11 +1,12 @@
 POWERLEAGUE_URL = (
     "https://www.powerleague.com/league?"
-    "league_id=c2eba5a8-76a3-e390-ef14-d1c4c8244ceb&division_id="
+    "league_id=d67f0f7a-9b43-e289-f714-e69f08676788&division_id="
 )
 TEAM_NAME = "24 Hour Party People"
 
-# Confirmed against the live Powerleague page on 8 September 2026. Keeping
-# selectors here makes a future markup change a focused configuration update.
+# Confirmed against the Autumn 2026 live Powerleague page on 24 September
+# 2026. Keeping selectors here makes a future markup change a focused
+# configuration update.
 STANDINGS_ROWS_SELECTOR = ".League__Current__Standings table tbody > tr"
 FIXTURES_CONTAINER_SELECTOR = ".League__Fixtures"
 RESULTS_CONTAINER_SELECTOR = ".League__Results"
@@ -24,4 +25,3 @@ REQUEST_HEADERS = {
     ),
 }
 REQUEST_TIMEOUT_SECONDS = 15
-

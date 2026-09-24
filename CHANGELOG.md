@@ -2,6 +2,24 @@
 
 All notable changes to 24 Hour Party People are recorded here.
 
+## [0.23.1] - 2026-09-24
+
+### Fixed
+
+- Preserve the completed Summer 2026 table and import the final 1–2 league
+  result against JamJars United after Powerleague removed the old page's
+  fixtures section.
+- Allow completed Powerleague pages without an upcoming-fixtures section to
+  retain their standings and final results during parsing.
+
+### Changed
+
+- Move automated scraping to the Old Spice Autumn League Autumn 2026 page.
+- Make Autumn 2026 the current, games-tracked season with its opening 0–1
+  result against Declan Crooks FC, eight-team table, and 13 published fixtures.
+- Record the completed-leagues archive and both season-specific Powerleague
+  sources in the project documentation.
+
 ## [0.23.0] - 2026-09-24
 
 ### Added
