@@ -1328,6 +1328,124 @@ select {
   font-size: 0.85rem;
 }
 
+.admin-fixture-squad {
+  padding-top: 0.8rem;
+  margin-top: 0.8rem;
+  border-top: 1px solid rgb(217 172 85 / 18%);
+}
+
+.admin-fixture-squad summary {
+  color: #d9ac55;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-fixture-squad form {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.fixture-squad-starters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+}
+
+.fixture-squad-starters label {
+  display: grid;
+  gap: 0.4rem;
+  color: #c9c4b8;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.fixture-squad-bench {
+  padding: 0;
+  border: 0;
+}
+
+.fixture-squad-bench legend {
+  margin-bottom: 0.65rem;
+  color: #c9c4b8;
+  font-weight: 800;
+}
+
+.fixture-squad-bench > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.5rem;
+}
+
+.fixture-squad-bench label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  color: #c9c4b8;
+  font-size: 0.85rem;
+}
+
+.fixture-selected-squad {
+  padding-top: 1rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid rgb(217 172 85 / 18%);
+}
+
+.fixture-squad-pitch {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem;
+  margin-top: 0.8rem;
+  border: 1px solid rgb(217 172 85 / 25%);
+  border-radius: 0.75rem;
+  background: #0d301f;
+}
+
+.fixture-squad-line {
+  display: grid;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.fixture-squad-line > span {
+  color: #b9b6aa;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.fixture-squad-line > div,
+.fixture-squad-selected-bench > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.fixture-squad-line a,
+.fixture-squad-selected-bench a {
+  padding: 0.35rem 0.55rem;
+  color: #f5ead2;
+  border: 1px solid rgb(217 172 85 / 28%);
+  border-radius: 999px;
+  background: rgb(4 20 13 / 55%);
+  font-size: 0.8rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.fixture-squad-selected-bench {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  text-align: center;
+}
+
+.fixture-squad-selected-bench strong {
+  color: #d9ac55;
+}
+
 .game-card {
   padding: clamp(1.25rem, 4vw, 2rem);
   border: 1px solid rgb(217 172 85 / 25%);

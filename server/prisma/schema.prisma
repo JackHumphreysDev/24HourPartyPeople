@@ -99,6 +99,7 @@ model Player {
   gameStats              GamePlayerStat[]
   seasonSquads           SeasonSquadEntry[]
   fixtureAvailability    FixtureAvailability[]
+  fixtureSquads          FixtureSquadEntry[]
 
   @@index([isActiveSquad, position])
 }
@@ -158,10 +159,26 @@ model Fixture {
   opponentClub   OpponentClub  @relation(fields: [opponentClubId], references: [id], onDelete: Restrict)
   result         GameResult?
   availability   FixtureAvailability[]
+  squadEntries   FixtureSquadEntry[]
 
   @@index([seasonId, scheduledDate])
   @@index([status, scheduledDate])
   @@index([opponentClubId])
+}
+
+model FixtureSquadEntry {
+  id        String          @id @default(uuid()) @db.Uuid
+  fixtureId String          @db.Uuid
+  playerId  String          @db.Uuid
+  isStarter Boolean
+  position  PlayerPosition?
+  createdAt DateTime        @default(now()) @db.Timestamptz(3)
+  fixture   Fixture         @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  player    Player          @relation(fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@unique([fixtureId, playerId])
+  @@index([fixtureId, isStarter, position])
+  @@index([playerId, fixtureId])
 }
 
 model FixtureAvailability {

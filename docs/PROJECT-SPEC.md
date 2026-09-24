@@ -1,6 +1,6 @@
 # 24 Hour Party People — Team Hub Build Spec
 
-**Current version:** `0.22.0` — see `AGENTS.md` for the versioning policy
+**Current version:** `0.23.0` — see `AGENTS.md` for the versioning policy
 (semver scheme, what triggers a bump, when it's confirmed/tagged) and
 Section 10 below for the changelog. Keep the changelog table and this
 version line up to date as work lands.
@@ -120,6 +120,12 @@ fixture/player pair is unique. Only a signed-in Player account with an
 approved profile can set or change its own response for a scheduled fixture
 from the current Sheffield date onward. The public page reveals no other
 players' responses; an administrator can inspect the named roster and totals.
+
+**FixtureSquadEntry** — id, fixtureId (FK), playerId (FK), isStarter
+(boolean), position (`PlayerPosition`, required for starters and null for bench
+players), createdAt. A player can appear only once per fixture. A valid saved
+squad contains exactly 1 GK + 3 DEF + 1 MID + 1 FWD starters and any number of
+active bench players. The complete selection is replaced transactionally.
 
 **GameResult** — id, fixtureId (FK, nullable — a cup game slotted in
 after a walkover may not have a pre-existing scraped fixture row, so allow
@@ -284,11 +290,21 @@ selected players are recorded as the bench.
   upcoming fixture. They see only their own saved response; the administrator
   sees named responses and counts on the fixture list. There is no
   administrator override in this release.
+- The owner administrator can turn those responses into a fixture-specific
+  starting six and bench. Availability is displayed as guidance but does not
+  block selection. Starting slots honour each player's primary and additional
+  playable positions. Saving requires a complete 1–3–1–1 formation with
+  unique, active players and replaces the previous squad atomically.
+- Selected squads are visible on the Fixtures page only to signed-in accounts
+  with an approved linked Player profile. Anonymous and unlinked accounts
+  cannot access them. A linked sub-administrator can view the selection as a
+  player, while editing remains owner-administrator only.
 - Scraped fixtures are updated in place during refreshes to preserve responses.
-  Missing scraped fixtures become read-only cancelled records and disappear
-  from the public upcoming list; they are restored if the same opponent,
-  competition, and date return. A changed date creates a new fixture needing
-  fresh responses, while the cancelled fixture retains the old ones.
+  Matching fixtures also preserve their saved squad. Missing scraped fixtures
+  become read-only cancelled records and disappear from the public upcoming
+  list; they are restored if the same opponent, competition, and date return.
+  A changed date creates a new fixture needing fresh responses and selection,
+  while the cancelled fixture retains its old records.
 
 ### Club history (tab)
 
@@ -566,8 +582,11 @@ PUT    /api/admin/standings/current        (admin) replace current standings sna
 GET    /api/fixtures/upcoming              upcoming fixtures (scraped, cached)
 GET    /api/fixtures/availability          approved player's upcoming responses
 PUT    /api/fixtures/:id/availability      approved player sets/changes own response
+GET    /api/fixtures/squads                approved player's upcoming selected squads
 GET    /api/admin/fixtures                 (admin) list all fixtures
 GET    /api/admin/fixtures/availability    (admin) named upcoming/cancelled responses
+GET    /api/admin/fixtures/squads           (admin) selection options and upcoming squads
+PUT    /api/admin/fixtures/:id/squad        (admin) replace an upcoming matchday squad
 POST   /api/admin/fixtures                 (admin) create a manual fixture
 PUT    /api/admin/fixtures/:id             (admin) correct a scheduled fixture
 GET    /api/club-history                   our club's season-by-season finishes
@@ -618,6 +637,10 @@ POST   /api/admin/scrape/refresh           (admin) force a manual re-scrape
 - [x] Approved players can set and change their own upcoming-fixture
       availability; administrators see named responses and headcounts, and
       refreshes retain responses on stable or cancelled scraped fixtures
+- [x] The owner administrator can save a fixture-specific 1–3–1–1 starting six
+      and bench using availability as guidance; approved linked accounts can
+      view the responsive selection, invalid saves are atomic, and matching
+      scraped refreshes preserve it
 - [x] Club history tab shows our club's own finalised season-end finishes,
       starting with Summer 2026, including the representative formation,
       bench, season awards, and full league record; administrators confirm the
@@ -681,6 +704,7 @@ state.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.23.0 | 2026-09-24 | Added owner-managed fixture-specific starting-six and bench selection with availability guidance and private linked-player viewing |
 | 0.22.0 | 2026-09-16 | Added scoped sub-administrator access for Doug covering players, the Home page description, seasons, and historic statistics while preserving owner-only controls elsewhere |
 | 0.21.1 | 2026-09-13 | Refreshed the site-wide header, footer, branding, social-sharing metadata, and responsive Home dashboard layout without changing the underlying football data |
 | 0.21.0 | 2026-09-13 | Added all-time opponent head-to-head records and expandable match lists on the Games page, with walkovers shown separately from scored results |

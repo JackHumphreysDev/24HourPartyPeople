@@ -7,7 +7,7 @@ the BoohooMAN Sheffield Tuesday League at Norton Playing Fields 3G. It will
 bring player profiles, statistics, fixtures, results, league standings, and
 club history together in one team hub.
 
-The current `0.22.0` release includes the project foundation, core football
+The current `0.23.0` release includes the project foundation, core football
 data model, secure administrator authentication, routed player profiles,
 administrator squad management, and season-by-season player-statistics
 management. Administrators can also record league, cup, and walkover results,
@@ -30,7 +30,9 @@ directory supports name search and current/historical filters, and the public
 Statistics tab compares recorded goals, assists and clean sheets by season or
 all-time. Approved players can also respond to upcoming fixtures with their
 matchday availability, while the administrator sees the named responses and
-headcount. Each upcoming fixture can be downloaded as a calendar event.
+headcount. The administrator can turn those responses into a fixture-specific
+1–3–1–1 starting six and bench, which signed-in linked players can view. Each
+upcoming fixture can be downloaded as a calendar event.
 
 Players can manage their own account name, email, and password without changing
 their administrator-managed public Player profile.
@@ -111,7 +113,7 @@ deployments at the canonical URL above.
 
 The Prisma schema defines users, the singleton team profile, scraper status,
 players, seasons, historical player season statistics, opponents, fixtures,
-per-player fixture availability,
+per-player fixture availability and fixture-specific matchday squads,
 game results, per-game player statistics, live standings, finalised club
 history, and season-specific formation snapshots. Migrations are stored in
 `server/prisma/migrations/`.
@@ -425,8 +427,19 @@ scheduled. The public page shows only that player's own response; named
 responses and totals are visible to the administrator on `/admin/fixtures`.
 An account awaiting profile approval cannot respond.
 
+The owner administrator can save exactly one goalkeeper, three defenders, one
+midfielder, and one attacker as the fixture's starting six, plus any number of
+active bench players. Availability is shown as guidance but does not prevent a
+selection. Starting positions honour each player's primary and additional
+playable positions. Saves replace the complete squad atomically, so an invalid
+or incomplete formation cannot partially overwrite the previous selection.
+Signed-in accounts with an approved linked Player profile can view the selected
+formation and bench on the Fixtures page; anonymous and unlinked accounts
+cannot access squad details. Fixture management remains owner-only, so a linked
+sub-administrator can view the selection as a player but cannot edit it.
+
 Powerleague fixtures are cached automatically. Matching scraped fixtures are
-updated in place so availability survives a refresh. A scraped fixture that
+updated in place so availability and its saved squad survive a refresh. A scraped fixture that
 disappears is marked cancelled, removed from the public upcoming list, and
 retained with its responses in the administrator's fixture list. If it returns
 with the same opponent, competition, and date, it is restored with those
@@ -445,6 +458,9 @@ The fixture API provides:
 - `GET /api/fixtures/upcoming` — list public upcoming scheduled fixtures
 - `GET /api/fixtures/availability` — list the approved player's own upcoming responses
 - `PUT /api/fixtures/:fixtureId/availability` — set or change the approved player's response
+- `GET /api/fixtures/squads` — list upcoming selected squads for an approved linked player
+- `GET /api/admin/fixtures/squads` — list active selection options and upcoming squads
+- `PUT /api/admin/fixtures/:fixtureId/squad` — atomically replace an upcoming matchday squad
 - `GET /api/admin/fixtures` — list all fixtures (administrator)
 - `GET /api/admin/fixtures/availability` — list named responses for upcoming and cancelled fixtures (administrator; the website calculates totals)
 - `POST /api/admin/fixtures` — create a manual fixture (administrator)

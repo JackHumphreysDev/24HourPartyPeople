@@ -10,6 +10,18 @@ const fixtureIdSchema = z.uuid();
 const availabilitySchema = z.object({
   response: z.enum(['AVAILABLE', 'UNSURE', 'UNAVAILABLE']),
 });
+const squadSchema = z.object({
+  entries: z
+    .array(
+      z.object({
+        isStarter: z.boolean(),
+        playerId: z.uuid(),
+        position: z.enum(['GK', 'DEF', 'MID', 'FWD']).nullable(),
+      }),
+    )
+    .min(6)
+    .max(100),
+});
 const timeSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
@@ -48,6 +60,18 @@ const fixtureSelect = {
   source: true,
   status: true,
   venue: true,
+} as const;
+
+const squadEntrySelect = {
+  isStarter: true,
+  player: {
+    select: {
+      id: true,
+      name: true,
+      profilePictureUrl: true,
+    },
+  },
+  position: true,
 } as const;
 
 class SeasonNotFoundError extends Error {}
@@ -124,6 +148,45 @@ function fixtureNotFoundResponse(response: Response): void {
     error: {
       code: 'FIXTURE_NOT_FOUND',
       message: 'Fixture not found.',
+    },
+  });
+}
+
+function hasValidStartingShape(
+  entries: z.infer<typeof squadSchema>['entries'],
+): boolean {
+  if (new Set(entries.map((entry) => entry.playerId)).size !== entries.length) {
+    return false;
+  }
+
+  if (
+    entries.some(
+      (entry) =>
+        (entry.isStarter && entry.position === null) ||
+        (!entry.isStarter && entry.position !== null),
+    )
+  ) {
+    return false;
+  }
+
+  const starters = entries.filter((entry) => entry.isStarter);
+  const count = (position: 'GK' | 'DEF' | 'MID' | 'FWD') =>
+    starters.filter((entry) => entry.position === position).length;
+
+  return (
+    starters.length === 6 &&
+    count('GK') === 1 &&
+    count('DEF') === 3 &&
+    count('MID') === 1 &&
+    count('FWD') === 1
+  );
+}
+
+function approvedPlayerRequired(response: Response): void {
+  response.status(403).json({
+    error: {
+      code: 'APPROVED_PLAYER_REQUIRED',
+      message: 'An approved player profile is required.',
     },
   });
 }
@@ -269,12 +332,7 @@ publicFixturesRouter.get(
       (user.role !== 'PLAYER' && user.role !== 'SUB_ADMIN') ||
       !user.playerId
     ) {
-      response.status(403).json({
-        error: {
-          code: 'APPROVED_PLAYER_REQUIRED',
-          message: 'An approved player profile is required.',
-        },
-      });
+      approvedPlayerRequired(response);
       return;
     }
 
@@ -292,6 +350,42 @@ publicFixturesRouter.get(
   },
 );
 
+publicFixturesRouter.get(
+  '/squads',
+  requireAuthentication,
+  async (request, response) => {
+    const user = request.authUser!;
+    if (
+      (user.role !== 'PLAYER' && user.role !== 'SUB_ADMIN') ||
+      !user.playerId
+    ) {
+      approvedPlayerRequired(response);
+      return;
+    }
+
+    const fixtures = await prisma.fixture.findMany({
+      orderBy: [{ scheduledDate: 'asc' }, { scheduledTime: 'asc' }],
+      select: {
+        id: true,
+        squadEntries: {
+          orderBy: [
+            { isStarter: 'desc' },
+            { position: 'asc' },
+            { player: { name: 'asc' } },
+          ],
+          select: squadEntrySelect,
+        },
+      },
+      where: {
+        scheduledDate: { gte: sheffieldToday() },
+        status: 'SCHEDULED',
+      },
+    });
+
+    response.status(200).json({ fixtures });
+  },
+);
+
 publicFixturesRouter.put(
   '/:fixtureId/availability',
   requireAuthentication,
@@ -301,12 +395,7 @@ publicFixturesRouter.put(
       (user.role !== 'PLAYER' && user.role !== 'SUB_ADMIN') ||
       !user.playerId
     ) {
-      response.status(403).json({
-        error: {
-          code: 'APPROVED_PLAYER_REQUIRED',
-          message: 'An approved player profile is required.',
-        },
-      });
+      approvedPlayerRequired(response);
       return;
     }
 
@@ -393,6 +482,149 @@ adminFixturesRouter.get('/availability', async (_request, response) => {
     },
   });
   response.status(200).json({ fixtures });
+});
+
+adminFixturesRouter.get('/squads', async (_request, response) => {
+  const [fixtures, players] = await Promise.all([
+    prisma.fixture.findMany({
+      orderBy: [{ scheduledDate: 'asc' }, { scheduledTime: 'asc' }],
+      select: {
+        id: true,
+        squadEntries: {
+          orderBy: [
+            { isStarter: 'desc' },
+            { position: 'asc' },
+            { player: { name: 'asc' } },
+          ],
+          select: squadEntrySelect,
+        },
+      },
+      where: {
+        scheduledDate: { gte: sheffieldToday() },
+        status: 'SCHEDULED',
+      },
+    }),
+    prisma.player.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        additionalPositions: true,
+        id: true,
+        name: true,
+        position: true,
+      },
+      where: { isActiveSquad: true },
+    }),
+  ]);
+
+  response.status(200).json({ fixtures, players });
+});
+
+adminFixturesRouter.put('/:fixtureId/squad', async (request, response) => {
+  const fixtureId = fixtureIdSchema.safeParse(request.params.fixtureId);
+  const parsed = squadSchema.safeParse(request.body);
+  if (
+    !fixtureId.success ||
+    !parsed.success ||
+    !hasValidStartingShape(parsed.data.entries)
+  ) {
+    response.status(400).json({
+      error: {
+        code: 'INVALID_FIXTURE_SQUAD',
+        message:
+          'Choose one goalkeeper, three defenders, one midfielder, one attacker, and any bench players without duplicates.',
+      },
+    });
+    return;
+  }
+
+  const squad = await runSerializableTransaction(async (transaction) => {
+    const fixture = await transaction.fixture.findUnique({
+      select: { scheduledDate: true, status: true },
+      where: { id: fixtureId.data },
+    });
+    if (
+      !fixture ||
+      fixture.status !== 'SCHEDULED' ||
+      fixture.scheduledDate < sheffieldToday()
+    ) {
+      return null;
+    }
+
+    const playerIds = parsed.data.entries.map((entry) => entry.playerId);
+    const activePlayers = await transaction.player.findMany({
+      select: { additionalPositions: true, id: true, position: true },
+      where: { id: { in: playerIds }, isActiveSquad: true },
+    });
+    const activePlayersById = new Map(
+      activePlayers.map((player) => [player.id, player]),
+    );
+    const hasIneligibleStarter = parsed.data.entries.some((entry) => {
+      if (!entry.isStarter || !entry.position) return false;
+      const player = activePlayersById.get(entry.playerId);
+      return (
+        !player ||
+        (player.position !== entry.position &&
+          !player.additionalPositions.includes(entry.position))
+      );
+    });
+    if (activePlayers.length !== playerIds.length || hasIneligibleStarter) {
+      throw new Error('INACTIVE_SQUAD_PLAYER');
+    }
+
+    await transaction.fixtureSquadEntry.deleteMany({
+      where: { fixtureId: fixtureId.data },
+    });
+    await transaction.fixtureSquadEntry.createMany({
+      data: parsed.data.entries.map((entry) => ({
+        fixtureId: fixtureId.data,
+        isStarter: entry.isStarter,
+        playerId: entry.playerId,
+        position: entry.position,
+      })),
+    });
+
+    return transaction.fixture.findUniqueOrThrow({
+      select: {
+        id: true,
+        squadEntries: {
+          orderBy: [
+            { isStarter: 'desc' },
+            { position: 'asc' },
+            { player: { name: 'asc' } },
+          ],
+          select: squadEntrySelect,
+        },
+      },
+      where: { id: fixtureId.data },
+    });
+  }).catch((error: unknown) => {
+    if (error instanceof Error && error.message === 'INACTIVE_SQUAD_PLAYER') {
+      return 'INACTIVE_SQUAD_PLAYER' as const;
+    }
+    throw error;
+  });
+
+  if (squad === null) {
+    response.status(409).json({
+      error: {
+        code: 'FIXTURE_NOT_OPEN',
+        message: 'Squads can only be edited for upcoming scheduled fixtures.',
+      },
+    });
+    return;
+  }
+  if (squad === 'INACTIVE_SQUAD_PLAYER') {
+    response.status(400).json({
+      error: {
+        code: 'INVALID_FIXTURE_SQUAD',
+        message:
+          'Only active squad players can be selected in their recorded playing positions.',
+      },
+    });
+    return;
+  }
+
+  response.status(200).json({ fixture: squad });
 });
 
 adminFixturesRouter.get('/', async (_request, response) => {

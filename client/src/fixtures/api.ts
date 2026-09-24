@@ -1,9 +1,12 @@
 import type {
   AdminFixtureAvailability,
+  AdminFixtureSquads,
   AvailabilityResponse,
   FixtureInput,
   FixturesSnapshot,
   FixtureSummary,
+  FixtureSquad,
+  FixtureSquadInput,
   OwnFixtureAvailability,
 } from './types';
 
@@ -69,6 +72,31 @@ export async function getAdminFixtureAvailability(): Promise<
     fixtures: AdminFixtureAvailability[];
   }>('/api/admin/fixtures/availability');
   return response.fixtures;
+}
+
+export function getUpcomingFixtureSquads(): Promise<FixtureSquad[]> {
+  return fixtureRequest<{ fixtures: FixtureSquad[] }>(
+    '/api/fixtures/squads',
+  ).then((response) => response.fixtures);
+}
+
+export function getAdminFixtureSquads(): Promise<AdminFixtureSquads> {
+  return fixtureRequest<AdminFixtureSquads>('/api/admin/fixtures/squads');
+}
+
+export async function saveAdminFixtureSquad(
+  fixtureId: string,
+  input: FixtureSquadInput,
+): Promise<FixtureSquad> {
+  const response = await fixtureRequest<{ fixture: FixtureSquad }>(
+    `/api/admin/fixtures/${encodeURIComponent(fixtureId)}/squad`,
+    {
+      body: JSON.stringify(input),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
+    },
+  );
+  return response.fixture;
 }
 
 export async function getAdminFixtures(): Promise<FixtureSummary[]> {
