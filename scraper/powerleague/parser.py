@@ -83,7 +83,10 @@ def _desktop_table(container: Tag, section_name: str) -> Tag:
 def parse_fixtures(soup: BeautifulSoup) -> list[ScrapedFixture]:
     container = soup.select_one(FIXTURES_CONTAINER_SELECTOR)
     if container is None:
-        raise PowerleagueStructureError("The Powerleague fixtures section was not found.")
+        # Completed league pages remove the fixtures section while retaining
+        # their final standings and results. Treat that as an empty schedule so
+        # the season's last result can still be imported.
+        return []
 
     table = _desktop_table(container, "fixtures")
     fixtures: list[ScrapedFixture] = []
@@ -178,4 +181,3 @@ def parse_powerleague_html(
 ) -> tuple[list[StandingRow], list[ScrapedFixture], list[ScrapedResult]]:
     soup = BeautifulSoup(html, "html.parser")
     return parse_standings(soup), parse_fixtures(soup), parse_results(soup)
-

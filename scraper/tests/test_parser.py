@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from bs4 import BeautifulSoup
+
 from powerleague.parser import parse_powerleague_html
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "powerleague_league.html"
@@ -43,3 +45,16 @@ def test_known_good_real_markup_is_parsed() -> None:
         }
     ]
 
+
+def test_completed_league_without_fixtures_keeps_final_results() -> None:
+    soup = BeautifulSoup(FIXTURE_PATH.read_text(encoding="utf-8"), "html.parser")
+    fixtures = soup.select_one(".League__Fixtures")
+    assert fixtures is not None
+    fixtures.decompose()
+
+    standings, upcoming, results = parse_powerleague_html(str(soup))
+
+    assert len(standings) == 2
+    assert upcoming == []
+    assert len(results) == 1
+    assert results[0].opponent_club_name == "League Leaders"

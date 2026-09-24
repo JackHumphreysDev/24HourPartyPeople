@@ -2,7 +2,12 @@ import logging
 
 import requests
 
+from powerleague.config import POWERLEAGUE_URL
 from powerleague.service import scrape_powerleague
+
+
+def test_scraper_targets_autumn_2026_league() -> None:
+    assert "d67f0f7a-9b43-e289-f714-e69f08676788" in POWERLEAGUE_URL
 
 
 class FakeResponse:
@@ -34,4 +39,3 @@ def test_network_failure_without_cache_is_logged_and_returns_none(caplog) -> Non
 
     assert result is None
     assert "Powerleague is unavailable" in caplog.text
-
