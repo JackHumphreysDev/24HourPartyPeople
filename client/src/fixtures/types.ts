@@ -4,6 +4,7 @@ import type { ScrapeStatus } from '../scrape/types';
 export type FixtureStatus = 'SCHEDULED' | 'PLAYED' | 'WALKOVER' | 'CANCELLED';
 export type FixtureSource = 'SCRAPE' | 'MANUAL';
 export type AvailabilityResponse = 'AVAILABLE' | 'UNSURE' | 'UNAVAILABLE';
+export type SquadPosition = 'GK' | 'DEF' | 'MID' | 'FWD';
 
 export type OwnFixtureAvailability = {
   fixtureId: string;
@@ -16,6 +17,41 @@ export type AdminFixtureAvailability = {
     player: { id: string; name: string };
     response: AvailabilityResponse;
     updatedAt: string;
+  }[];
+};
+
+export type FixtureSquadEntry = {
+  isStarter: boolean;
+  player: {
+    id: string;
+    name: string;
+    profilePictureUrl: string | null;
+  };
+  position: SquadPosition | null;
+};
+
+export type FixtureSquad = {
+  id: string;
+  squadEntries: FixtureSquadEntry[];
+};
+
+export type AdminSquadPlayer = {
+  additionalPositions: SquadPosition[];
+  id: string;
+  name: string;
+  position: SquadPosition | null;
+};
+
+export type AdminFixtureSquads = {
+  fixtures: FixtureSquad[];
+  players: AdminSquadPlayer[];
+};
+
+export type FixtureSquadInput = {
+  entries: {
+    isStarter: boolean;
+    playerId: string;
+    position: SquadPosition | null;
   }[];
 };
 

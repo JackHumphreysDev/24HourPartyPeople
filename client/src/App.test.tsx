@@ -1979,6 +1979,67 @@ describe('App', () => {
               ),
             );
           }
+          if (path === '/api/fixtures/squads') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  fixtures: [
+                    {
+                      id: 'fixture',
+                      squadEntries: [
+                        {
+                          isStarter: true,
+                          player: {
+                            id: 'keeper',
+                            name: 'Twiggy',
+                            profilePictureUrl: null,
+                          },
+                          position: 'GK',
+                        },
+                        ...['Doug', 'Kyle', 'Andy'].map((name, index) => ({
+                          isStarter: true,
+                          player: {
+                            id: `def-${index}`,
+                            name,
+                            profilePictureUrl: null,
+                          },
+                          position: 'DEF',
+                        })),
+                        {
+                          isStarter: true,
+                          player: {
+                            id: 'mid',
+                            name: 'Javi',
+                            profilePictureUrl: null,
+                          },
+                          position: 'MID',
+                        },
+                        {
+                          isStarter: true,
+                          player: {
+                            id: 'fwd',
+                            name: 'Luke',
+                            profilePictureUrl: null,
+                          },
+                          position: 'FWD',
+                        },
+                        {
+                          isStarter: false,
+                          player: {
+                            id: 'bench',
+                            name: 'Broomhead',
+                            profilePictureUrl: null,
+                          },
+                          position: null,
+                        },
+                      ],
+                    },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
           if (
             path === '/api/fixtures/fixture/availability' &&
             init?.method === 'PUT'
@@ -2012,6 +2073,8 @@ describe('App', () => {
       ),
     );
     expect(submittedBody).toEqual({ response: 'AVAILABLE' });
+    expect(screen.getByText('Selected squad')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Broomhead' })).toBeInTheDocument();
     expect(
       screen.queryByText('Norton Rivals — Available'),
     ).not.toBeInTheDocument();
@@ -2020,6 +2083,7 @@ describe('App', () => {
   it('creates fixtures while keeping recorded fixtures read-only for administrators', async () => {
     const seasonId = '12c37c8a-6559-493b-9615-76ddab94dd66';
     let submittedBody: Record<string, unknown> | undefined;
+    let squadSubmittedBody: Record<string, unknown> | undefined;
     let fixtures: FixtureSummary[] = [
       {
         competition: 'LEAGUE',
@@ -2126,6 +2190,87 @@ describe('App', () => {
             );
           }
 
+          if (
+            path === '/api/admin/fixtures/created-fixture/squad' &&
+            init?.method === 'PUT'
+          ) {
+            squadSubmittedBody = JSON.parse(String(init.body)) as Record<
+              string,
+              unknown
+            >;
+            return Promise.resolve(
+              mockResponse(
+                {
+                  fixture: {
+                    id: 'created-fixture',
+                    squadEntries: [],
+                  },
+                },
+                200,
+              ),
+            );
+          }
+
+          if (path === '/api/admin/fixtures/squads') {
+            return Promise.resolve(
+              mockResponse(
+                {
+                  fixtures: fixtures
+                    .filter((fixture) => fixture.status === 'SCHEDULED')
+                    .map((fixture) => ({
+                      id: fixture.id,
+                      squadEntries: [],
+                    })),
+                  players: [
+                    {
+                      additionalPositions: [],
+                      id: 'gk',
+                      name: 'Keeper',
+                      position: 'GK',
+                    },
+                    {
+                      additionalPositions: [],
+                      id: 'def-1',
+                      name: 'Defender One',
+                      position: 'DEF',
+                    },
+                    {
+                      additionalPositions: [],
+                      id: 'def-2',
+                      name: 'Defender Two',
+                      position: 'DEF',
+                    },
+                    {
+                      additionalPositions: [],
+                      id: 'def-3',
+                      name: 'Defender Three',
+                      position: 'DEF',
+                    },
+                    {
+                      additionalPositions: [],
+                      id: 'mid',
+                      name: 'Midfielder',
+                      position: 'MID',
+                    },
+                    {
+                      additionalPositions: [],
+                      id: 'fwd',
+                      name: 'Attacker',
+                      position: 'FWD',
+                    },
+                    {
+                      additionalPositions: [],
+                      id: 'bench',
+                      name: 'Bench Player',
+                      position: 'DEF',
+                    },
+                  ],
+                },
+                200,
+              ),
+            );
+          }
+
           return Promise.resolve(mockResponse({}, 404));
         }),
     );
@@ -2172,6 +2317,40 @@ describe('App', () => {
       screen.getByText('Available 1 · Unsure 0 · Unavailable 0'),
     ).toBeInTheDocument();
     expect(screen.getByText('Twiggy — Available')).toBeInTheDocument();
+    expect(screen.getByText(/Matchday squad/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(/Matchday squad/));
+    for (const [label, playerId] of [
+      ['Goalkeeper', 'gk'],
+      ['Defender 1', 'def-1'],
+      ['Defender 2', 'def-2'],
+      ['Defender 3', 'def-3'],
+      ['Midfielder', 'mid'],
+      ['Attacker', 'fwd'],
+    ]) {
+      fireEvent.change(screen.getByLabelText(`${label} against New Opponent`), {
+        target: { value: playerId },
+      });
+    }
+    fireEvent.click(screen.getByRole('checkbox', { name: /Bench Player/ }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Save matchday squad' }),
+    );
+
+    expect(
+      await screen.findByText('Matchday squad saved.'),
+    ).toBeInTheDocument();
+    expect(squadSubmittedBody).toEqual({
+      entries: [
+        { isStarter: true, playerId: 'gk', position: 'GK' },
+        { isStarter: true, playerId: 'def-1', position: 'DEF' },
+        { isStarter: true, playerId: 'def-2', position: 'DEF' },
+        { isStarter: true, playerId: 'def-3', position: 'DEF' },
+        { isStarter: true, playerId: 'mid', position: 'MID' },
+        { isStarter: true, playerId: 'fwd', position: 'FWD' },
+        { isStarter: false, playerId: 'bench', position: null },
+      ],
+    });
   });
 
   it('prefills a manual cup result after an administrator saves a league walkover', async () => {

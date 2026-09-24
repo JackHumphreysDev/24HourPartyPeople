@@ -10,10 +10,13 @@ import {
   createFixture,
   getAdminFixtureAvailability,
   getAdminFixtures,
+  getAdminFixtureSquads,
   updateFixture,
 } from './api';
+import { FixtureSquadEditor } from './FixtureSquadEditor';
 import type {
   AdminFixtureAvailability,
+  AdminFixtureSquads,
   AvailabilityResponse,
   FixtureInput,
   FixtureSummary,
@@ -72,6 +75,10 @@ function FixtureManager() {
   const [fixtureAvailability, setFixtureAvailability] = useState<
     AdminFixtureAvailability[]
   >([]);
+  const [fixtureSquads, setFixtureSquads] = useState<AdminFixtureSquads>({
+    fixtures: [],
+    players: [],
+  });
   const [seasons, setSeasons] = useState<SeasonSummary[]>([]);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
@@ -89,24 +96,28 @@ function FixtureManager() {
       getAdminFixtures(),
       getAdminSeasons(),
       getAdminFixtureAvailability(),
+      getAdminFixtureSquads(),
     ])
-      .then(([nextFixtures, nextSeasons, nextAvailability]) => {
-        if (!isCurrentRequest) {
-          return;
-        }
+      .then(
+        ([nextFixtures, nextSeasons, nextAvailability, nextFixtureSquads]) => {
+          if (!isCurrentRequest) {
+            return;
+          }
 
-        setFixtures(nextFixtures);
-        setFixtureAvailability(nextAvailability);
-        setSeasons(nextSeasons);
-        setDraft({
-          ...emptyDraft,
-          seasonId:
-            nextSeasons.find((season) => season.isCurrent)?.id ??
-            nextSeasons[0]?.id ??
-            '',
-        });
-        setLoadStatus('ready');
-      })
+          setFixtures(nextFixtures);
+          setFixtureAvailability(nextAvailability);
+          setFixtureSquads(nextFixtureSquads);
+          setSeasons(nextSeasons);
+          setDraft({
+            ...emptyDraft,
+            seasonId:
+              nextSeasons.find((season) => season.isCurrent)?.id ??
+              nextSeasons[0]?.id ??
+              '',
+          });
+          setLoadStatus('ready');
+        },
+      )
       .catch(() => {
         if (isCurrentRequest) {
           setLoadStatus('error');
@@ -172,12 +183,15 @@ function FixtureManager() {
       } else {
         await createFixture(input);
       }
-      const [nextFixtures, nextAvailability] = await Promise.all([
-        getAdminFixtures(),
-        getAdminFixtureAvailability(),
-      ]);
+      const [nextFixtures, nextAvailability, nextFixtureSquads] =
+        await Promise.all([
+          getAdminFixtures(),
+          getAdminFixtureAvailability(),
+          getAdminFixtureSquads(),
+        ]);
       setFixtures(nextFixtures);
       setFixtureAvailability(nextAvailability);
+      setFixtureSquads(nextFixtureSquads);
       setSuccessMessage(
         editingFixtureId
           ? 'Fixture updated successfully.'
@@ -220,6 +234,9 @@ function FixtureManager() {
             const canEdit =
               fixture.status === 'SCHEDULED' && fixture.result === null;
             const roster = fixtureAvailability.find(
+              (entry) => entry.id === fixture.id,
+            );
+            const squad = fixtureSquads.fixtures.find(
               (entry) => entry.id === fixture.id,
             );
             const counts = roster && {
@@ -272,6 +289,23 @@ function FixtureManager() {
                         </ul>
                       )}
                     </div>
+                  )}
+                  {squad && (
+                    <FixtureSquadEditor
+                      fixtureId={fixture.id}
+                      onSaved={(saved) =>
+                        setFixtureSquads((current) => ({
+                          ...current,
+                          fixtures: current.fixtures.map((entry) =>
+                            entry.id === saved.id ? saved : entry,
+                          ),
+                        }))
+                      }
+                      opponentName={fixture.opponentClub.name}
+                      players={fixtureSquads.players}
+                      roster={roster}
+                      squad={squad}
+                    />
                   )}
                 </div>
                 {canEdit ? (

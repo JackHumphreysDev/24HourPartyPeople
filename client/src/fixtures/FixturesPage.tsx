@@ -6,6 +6,7 @@ import { canUsePlayerProfile } from '../auth/permissions';
 import {
   getOwnFixtureAvailability,
   getUpcomingFixtures,
+  getUpcomingFixtureSquads,
   setFixtureAvailability,
 } from './api';
 import { downloadFixtureCalendarEvent } from './calendar';
@@ -13,8 +14,60 @@ import type { ScrapeStatus } from '../scrape/types';
 import type {
   AvailabilityResponse,
   FixtureSummary,
+  FixtureSquad,
   OwnFixtureAvailability,
 } from './types';
+
+const squadLines = [
+  { label: 'Attack', position: 'FWD' },
+  { label: 'Midfield', position: 'MID' },
+  { label: 'Defence', position: 'DEF' },
+  { label: 'Goal', position: 'GK' },
+] as const;
+
+function FixtureSquadView({ squad }: { squad: FixtureSquad }) {
+  const starters = squad.squadEntries.filter((entry) => entry.isStarter);
+  const bench = squad.squadEntries.filter((entry) => !entry.isStarter);
+
+  if (starters.length === 0) return null;
+
+  return (
+    <div className="fixture-selected-squad">
+      <p className="eyebrow">Selected squad</p>
+      <div className="fixture-squad-pitch" aria-label="Starting six">
+        {squadLines.map((line) => (
+          <div className="fixture-squad-line" key={line.position}>
+            <span>{line.label}</span>
+            <div>
+              {starters
+                .filter((entry) => entry.position === line.position)
+                .map((entry) => (
+                  <Link
+                    key={entry.player.id}
+                    to={`/players/${entry.player.id}`}
+                  >
+                    {entry.player.name}
+                  </Link>
+                ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {bench.length > 0 && (
+        <div className="fixture-squad-selected-bench">
+          <strong>Bench</strong>
+          <div>
+            {bench.map((entry) => (
+              <Link key={entry.player.id} to={`/players/${entry.player.id}`}>
+                {entry.player.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const availabilityOptions: { label: string; response: AvailabilityResponse }[] =
   [
@@ -57,6 +110,10 @@ export function FixturesPage() {
     entries: OwnFixtureAvailability[];
     status: 'ready' | 'error';
   } | null>(null);
+  const [squadSnapshot, setSquadSnapshot] = useState<{
+    profileKey: string;
+    entries: FixtureSquad[];
+  } | null>(null);
   const [savingFixtureId, setSavingFixtureId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<{
     fixtureId: string;
@@ -76,6 +133,10 @@ export function FixturesPage() {
     ? (currentSnapshot?.status ?? 'loading')
     : 'idle';
   const availability = currentSnapshot?.entries ?? [];
+  const squads =
+    squadSnapshot?.profileKey === approvedProfileKey
+      ? squadSnapshot.entries
+      : [];
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -105,13 +166,17 @@ export function FixturesPage() {
     }
 
     let isCurrentRequest = true;
-    void getOwnFixtureAvailability()
-      .then((responses) => {
+    void Promise.all([getOwnFixtureAvailability(), getUpcomingFixtureSquads()])
+      .then(([responses, nextSquads]) => {
         if (isCurrentRequest) {
           setAvailabilitySnapshot({
             profileKey: approvedProfileKey,
             entries: responses,
             status: 'ready',
+          });
+          setSquadSnapshot({
+            entries: nextSquads,
+            profileKey: approvedProfileKey,
           });
         }
       })
@@ -231,6 +296,7 @@ export function FixturesPage() {
           const ownResponse = availability.find(
             (entry) => entry.fixtureId === fixture.id,
           )?.response;
+          const squad = squads.find((entry) => entry.id === fixture.id);
           return (
             <article className="fixture-card" key={fixture.id}>
               <div className="fixture-card-meta">
@@ -254,6 +320,7 @@ export function FixturesPage() {
               {fixture.venue && (
                 <p className="fixture-venue">{fixture.venue}</p>
               )}
+              {squad && <FixtureSquadView squad={squad} />}
               <button
                 className="secondary-button fixture-calendar-button"
                 type="button"
